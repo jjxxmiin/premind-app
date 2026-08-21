@@ -4,6 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:premind/app/app.dart';
 import 'package:premind/features/auth/data/mock_auth_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// ignore: depend_on_referenced_packages
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+// ignore: depend_on_referenced_packages
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 void main() {
   testWidgets('restores a session and navigates across the main shell', (
@@ -14,6 +18,10 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    // The app starts its upload queue on launch, which reads tokens through
+    // the async preferences API.
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
 
     await tester.pumpWidget(
       ProviderScope(
@@ -50,6 +58,12 @@ class _AuthenticatedRepository implements AuthRepository {
 
   @override
   Future<AuthSession?> restoreSession() async => _session;
+
+  @override
+  Future<AuthSession> signInWithEmail({
+    required String email,
+    required String password,
+  }) async => _session;
 
   @override
   Future<AuthSession> signInWithDevelopmentAccount() async => _session;

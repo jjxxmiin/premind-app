@@ -23,6 +23,38 @@ flutter run
 
 Android 실기기에서는 USB 디버깅을 켠 뒤 `flutter devices`로 기기를 확인하고 `flutter run -d <device-id>`를 실행합니다.
 
+## 서버 연결
+
+앱은 PREMIND FastAPI 백엔드에 붙습니다. 서버 주소는 빌드 시 주입합니다.
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://api.example.com
+```
+
+지정하지 않으면 Android 에뮬레이터는 `http://10.0.2.2:8000`, 그 외에는
+`http://127.0.0.1:8000`을 씁니다. 배포 빌드에는 반드시 HTTPS 주소를 넘겨야 합니다
+(평문 HTTP는 debug/profile 빌드에서만 허용됩니다).
+
+실제 서버를 상대로 하는 통합 테스트는 기본 스위트에서 제외돼 있습니다.
+
+```bash
+flutter test --tags live --run-skipped \
+  --dart-define=API_BASE_URL=http://127.0.0.1:8777
+```
+
+## 화면 디자인 확인
+
+실기기 없이 화면을 픽셀로 확인할 수 있는 갤러리가 있습니다. 각 화면을
+`test/design/images/`에 PNG로 렌더링합니다.
+
+```bash
+flutter test --tags gallery --run-skipped --update-goldens test/design
+```
+
+렌더링에는 실제 Pretendard와 Material 아이콘 폰트를 로드하므로, 실행 중인 앱과
+같은 타이포그래피·아이콘으로 보입니다. `--update-goldens` 없이 실행하면 이전
+이미지와 비교해 의도치 않은 시각적 변경을 잡아냅니다.
+
 ## 프로젝트 구조
 
 ```text

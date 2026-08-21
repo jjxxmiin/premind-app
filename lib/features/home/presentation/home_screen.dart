@@ -8,6 +8,8 @@ import '../../lectures/presentation/widgets/content_state.dart';
 import '../../lectures/presentation/widgets/lecture_card.dart';
 import '../../recording/domain/recording_session.dart';
 import '../../recording/presentation/recording_session_providers.dart';
+import '../../upload/domain/upload_job.dart';
+import '../../upload/presentation/upload_providers.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({
@@ -35,6 +37,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lectures = ref.watch(lecturesProvider);
     final recoverableSessions = ref.watch(recoverableRecordingSessionsProvider);
+    final uploadQueue = ref.watch(uploadQueueProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -68,7 +71,7 @@ class HomeScreen extends ConsumerWidget {
                   child: _VideoAction(onTap: onVideoTap),
                 ),
               ),
-              ..._buildRecoveryBanner(recoverableSessions),
+              ..._buildRecoveryBanner(ref, recoverableSessions, uploadQueue),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 40, 20, 8),
                 sliver: SliverToBoxAdapter(
@@ -114,7 +117,9 @@ class HomeScreen extends ConsumerWidget {
   }
 
   List<Widget> _buildRecoveryBanner(
+    WidgetRef ref,
     AsyncValue<List<RecordingSession>> sessions,
+    AsyncValue<List<UploadJob>> uploadQueue,
   ) {
     return sessions.maybeWhen(
       data: (items) {
@@ -122,13 +127,25 @@ class HomeScreen extends ConsumerWidget {
           return const <Widget>[];
         }
         final session = items.first;
+        // The queue is the truth about what the server still owes us; the
+        // recoverable sessions only say a local file is unfinished.
+        final job = uploadQueue.maybeWhen(
+          data: (jobs) =>
+              jobs.where((candidate) => candidate.id == session.id).firstOrNull,
+          orElse: () => null,
+        );
         return <Widget>[
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             sliver: SliverToBoxAdapter(
               child: _RecoveryBanner(
                 additionalCount: items.length - 1,
+                job: job,
                 onPressed: () => onRecoverLecture(session.lectureId),
+                onRetry: job == null || !job.isTerminal
+                    ? null
+                    : () =>
+                          ref.read(uploadQueueProvider.notifier).retry(job.id),
               ),
             ),
           ),
@@ -215,15 +232,26 @@ class HomeScreen extends ConsumerWidget {
 class _RecoveryBanner extends StatelessWidget {
   const _RecoveryBanner({
     required this.additionalCount,
+    required this.job,
     required this.onPressed,
+    this.onRetry,
   });
 
   final int additionalCount;
+
+  /// The upload job for this recording, when one is queued. Null means the
+  /// recording is only on the device — nothing has been handed to the server.
+  final UploadJob? job;
   final VoidCallback onPressed;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final progress = job?.status == UploadJobStatus.uploading
+        ? job?.progress
+        : null;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -231,37 +259,93 @@ class _RecoveryBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.cloud_upload_outlined, color: theme.colorScheme.secondary),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '업로드하지 않은 강의가 있어요',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+          Row(
+            children: [
+              Icon(
+                Icons.cloud_upload_outlined,
+                color: theme.colorScheme.secondary,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  additionalCount > 0
-                      ? '이 강의 외 $additionalCount개가 기기에 안전하게 저장되어 있어요.'
-                      : '녹음 파일은 기기에 안전하게 저장되어 있어요.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              if (onRetry != null)
+                TextButton(onPressed: onRetry, child: const Text('다시 시도'))
+              else
+                TextButton(onPressed: onPressed, child: const Text('정리 계속')),
+            ],
           ),
-          const SizedBox(width: 8),
-          TextButton(onPressed: onPressed, child: const Text('정리 계속')),
+          if (progress != null) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 4,
+                backgroundColor: theme.colorScheme.outlineVariant,
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  String get _title {
+    switch (job?.status) {
+      case UploadJobStatus.uploading:
+        return '강의를 업로드하고 있어요';
+      case UploadJobStatus.queued:
+        return '업로드를 기다리고 있어요';
+      case UploadJobStatus.failed:
+        return job!.isTerminal ? '업로드하지 못했어요' : '업로드를 다시 시도할게요';
+      case UploadJobStatus.completed:
+      case UploadJobStatus.cancelled:
+      case null:
+        return '업로드하지 않은 강의가 있어요';
+    }
+  }
+
+  String get _subtitle {
+    final current = job;
+    if (current != null) {
+      switch (current.status) {
+        case UploadJobStatus.uploading:
+          return '${(current.progress * 100).round()}% · 앱을 닫아도 이어져요';
+        case UploadJobStatus.failed when current.isTerminal:
+          return '녹음 파일은 기기에 그대로 있어요';
+        case UploadJobStatus.failed:
+          return '네트워크가 돌아오면 이어서 올려요';
+        case UploadJobStatus.queued:
+        case UploadJobStatus.completed:
+        case UploadJobStatus.cancelled:
+          break;
+      }
+    }
+    return additionalCount > 0
+        ? '이 강의 외 $additionalCount개가 기기에 안전하게 저장되어 있어요.'
+        : '녹음 파일은 기기에 안전하게 저장되어 있어요.';
   }
 }
 

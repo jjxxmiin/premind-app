@@ -1,0 +1,14 @@
+# Tests tagged `live` drive the real PREMIND API over HTTP, and tests tagged
+# `gallery` compare rendered screenshots. Both are excluded from the default
+# suite: `flutter test` must pass with no server running, and golden images are
+# tied to the machine's font rasterisation.
+#
+#   flutter test --tags live --run-skipped \
+#     --dart-define=API_BASE_URL=http://127.0.0.1:8777
+#
+#   flutter test --tags gallery --run-skipped --update-goldens test/design
+tags:
+  live:
+    skip: "needs a running API; run with --tags live --run-skipped"
+  gallery:
+    skip: "renders design screenshots; run with --tags gallery --run-skipped"

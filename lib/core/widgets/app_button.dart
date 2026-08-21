@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:premind/core/constants/app_typography.dart';
 import 'package:premind/core/constants/app_colors.dart';
 import 'package:premind/core/constants/app_sizes.dart';
 
@@ -41,6 +42,9 @@ class AppButton extends StatelessWidget {
       shape: const WidgetStatePropertyAll(StadiumBorder()),
       textStyle: WidgetStatePropertyAll(
         TextStyle(
+          // A bare TextStyle here overrides the themed one, and without the
+          // family it falls back to the system font next to Pretendard copy.
+          fontFamily: AppTypography.brandFamily,
           fontSize: dimensions.fontSize,
           height: 1.2,
           fontWeight: FontWeight.w700,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:premind/core/constants/app_typography.dart';
 import 'package:premind/core/constants/app_colors.dart';
 import 'package:premind/core/constants/app_sizes.dart';
 
@@ -42,7 +43,7 @@ ThemeData get appTheme {
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: colorScheme,
-    fontFamily: 'Pretendard',
+    fontFamily: AppTypography.brandFamily,
     visualDensity: VisualDensity.standard,
     materialTapTargetSize: MaterialTapTargetSize.padded,
   );
@@ -68,6 +69,7 @@ ThemeData get appTheme {
       iconTheme: IconThemeData(color: AppColors.ink, size: 24),
       actionsIconTheme: IconThemeData(color: AppColors.ink, size: 24),
       titleTextStyle: TextStyle(
+        fontFamily: AppTypography.brandFamily,
         color: AppColors.ink,
         fontSize: 20,
         height: 1.35,
@@ -97,11 +99,13 @@ ThemeData get appTheme {
       fillColor: AppColors.inputSurface,
       contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       hintStyle: TextStyle(
+        fontFamily: AppTypography.brandFamily,
         color: AppColors.faint,
         fontSize: 15,
         fontWeight: FontWeight.w400,
       ),
       labelStyle: TextStyle(
+        fontFamily: AppTypography.brandFamily,
         color: AppColors.muted,
         fontSize: 15,
         fontWeight: FontWeight.w500,
@@ -155,6 +159,7 @@ ThemeData get appTheme {
         shape: const WidgetStatePropertyAll(StadiumBorder()),
         textStyle: const WidgetStatePropertyAll(
           TextStyle(
+            fontFamily: AppTypography.brandFamily,
             fontSize: 16,
             height: 1.2,
             fontWeight: FontWeight.w700,
@@ -192,6 +197,7 @@ ThemeData get appTheme {
         shape: const WidgetStatePropertyAll(StadiumBorder()),
         textStyle: const WidgetStatePropertyAll(
           TextStyle(
+            fontFamily: AppTypography.brandFamily,
             fontSize: 16,
             height: 1.2,
             fontWeight: FontWeight.w700,
@@ -220,7 +226,12 @@ ThemeData get appTheme {
         ),
         shape: const WidgetStatePropertyAll(StadiumBorder()),
         textStyle: const WidgetStatePropertyAll(
-          TextStyle(fontSize: 15, height: 1.3, fontWeight: FontWeight.w700),
+          TextStyle(
+            fontFamily: AppTypography.brandFamily,
+            fontSize: 15,
+            height: 1.3,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     ),
@@ -245,6 +256,7 @@ ThemeData get appTheme {
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         final isSelected = states.contains(WidgetState.selected);
         return TextStyle(
+          fontFamily: AppTypography.brandFamily,
           color: isSelected ? AppColors.brand : AppColors.faint,
           fontSize: 12,
           height: 1.2,
@@ -299,6 +311,7 @@ ThemeData get appTheme {
         AppSizes.space16,
       ),
       contentTextStyle: TextStyle(
+        fontFamily: AppTypography.brandFamily,
         color: Colors.white,
         fontSize: 14,
         height: 1.45,
@@ -315,6 +328,14 @@ ThemeData get appTheme {
     ),
   );
 }
+
+/// The bundled brand typeface.
+///
+/// `ThemeData.fontFamily` only reaches the base text theme — component styles
+/// declared as standalone `TextStyle`s (buttons, app bar titles, inputs,
+/// snack bars, navigation labels) fall back to the system font unless they name
+/// the family themselves, which reads as a different typeface next to body
+/// copy. Every explicit style below therefore sets it.
 
 TextTheme _buildTextTheme(TextTheme base) {
   return base.copyWith(

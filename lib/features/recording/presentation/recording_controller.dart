@@ -10,6 +10,9 @@ import 'package:uuid/uuid.dart';
 import '../../lectures/data/lecture_repository.dart';
 import '../../lectures/domain/lecture.dart';
 import '../../lectures/presentation/lecture_providers.dart';
+import '../../upload/data/upload_queue_repository.dart';
+import '../../upload/domain/upload_job.dart';
+import '../../upload/presentation/upload_providers.dart';
 import '../data/recording_session_repository.dart';
 import '../domain/recording_session.dart';
 import 'recording_session_providers.dart';
@@ -33,6 +36,7 @@ class RecordingController extends Notifier<RecordingState> {
   StreamSubscription<RecordState>? _recordStateSubscription;
   late RecordingSessionRepository _sessionRepository;
   late LectureRepository _lectureRepository;
+  late UploadQueueRepository _uploadQueueRepository;
   Future<void> _transitionTail = Future<void>.value();
   DateTime? _startedAt;
   bool _finishing = false;
@@ -43,6 +47,7 @@ class RecordingController extends Notifier<RecordingState> {
   RecordingState build() {
     _sessionRepository = ref.read(recordingSessionRepositoryProvider);
     _lectureRepository = ref.read(lectureRepositoryProvider);
+    _uploadQueueRepository = ref.read(uploadQueueRepositoryProvider);
     ref.onDispose(() {
       final snapshot = state;
       _disposed = true;
@@ -332,7 +337,7 @@ class RecordingController extends Notifier<RecordingState> {
       return;
     }
     try {
-      await _sessionRepository.save(_sessionFromState(state));
+      await _sessionRepository.save(await _sessionFromState(state));
       if (!_disposed && state.errorMessage?.startsWith('세션 정보') == true) {
         state = state.copyWith(errorMessage: '');
       }
@@ -368,14 +373,15 @@ class RecordingController extends Notifier<RecordingState> {
         );
         state = completedState;
 
-        await _sessionRepository.save(
-          _sessionFromState(
-            completedState,
-            status: RecordingSessionStatus.completed,
-            endedAt: DateTime.now(),
-          ),
+        final completedSession = await _sessionFromState(
+          completedState,
+          status: RecordingSessionStatus.completed,
+          endedAt: DateTime.now(),
         );
+        await _sessionRepository.save(completedSession);
+        await _enqueueUpload(completedSession);
         ref.invalidate(recoverableRecordingSessionsProvider);
+        ref.invalidate(uploadQueueProvider);
 
         final lectureId = completedState.lectureId;
         if (lectureId != null) {
@@ -430,13 +436,28 @@ class RecordingController extends Notifier<RecordingState> {
     return completer.future;
   }
 
-  RecordingSession _sessionFromState(
+  /// Rebuilds the persisted session from [snapshot].
+  ///
+  /// The upload status is read back from storage rather than reset: a snapshot
+  /// is saved every few seconds, and hardcoding `pending` here would keep
+  /// knocking a session that is already uploading (or uploaded) back to the
+  /// start of the queue.
+  Future<RecordingSession> _sessionFromState(
     RecordingState snapshot, {
     RecordingSessionStatus? status,
     DateTime? endedAt,
-  }) {
+  }) async {
+    final sessionId = snapshot.sessionId!;
+    UploadStatus uploadStatus;
+    try {
+      final existing = await _sessionRepository.get(sessionId);
+      uploadStatus = existing?.uploadStatus ?? UploadStatus.pending;
+    } catch (_) {
+      uploadStatus = UploadStatus.pending;
+    }
+
     return RecordingSession(
-      id: snapshot.sessionId!,
+      id: sessionId,
       lectureId: snapshot.lectureId!,
       startedAt: _startedAt!,
       endedAt: endedAt,
@@ -447,9 +468,36 @@ class RecordingController extends Notifier<RecordingState> {
           (snapshot.status == RecordingFlowStatus.paused
               ? RecordingSessionStatus.paused
               : RecordingSessionStatus.recording),
-      uploadStatus: UploadStatus.pending,
+      uploadStatus: uploadStatus,
       markers: snapshot.markers,
     );
+  }
+
+  /// Adds the finished [session] to the resumable upload queue.
+  ///
+  /// Failure-tolerant by design: a recording that is safely on disk must never
+  /// be lost because the queue could not be written. The session stays
+  /// recoverable, so a later pass can queue it again.
+  Future<void> _enqueueUpload(RecordingSession session) async {
+    try {
+      final file = File(session.localFilePath);
+      if (!await file.exists()) {
+        return;
+      }
+      final totalBytes = await file.length();
+      if (totalBytes <= 0) {
+        return;
+      }
+      await _uploadQueueRepository.enqueue(
+        UploadJob.forRecording(
+          session: session,
+          title: _title,
+          totalBytes: totalBytes,
+        ),
+      );
+    } catch (_) {
+      // Recording completion must succeed even when queueing does not.
+    }
   }
 
   Future<void> _markFailed(Object error) async {
@@ -465,7 +513,7 @@ class RecordingController extends Notifier<RecordingState> {
       try {
         if (_recorderStartRequested) {
           await _sessionRepository.save(
-            _sessionFromState(
+            await _sessionFromState(
               state,
               status: RecordingSessionStatus.failed,
               endedAt: DateTime.now(),
@@ -509,13 +557,13 @@ class RecordingController extends Notifier<RecordingState> {
             elapsed: _stopwatch.elapsed,
             filePath: path ?? snapshot.filePath,
           );
-          await _sessionRepository.save(
-            _sessionFromState(
-              finalized,
-              status: RecordingSessionStatus.completed,
-              endedAt: DateTime.now(),
-            ),
+          final finalizedSession = await _sessionFromState(
+            finalized,
+            status: RecordingSessionStatus.completed,
+            endedAt: DateTime.now(),
           );
+          await _sessionRepository.save(finalizedSession);
+          await _enqueueUpload(finalizedSession);
           final lectureId = finalized.lectureId;
           if (lectureId != null) {
             final lecture = await _lectureRepository.getLecture(lectureId);

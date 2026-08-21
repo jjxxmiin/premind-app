@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/widgets/app_wordmark.dart';
 import '../features/auth/presentation/auth_controller.dart';
+import '../features/auth/presentation/email_login_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
 import '../features/home/presentation/home_screen.dart';
@@ -39,8 +40,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         name: 'login',
+        builder: (context, state) => LoginScreen(
+          onLoginSuccess: () => context.goNamed('home'),
+          onEmailPressed: () => context.pushNamed('email-login'),
+        ),
+      ),
+      GoRoute(
+        path: '/login/email',
+        name: 'email-login',
         builder: (context, state) =>
-            LoginScreen(onLoginSuccess: () => context.goNamed('home')),
+            EmailLoginScreen(onLoginSuccess: () => context.goNamed('home')),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

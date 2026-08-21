@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:premind/features/auth/data/api_auth_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum AuthMethod { google, apple, email, development }
@@ -60,6 +61,11 @@ class AuthSession {
 abstract interface class AuthRepository {
   Future<AuthSession?> restoreSession();
 
+  Future<AuthSession> signInWithEmail({
+    required String email,
+    required String password,
+  });
+
   Future<AuthSession> signInWithDevelopmentAccount();
 
   Future<void> signOut();
@@ -94,6 +100,23 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<AuthSession> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    final localPart = email.split('@').first.trim();
+    final session = AuthSession(
+      userId: 'premind-email-user',
+      displayName: localPart.isEmpty ? 'PREMIND 사용자' : localPart,
+      email: email,
+      method: AuthMethod.email,
+      signedInAt: DateTime.now(),
+    );
+    await _preferences.setString(_sessionKey, jsonEncode(session.toJson()));
+    return session;
+  }
+
+  @override
   Future<AuthSession> signInWithDevelopmentAccount() async {
     final session = AuthSession(
       userId: 'premind-development-user',
@@ -115,7 +138,8 @@ final mockAuthRepositoryProvider = Provider<MockAuthRepository>((ref) {
   return MockAuthRepository();
 });
 
-/// Override this provider when the production authentication repository lands.
+/// The repository the app runs against. Tests override this provider; swap it
+/// back to [mockAuthRepositoryProvider] to develop without a server.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return ref.watch(mockAuthRepositoryProvider);
+  return ref.watch(apiAuthRepositoryProvider);
 });

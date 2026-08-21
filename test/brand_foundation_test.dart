@@ -136,6 +136,42 @@ void main() {
     });
   });
 
+  test('every themed component text style uses the brand typeface', () {
+    // ThemeData.fontFamily only reaches the base text theme; component styles
+    // declared as standalone TextStyles silently fall back to the system font,
+    // which ships button and app bar text in the wrong typeface.
+    final theme = appTheme;
+    final styles = <String, TextStyle?>{
+      'appBar.title': theme.appBarTheme.titleTextStyle,
+      'input.hint': theme.inputDecorationTheme.hintStyle,
+      'input.label': theme.inputDecorationTheme.labelStyle,
+      'snackBar.content': theme.snackBarTheme.contentTextStyle,
+      'filledButton': theme.filledButtonTheme.style?.textStyle?.resolve(
+        <WidgetState>{},
+      ),
+      'outlinedButton': theme.outlinedButtonTheme.style?.textStyle?.resolve(
+        <WidgetState>{},
+      ),
+      'textButton': theme.textButtonTheme.style?.textStyle?.resolve(
+        <WidgetState>{},
+      ),
+      'navigationBar.label': theme.navigationBarTheme.labelTextStyle?.resolve(
+        <WidgetState>{},
+      ),
+      'navigationBar.label(selected)': theme.navigationBarTheme.labelTextStyle
+          ?.resolve(<WidgetState>{WidgetState.selected}),
+    };
+
+    styles.forEach((name, style) {
+      expect(style, isNotNull, reason: '$name has no themed style');
+      expect(
+        style!.fontFamily,
+        'Pretendard',
+        reason: '$name would render in the system font',
+      );
+    });
+  });
+
   testWidgets(
     'wordmark and brand mark load official assets with semantics at compact widths',
     (tester) async {

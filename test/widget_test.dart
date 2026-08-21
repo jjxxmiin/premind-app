@@ -68,6 +68,20 @@ class _InMemoryAuthRepository implements AuthRepository {
   Future<AuthSession?> restoreSession() async => session;
 
   @override
+  Future<AuthSession> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    return session = AuthSession(
+      userId: 'widget-test-user',
+      displayName: 'Widget Test',
+      email: email,
+      method: AuthMethod.email,
+      signedInAt: DateTime.utc(2026, 8, 8),
+    );
+  }
+
+  @override
   Future<AuthSession> signInWithDevelopmentAccount() async {
     return session = AuthSession(
       userId: 'widget-test-user',

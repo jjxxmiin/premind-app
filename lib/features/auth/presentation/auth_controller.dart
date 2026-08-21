@@ -11,6 +11,23 @@ class AuthController extends AsyncNotifier<AuthSession?> {
     return ref.watch(authRepositoryProvider).restoreSession();
   }
 
+  Future<AuthSession> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    state = const AsyncLoading<AuthSession?>();
+    try {
+      final session = await ref
+          .read(authRepositoryProvider)
+          .signInWithEmail(email: email, password: password);
+      state = AsyncData<AuthSession?>(session);
+      return session;
+    } on Object catch (error, stackTrace) {
+      state = AsyncError<AuthSession?>(error, stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
   Future<AuthSession> signInWithDevelopmentAccount() async {
     state = const AsyncLoading<AuthSession?>();
     try {

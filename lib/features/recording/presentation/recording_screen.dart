@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/utils/duration_format.dart';
+import '../domain/recording_session.dart';
 import 'recording_controller.dart';
 import 'recording_state.dart';
 
@@ -395,61 +396,42 @@ class _ActiveRecordingView extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 10, 24, 24),
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            minHeight: math.max(0, constraints.maxHeight - 34),
+            minHeight: math.max(0, constraints.maxHeight - 28),
           ),
           child: IntrinsicHeight(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: isPaused ? scheme.outline : scheme.error,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      isPaused ? '일시정지' : '녹음 중',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isPaused
-                            ? scheme.onSurfaceVariant
-                            : scheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    Icon(
-                      Icons.shield_outlined,
-                      size: 17,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      '기기에 저장 중',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+                // One centre of gravity: status, time, signal and marks read
+                // as a single live block, with the controls pinned below it.
                 const Spacer(),
+                _RecordingStatusLine(isPaused: isPaused),
+                const SizedBox(height: 18),
                 Text(
                   formatDuration(recording.elapsed),
+                  textAlign: TextAlign.center,
                   style: theme.textTheme.displaySmall?.copyWith(
                     fontSize: 48,
                     fontFeatures: const [FontFeature.tabularFigures()],
                     fontWeight: FontWeight.w700,
                     letterSpacing: -1.8,
+                    color: isPaused
+                        ? scheme.onSurfaceVariant
+                        : scheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 34),
+                const SizedBox(height: 6),
+                Text(
+                  isPaused ? '잠시 멈춰 있어요' : '기기에 저장되고 있어요',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 28),
                 SizedBox(
                   height: 96,
                   width: double.infinity,
@@ -462,28 +444,17 @@ class _ActiveRecordingView extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 30),
-                Text(
-                  isPaused ? '잠시 멈춰 있어요' : '강의를 기록하고 있어요',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 180),
-                  child: Text(
-                    recording.markers.isEmpty
-                        ? '기억할 순간은 중요 표시로 남겨보세요.'
-                        : '중요 표시 ${recording.markers.length}개를 남겼어요.',
-                    key: ValueKey(recording.markers.length),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
+                const SizedBox(height: 24),
+                // Where the 중요 표시 landed, not just how many: the marks are
+                // what the AI weights later, so the lecturer should be able to
+                // see the shape of what they have captured.
+                _MarkerTimeline(
+                  elapsed: recording.elapsed,
+                  markers: recording.markers,
+                  paused: isPaused,
                 ),
                 if (recording.errorMessage?.isNotEmpty == true) ...[
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 14),
                   Text(
                     recording.errorMessage!,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -493,27 +464,62 @@ class _ActiveRecordingView extends StatelessWidget {
                   ),
                 ],
                 const Spacer(),
+                const SizedBox(height: 8),
+                // While recording, 중요 표시 leads: it is pressed many times
+                // per lecture and it is what the AI weights later. While
+                // paused, the action the lecturer actually needs is 계속하기,
+                // so the two swap places rather than sitting in a fixed row.
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    _RecordingAction(
-                      icon: recording.markers.isEmpty
-                          ? Icons.star_border_rounded
-                          : Icons.star_rounded,
-                      label: '중요 표시',
-                      onPressed: onMarker,
-                      highlighted: recording.markers.isNotEmpty,
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: isPaused
+                            ? _RecordingAction(
+                                icon: recording.markers.isEmpty
+                                    ? Icons.star_border_rounded
+                                    : Icons.star_rounded,
+                                label: '중요 표시',
+                                onPressed: onMarker,
+                                size: 60,
+                              )
+                            : _RecordingAction(
+                                icon: Icons.pause_rounded,
+                                label: '일시정지',
+                                onPressed: onPauseToggle,
+                                size: 60,
+                              ),
+                      ),
                     ),
-                    _RecordingAction(
-                      icon: isPaused ? Icons.mic_rounded : Icons.pause_rounded,
-                      label: isPaused ? '계속하기' : '일시정지',
-                      onPressed: onPauseToggle,
-                    ),
-                    _RecordingAction(
-                      icon: Icons.stop_rounded,
-                      label: '종료',
-                      destructive: true,
-                      onPressed: onFinish,
+                    isPaused
+                        ? _RecordingAction(
+                            icon: Icons.mic_rounded,
+                            label: '계속하기',
+                            onPressed: onPauseToggle,
+                            primary: true,
+                            size: 84,
+                          )
+                        : _RecordingAction(
+                            icon: recording.markers.isEmpty
+                                ? Icons.star_border_rounded
+                                : Icons.star_rounded,
+                            label: '중요 표시',
+                            onPressed: onMarker,
+                            primary: true,
+                            size: 84,
+                          ),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _RecordingAction(
+                          icon: Icons.stop_rounded,
+                          label: '종료',
+                          destructive: true,
+                          onPressed: onFinish,
+                          size: 60,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -526,59 +532,226 @@ class _ActiveRecordingView extends StatelessWidget {
   }
 }
 
+/// The single live-state line: a pulseless dot plus what is happening.
+class _RecordingStatusLine extends StatelessWidget {
+  const _RecordingStatusLine({required this.isPaused});
+
+  final bool isPaused;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: isPaused ? scheme.outline : scheme.error,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          isPaused ? '일시정지' : '녹음 중',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: isPaused ? scheme.onSurfaceVariant : scheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A time track with a tick for every 중요 표시 placed so far.
+class _MarkerTimeline extends StatelessWidget {
+  const _MarkerTimeline({
+    required this.elapsed,
+    required this.markers,
+    required this.paused,
+  });
+
+  final Duration elapsed;
+  final List<RecordingMarker> markers;
+  final bool paused;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final hasMarkers = markers.isNotEmpty;
+
+    return Semantics(
+      label: hasMarkers ? '중요 표시 ${markers.length}개' : '아직 중요 표시가 없어요',
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            height: 26,
+            child: CustomPaint(
+              painter: _MarkerTrackPainter(
+                elapsed: elapsed,
+                markers: markers,
+                trackColor: scheme.outlineVariant,
+                markerColor: paused ? scheme.outline : scheme.primary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: Text(
+              hasMarkers
+                  ? '중요 표시 ${markers.length}개 · 마지막 ${formatDuration(markers.last.timestamp)}'
+                  : '기억할 순간은 중요 표시로 남겨보세요',
+              key: ValueKey<int>(markers.length),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: hasMarkers ? scheme.primary : scheme.onSurfaceVariant,
+                fontWeight: hasMarkers ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MarkerTrackPainter extends CustomPainter {
+  const _MarkerTrackPainter({
+    required this.elapsed,
+    required this.markers,
+    required this.trackColor,
+    required this.markerColor,
+  });
+
+  final Duration elapsed;
+  final List<RecordingMarker> markers;
+  final Color trackColor;
+  final Color markerColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centreY = size.height / 2;
+    final track = Paint()
+      ..color = trackColor
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 3;
+    canvas.drawLine(
+      Offset(1.5, centreY),
+      Offset(size.width - 1.5, centreY),
+      track,
+    );
+
+    final total = elapsed.inMilliseconds;
+    if (total <= 0 || markers.isEmpty) {
+      return;
+    }
+
+    final tick = Paint()
+      ..color = markerColor
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 3;
+    for (final marker in markers) {
+      final ratio = (marker.timestamp.inMilliseconds / total).clamp(0.0, 1.0);
+      final x = 1.5 + (size.width - 3) * ratio;
+      canvas.drawLine(
+        Offset(x, centreY - size.height / 2 + 2),
+        Offset(x, centreY + size.height / 2 - 2),
+        tick,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _MarkerTrackPainter oldDelegate) {
+    return oldDelegate.elapsed != elapsed ||
+        oldDelegate.markers.length != markers.length ||
+        oldDelegate.markerColor != markerColor;
+  }
+}
+
 class _RecordingAction extends StatelessWidget {
   const _RecordingAction({
     required this.icon,
     required this.label,
     required this.onPressed,
     this.destructive = false,
-    this.highlighted = false,
+    this.primary = false,
+    this.size = 64,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onPressed;
+
+  /// Quiet, outlined treatment — reserved for 종료, which is pressed once.
   final bool destructive;
-  final bool highlighted;
+
+  /// The lead action: filled brand circle, larger tap target.
+  final bool primary;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final foreground = destructive
-        ? scheme.onError
-        : highlighted
-        ? scheme.primary
-        : scheme.onSurface;
-    final background = destructive
-        ? scheme.error
-        : highlighted
-        ? scheme.primaryContainer
-        : scheme.surfaceContainerHighest;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    final (Color background, Color foreground, BoxBorder? border) = switch ((
+      primary,
+      destructive,
+    )) {
+      (true, _) => (scheme.primary, scheme.onPrimary, null),
+      (_, true) => (
+        Colors.transparent,
+        scheme.error,
+        Border.all(color: scheme.error.withValues(alpha: 0.45), width: 1.5),
+      ),
+      _ => (scheme.surfaceContainerHighest, scheme.onSurface, null),
+    };
+
     return Semantics(
       button: true,
       label: label,
       excludeSemantics: true,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Material(
-            color: background,
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: onPressed,
-              child: SizedBox(
-                width: 64,
-                height: 64,
-                child: Icon(icon, color: foreground, size: 29),
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: border,
+              color: background,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onPressed,
+                child: SizedBox(
+                  width: size,
+                  height: size,
+                  child: Icon(icon, color: foreground, size: primary ? 38 : 27),
+                ),
               ),
             ),
           ),
           const SizedBox(height: 9),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: destructive ? scheme.error : scheme.onSurface,
-              fontWeight: FontWeight.w600,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: destructive
+                  ? scheme.error
+                  : primary
+                  ? scheme.primary
+                  : scheme.onSurface,
+              fontWeight: primary ? FontWeight.w700 : FontWeight.w600,
             ),
           ),
         ],
