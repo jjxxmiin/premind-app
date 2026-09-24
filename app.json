@@ -1,0 +1,77 @@
+{
+  "expo": {
+    "name": "PREMIND",
+    "slug": "premind",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/brand/app-icon.png",
+    "scheme": "premind",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "kr.co.premind.premind",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "발표와 강의를 녹음해 마인드팩을 만들 수 있도록 마이크 접근을 허용해 주세요.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "kr.co.premind.premind",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/brand/adaptive-foreground.png"
+      },
+      "predictiveBackGestureEnabled": true,
+      "versionCode": 3,
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/brand/app-icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/brand/splash-symbol.png",
+          "imageWidth": 120,
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "발표와 강의를 녹음해 마인드팩을 만들 수 있도록 마이크 접근을 허용해 주세요.",
+          "enableBackgroundPlayback": true,
+          "enableBackgroundRecording": true
+        }
+      ],
+      "expo-document-picker",
+      "expo-secure-store",
+      "expo-notifications",
+      "expo-sharing",
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ],
+      "expo-sqlite",
+      "expo-web-browser",
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

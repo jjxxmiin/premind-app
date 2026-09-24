@@ -1,109 +1,126 @@
-# PREMIND Flutter MVP
+# PREMIND Mobile
 
-PREMIND는 강의를 녹음하고, 로컬에 안전하게 보관한 뒤 AI 정리 결과를 확인하는 교수자용 Flutter 앱 MVP입니다.
+PREMIND의 React Native 모바일 앱입니다. 영상이나 음성을 가져오거나 직접 녹음하면 대본, 핵심 노트, 확인 퀴즈와 근거 타임스탬프로 이루어진 마인드팩을 만듭니다.
 
-현재 구현 범위는 Phase 1~2와 다음 흐름의 Mock 처리까지입니다.
+## 기술 구성
 
-`개발용 로그인 → 홈 → 강의 정보 입력 → 실제 녹음 → Pause/Resume → 중요 표시 → 종료 확인 → 로컬 파일 확정 → Mock AI 처리 → 결과/오디오 재생 → 공유 링크 생성·시스템 공유`
+- Expo SDK 57, React Native 0.86, TypeScript, Expo Router
+- `expo-audio` 기반 백그라운드 녹음과 재생
+- 계정별로 격리된 로컬 우선 저장, 서버 어댑터 분리
+- 눈누에서 배포되는 Pretendard 4개 굵기와 PREMIND 브랜드 토큰
+- Expo Image 캐시를 쓰는 전용 3D 일러스트와 콘텐츠 커버
 
-## 실행 환경
+## 구현된 모바일 흐름
 
-- Flutter 3.38.5 / Dart 3.10.4 기준
-- Android API 24 이상
-- Android SDK Platform 37 설치
-- Android 빌드는 JDK 17 이상 25 미만 권장
-- iOS 13 이상
+- 이메일 회원가입과 로그인, 구글·카카오 간편 로그인, 자동 토큰 갱신, 로컬 데모 진입
+- 강의 프로젝트, 검색 가능한 자료실, 카드와 목록 보기
+- 화면 잠금 중에도 이어지는 음성 녹음, 일시정지, 중요 시점 표시, 5초 복구 스냅샷
+- 기기의 영상과 음성 가져오기, 원본 로컬 보존, 처리 진행 상태
+- 네이티브 영상/음성 플레이어, 전체 화면 영상, 잠금 화면 재생, 배속과 15초 이동
+- 시간별 대본, 핵심 요약, 개념 노트, 확인 퀴즈, 원본 근거 시점 이동
+- 대본·요약·개념 안에서만 답하고 원본 시점을 제시하는 자료 기반 채팅
+- 강사의 중요·시험·기억·핵심 표현과 개념 반복을 감지하는 자동 하이라이트
+- 강의자와 학습자 모드, 3분 복습, 헷갈린 구간 피드백
+- 서버가 제공한 점수·발화 근거·개선 행동만 보여 주는 PREMIND Lens 리포트
+- 표준/고음질 녹음, Wi-Fi에서만 업로드, 마인드팩 완료 로컬 알림
+- 무료와 스탠다드 요금제 안내(결제는 웹에서만, 앱 안에는 결제 링크 없음)
+- 인증 상태에 따른 라우트 보호와 로그아웃·계정 전환 시 워크스페이스 격리
 
-```bash
-flutter pub get
-flutter analyze
-flutter test
-flutter run
-```
+## UI 시스템
 
-Android 실기기에서는 USB 디버깅을 켠 뒤 `flutter devices`로 기기를 확인하고 `flutter run -d <device-id>`를 실행합니다.
+모든 화면은 따뜻한 아이보리 배경, 접근성 대비를 통과하는 테라코타 CTA,
+Pretendard 타이포그래피, Lucide 아이콘을 공통 토큰으로 사용합니다. 녹음·변환·학습
+완료를 표현하는 3D 일러스트는 앱 전용으로 제작했고, 장식 이미지는 스크린 리더에서
+제외하며 의미와 동작은 항상 실제 텍스트와 버튼으로 제공합니다. 모션 감소 설정에서는
+반복 애니메이션을 실행하지 않습니다.
 
-## 서버 연결
+## 실행
 
-앱은 PREMIND FastAPI 백엔드에 붙습니다. 서버 주소는 빌드 시 주입합니다.
-
-```bash
-flutter run --dart-define=API_BASE_URL=https://api.example.com
-```
-
-지정하지 않으면 Android 에뮬레이터는 `http://10.0.2.2:8000`, 그 외에는
-`http://127.0.0.1:8000`을 씁니다. 배포 빌드에는 반드시 HTTPS 주소를 넘겨야 합니다
-(평문 HTTP는 debug/profile 빌드에서만 허용됩니다).
-
-실제 서버를 상대로 하는 통합 테스트는 기본 스위트에서 제외돼 있습니다.
-
-```bash
-flutter test --tags live --run-skipped \
-  --dart-define=API_BASE_URL=http://127.0.0.1:8777
-```
-
-## 화면 디자인 확인
-
-실기기 없이 화면을 픽셀로 확인할 수 있는 갤러리가 있습니다. 각 화면을
-`test/design/images/`에 PNG로 렌더링합니다.
+Node.js 22.13 이상이 필요합니다.
 
 ```bash
-flutter test --tags gallery --run-skipped --update-goldens test/design
+npm install
+npm run start:go
 ```
 
-렌더링에는 실제 Pretendard와 Material 아이콘 폰트를 로드하므로, 실행 중인 앱과
-같은 타이포그래피·아이콘으로 보입니다. `--update-goldens` 없이 실행하면 이전
-이미지와 비교해 의도치 않은 시각적 변경을 잡아냅니다.
+외부 터널이나 정적 웹 미리보기에서는 먼저 동일 출처 API 경로로 export한 뒤 전용
+서버를 실행합니다. 전용 서버는 Expo Router의 SPA fallback과 `/api` 프록시를 함께
+제공하므로 새로고침과 로그인 요청이 같은 주소에서 동작합니다.
 
-## 프로젝트 구조
-
-```text
-lib/
-  app/                 # 앱, 테마, go_router, 하단 내비게이션
-  core/                # 색상/문구/공통 위젯/유틸리티
-  features/
-    auth/              # Mock 인증과 세션 유지
-    home/              # 홈과 미업로드 세션 복구 안내
-    lectures/          # 모델, Mock 저장소, 목록, 상세, 오디오 재생
-    processing/        # 단계 기반 Mock AI 처리
-    profile/           # 사용자/앱 설정 UI
-    recording/         # 실제 녹음, 세션 영속화, 완료 화면
-    sharing/           # Mock 링크 생성, 시스템 공유, 공유 목록
+```bash
+npm run export:web:preview
+npm run preview:web
 ```
 
-## UI/UX
+백그라운드 녹음 등 네이티브 기능을 검증하려면 development build를 사용합니다.
 
-- Warm white 기반의 중립적인 화면과 Navy/Indigo 포인트를 사용합니다.
-- 홈은 하나의 강의 녹음 Primary Action과 작은 녹화 보조 액션으로 우선순위를 구분합니다.
-- 강의·공유 목록은 카드 반복 대신 구분선 기반의 정보 목록을 사용합니다.
-- 강의 상세는 오디오 플레이어, AI 요약, 핵심 내용, 중요 구간, 접힌 스크립트를 한 흐름으로 보여줍니다.
-- 목록과 상세 로딩에는 지연형 Skeleton을 사용해 짧은 로딩에서 화면이 번쩍이지 않도록 했습니다.
-- `share_plus`는 Android/iOS 시스템 공유 시트를 연결하기 위해 사용합니다.
+```bash
+npm run android
+```
 
-## 로컬 데이터와 녹음
+Expo SDK 57의 지원 범위에 따라 iOS 16.4 이상과 Android 7 이상을 대상으로 합니다. Linux 환경에서는 iOS 빌드를 만들 수 없으므로 macOS 또는 EAS Build가 필요합니다.
 
-- 녹음은 AAC-LC mono 44.1 kHz, 128 kbps의 `.m4a` 파일로 앱 Documents 디렉터리의 `recordings/` 아래 저장됩니다.
-- Android에서는 `record`의 microphone foreground service를 사용해 화면 잠금·백그라운드 중 녹음 지속성을 높입니다.
-- 녹음 시작 전에 `RecordingSession`과 `Lecture` 메타데이터를 먼저 생성합니다.
-- 녹음 중 5초마다, Pause 및 앱 lifecycle 변화 시 세션 스냅샷을 SharedPreferences에 저장합니다.
-- Stop 시 파일을 확정하고 세션 상태를 `completed`로 변경합니다.
-- Mock 처리가 끝날 때까지 로컬 파일을 삭제하지 않습니다.
-- 재실행 시 미완료 또는 미업로드 세션이 있으면 홈에 복구 배너를 표시합니다.
+## 검증
 
-## Mock인 기능
+```bash
+npm run typecheck
+npm test
+npm run lint
+npm run export:web
+```
 
-- Google / Apple / 이메일 인증
-- Object Storage 업로드 및 업로드 재시도
-- AI 음성 인식, 요약, 타임라인, 스크립트 생성
-- 공유 링크 서버 발급(현재는 로컬에 영속되는 Mock URL)
-- 녹화 기능
+## 데이터와 서버 연결
 
-개발용 로그인, Mock 강의/AI 처리 결과, 공유 URL은 앱 전체 흐름을 서버 없이 확인할 수 있도록 실제 로컬 영속성을 사용합니다. 링크 복사, 시스템 공유 시트, 로컬 공유 중지는 동작합니다.
+이 앱의 백엔드는 `../premind-recorder-api`입니다. `EXPO_PUBLIC_API_URL`에 그 주소를
+넣으면 앱은 실제 클라이언트로 동작합니다.
 
-## 플랫폼 권한
+- **인증**: `POST /api/auth/register`, `/auth/token`으로 접근 토큰과 회전형 리프레시
+  토큰을 받습니다. 리프레시 토큰은 1회용이라 앱은 갱신을 단일 요청으로 묶어
+  처리하고, 새 토큰을 저장한 뒤에만 사용합니다. 접근 토큰은 SecureStore에
+  보관하고, 만료되면 화면 조작 없이 자동으로 갱신합니다.
+- **업로드**: 서버가 정한 크기로 나눠 올리는 재개 가능한 업로드입니다. 어떤 조각이
+  도착했는지는 서버가 알려 주므로, 끊긴 업로드는 처음부터가 아니라 남은 조각부터
+  이어집니다. 원본 파일은 업로드 성공 여부와 관계없이 기기에 그대로 남습니다.
+- **마인드팩**: 업로드가 끝나면 서버가 ffmpeg으로 자른 오디오를 Vertex AI Gemini로
+  전사하고, 요약과 핵심 문장, 개념 카드, 확인 퀴즈를 만듭니다. 앱은 상태가 `ready`가
+  될 때까지 기다렸다가 대본 구간(`/api/recordings/{id}/segments`)까지 받아 화면에
+  연결합니다. 자동 하이라이트는 이 실제 대본 위에서 기기 안에서 계산합니다.
 
-- Android: `RECORD_AUDIO`, foreground microphone service, Bluetooth SCO용 `MODIFY_AUDIO_SETTINGS`, 향후 녹화용 `CAMERA`
-- iOS: `NSMicrophoneUsageDescription`, 향후 녹화용 `NSCameraUsageDescription`, background audio mode
-- iOS `Podfile`: permission_handler의 microphone/camera 전처리 정의 포함
+`EXPO_PUBLIC_API_URL`을 비워 두면 앱은 서버에 전혀 접속하지 않고, 내장 데모 데이터와
+기기 안의 예시 파이프라인으로 화면을 둘러볼 수 있습니다. 이때 만들어지는 마인드팩은
+고정된 예시 문장이며 실제 전사 결과가 아닙니다. 데모 진입으로 시작한 세션도 마찬가지로
+서버 기능을 쓰지 않습니다.
 
-실기기에서는 최초 녹음 시작 시 권한 허용/거부/영구 거부와 설정 이동 흐름을 각각 확인해야 합니다.
+구독 화면은 안내 전용입니다. 스토어 정책 때문에 네이티브 빌드에는 결제 버튼도 웹 결제
+링크도 두지 않고, 결제는 PREMIND 웹(Polar)에서만 진행합니다. 심사 준비 항목은
+`docs/release-checklist.md`에 있습니다.
+
+### 구글·카카오 로그인
+
+앱과 서버 양쪽에 키가 있을 때만 버튼이 나타납니다. 한쪽이라도 비어 있으면 아무것도
+그리지 않아요 — 눌러도 실패하는 버튼보다 없는 편이 낫습니다.
+
+- 앱: `.env`의 `EXPO_PUBLIC_GOOGLE_CLIENT_ID_*`, `EXPO_PUBLIC_KAKAO_REST_KEY`
+- 서버: `GOOGLE_OAUTH_CLIENT_IDS`(플랫폼별 클라이언트 ID를 쉼표로), `KAKAO_APP_ID`
+
+앱이 받은 토큰은 그대로 서버로 넘기고, 서버가 구글·카카오에 직접 물어 확인합니다. 서버는
+그 토큰이 **이 앱**에 발급된 것인지(구글은 `aud`, 카카오는 `app_id`)까지 확인한 뒤에만
+계정을 만듭니다. 이미 비밀번호로 가입한 이메일이면 새 계정을 만들지 않고 연결합니다.
+
+버튼에는 각 회사가 배포한 공식 Google G 마크와 카카오 로그인 이미지만 사용합니다.
+출처와 업데이트 지침은 `assets/social/README.md`에 기록되어 있습니다.
+
+### 서버와 함께 검증하기
+
+`../premind-recorder-api`를 띄운 뒤 실제 오디오로 전체 파이프라인을 검증할 수 있습니다.
+이 테스트는 실제 Gemini 호출 비용이 들기 때문에 기본적으로 건너뜁니다.
+
+```bash
+EXPO_PUBLIC_API_URL=http://127.0.0.1:8100 \
+PREMIND_LIVE_API_URL=http://127.0.0.1:8100 \
+PREMIND_LIVE_AUDIO=/절대/경로/강의.wav \
+npx jest src/services/api/live-pipeline.integration.test.ts
+```
+
+웹 실행은 화면과 라우트 확인용입니다. 브라우저가 제공한 파일 URI의 장기 보존, 백그라운드
+녹음, 잠금 화면 재생과 네이티브 알림은 development build에서 검증해야 합니다.
