@@ -4,6 +4,7 @@ import {
   type BillingCycle,
   type PlanPrice,
 } from '@/data/subscription-plans';
+import { enShortDate, fmtWon, type AppLocale } from '@/lib/i18n/core';
 
 /**
  * Every word the 구독 화면 puts around a price.
@@ -72,7 +73,24 @@ export function priceCopy(
   price: PlanPrice,
   storePrice: string | null,
   storePerMonth: string | null = null,
+  locale: AppLocale = 'ko',
 ): PriceCopy {
+  if (locale === 'en') {
+    const enAmount = storePrice ?? fmtWon(cycle === 'monthly' ? price.monthly : price.yearly, 'en');
+    if (cycle === 'monthly') {
+      return {
+        headline: `${enAmount} / month`,
+        subline: null,
+        billingLine: `You're charged ${enAmount} every month.`,
+      };
+    }
+    const enPerMonth = storePerMonth ?? fmtWon(yearlyPerMonth(price), 'en');
+    return {
+      headline: `${enAmount} / year`,
+      subline: `About ${enPerMonth} a month, 2 months free`,
+      billingLine: `You're charged ${enAmount} once a year.`,
+    };
+  }
   const amount = storePrice ?? formatKrw(cycle === 'monthly' ? price.monthly : price.yearly);
   if (cycle === 'monthly') {
     return {
@@ -90,14 +108,29 @@ export function priceCopy(
 }
 
 /** The auto-renewal sentence. Play rejects a purchase screen without it. */
-export function autoRenewLine(cycle: BillingCycle): string {
+export function autoRenewLine(cycle: BillingCycle, locale: AppLocale = 'ko'): string {
+  if (locale === 'en') {
+    return cycle === 'monthly'
+      ? 'It renews automatically every month until you cancel.'
+      : 'It renews automatically every year until you cancel.';
+  }
   return cycle === 'monthly'
     ? '해지하기 전까지 매달 자동으로 갱신돼요.'
     : '해지하기 전까지 1년마다 자동으로 갱신돼요.';
 }
 
 /** How to stop paying, said in the place the buyer has to go. */
-export function cancelLine(surface: BillingSurface): string {
+export function cancelLine(surface: BillingSurface, locale: AppLocale = 'ko'): string {
+  if (locale === 'en') {
+    switch (surface) {
+      case 'play':
+        return "You can cancel anytime in Google Play subscriptions. Cancel before the next renewal date and you won't be charged again.";
+      case 'appstore':
+        return "You can cancel anytime in App Store subscriptions. Cancel before the next renewal date and you won't be charged again.";
+      default:
+        return 'You can cancel anytime in subscription settings on the PREMIND web.';
+    }
+  }
   switch (surface) {
     case 'play':
       return 'Google Play 구독에서 언제든 해지할 수 있어요. 다음 갱신일 전에 해지하면 더 청구되지 않아요.';
@@ -109,14 +142,22 @@ export function cancelLine(surface: BillingSurface): string {
 }
 
 /** "9월 20일". A date the store or the server could not give us says so. */
-export function formatRenewalDate(iso: string | null): string | null {
+export function formatRenewalDate(iso: string | null, locale: AppLocale = 'ko'): string | null {
   if (!iso) return null;
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return null;
+  if (locale === 'en') return enShortDate(date);
   return `${date.getMonth() + 1}월 ${date.getDate()}일`;
 }
 
 /** The renewal date for a fact row: a real date, or an honest placeholder. */
-export function renewalFact(iso: string | null, subscribed: boolean): string {
+export function renewalFact(
+  iso: string | null,
+  subscribed: boolean,
+  locale: AppLocale = 'ko',
+): string {
+  if (locale === 'en') {
+    return formatRenewalDate(iso, 'en') ?? (subscribed ? 'Checking' : 'None');
+  }
   return formatRenewalDate(iso) ?? (subscribed ? '확인 중' : '없어요');
 }

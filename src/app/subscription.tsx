@@ -68,6 +68,7 @@ import {
   type BillingCycle,
 } from '@/data/subscription-plans';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
+import { useLocale, useT } from '@/lib/i18n';
 
 const cycleOptions = [
   { value: 'monthly', label: '월간' },
@@ -76,9 +77,8 @@ const cycleOptions = [
 
 const SUPPORT_EMAIL = 'support@camorix.com';
 /** A mail app is not a payment link, so this is allowed in a native build. */
-const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
-  '[PREMIND] 구독 문의',
-)}`;
+const supportMailto = (subject: string) =>
+  `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;
 
 /** Toast sits above the bottom bar (52pt button + 12 + 20 padding). */
 const TOAST_ABOVE_BAR = 104;
@@ -89,10 +89,11 @@ function openUrl(url: string) {
 
 /** One fact of the subscription: its name on the left, its value on the right. */
 function ManageFact({ label, value }: { label: string; value: string }) {
+  const t = useT();
   return (
     <View style={styles.manageRow}>
       <AppText tone="muted" variant="meta">
-        {label}
+        {t(label)}
       </AppText>
       <AppText tabular variant="itemTitle">
         {value}
@@ -116,6 +117,8 @@ function ManageFact({ label, value }: { label: string; value: string }) {
  * says why, instead of crashing on a missing native module.
  */
 export default function SubscriptionScreen() {
+  const t = useT();
+  const locale = useLocale();
   const { session } = useAppStore();
   const [cycle, setCycle] = useState<BillingCycle>('monthly');
   const [webCheckout, setWebCheckout] = useState<{ busy: boolean; error: string | null }>({
@@ -149,15 +152,18 @@ export default function SubscriptionScreen() {
     price,
     storePackage?.priceString ?? null,
     storePackage?.perMonthString ?? null,
+    locale,
   );
 
   // The renewal date the server knows, or the one the store just told us.
   const renewsAtIso = planStatus.renewsAt ?? entitlement?.expiresAt ?? null;
-  const renewsText = renewalFact(renewsAtIso, subscribed);
-  const planName = subscribed ? '스탠다드' : '무료';
+  const renewsText = renewalFact(renewsAtIso, subscribed, locale);
+  const planName = t(subscribed ? '스탠다드' : '무료');
   const planLine = formatRenewalDate(renewsAtIso)
-    ? `지금 요금제 ${planName} / 다음 갱신일 ${renewsText}`
-    : `지금 요금제 ${planName}`;
+    ? t('지금 요금제 {planName} / 다음 갱신일 {renewsText}', { planName, renewsText })
+    : t('지금 요금제 {planName}', { planName });
+  const minutesText = (used: number, limit: number) =>
+    t('{used}분 / {limit}분', { used, limit });
   // Play requires the manage link to point at the exact product, so a known
   // entitlement wins; before it loads, the cycle on screen is the best guess.
   const manageProductId =
@@ -213,7 +219,7 @@ export default function SubscriptionScreen() {
     const result = await purchaseStorePackage(storePackage.identifier);
     dispatch({ type: 'purchase:settle', result });
     if (result.status !== 'purchased') return;
-    if (result.entitled) toast.show('스탠다드가 시작됐어요');
+    if (result.entitled) toast.show(t('스탠다드가 시작됐어요'));
     const current = await getStoreEntitlement();
     if (current) setEntitlement(current);
     await syncAndRefresh();
@@ -225,7 +231,7 @@ export default function SubscriptionScreen() {
     dispatch({ type: 'restore:settle', result });
     if (result.status !== 'restored') return;
     setEntitlement(result.entitlement);
-    toast.show('구독을 복원했어요');
+    toast.show(t('구독을 복원했어요'));
     await syncAndRefresh();
   };
 
@@ -233,7 +239,7 @@ export default function SubscriptionScreen() {
     <Screen padded={false}>
       <AppHeader
         onBack={() => goBackOrReplace('/(tabs)/profile')}
-        title="구독"
+        title={t('구독')}
       />
 
       <ScrollView
@@ -242,12 +248,12 @@ export default function SubscriptionScreen() {
       >
         <View style={styles.intro}>
           <StatusBadge
-            label={subscribed ? '스탠다드 이용 중' : '무료 이용 중'}
+            label={t(subscribed ? '스탠다드 이용 중' : '무료 이용 중')}
             tone={subscribed ? 'positive' : 'neutral'}
           />
-          <AppText variant="pageTitle">더 많이 담고, 오래 남겨요</AppText>
+          <AppText variant="pageTitle">{t('더 많이 담고, 오래 남겨요')}</AppText>
           <AppText tone="muted" variant="body">
-            무료로도 모든 기능을 쓸 수 있어요. 스탠다드는 처리 분량과 보관을 늘려 줘요.
+            {t('무료로도 모든 기능을 쓸 수 있어요. 스탠다드는 처리 분량과 보관을 늘려 줘요.')}
           </AppText>
           {/* The plan and its renewal date sit above the fold: a learner who
               opens this screen worried about being charged should not have to
@@ -260,9 +266,9 @@ export default function SubscriptionScreen() {
         {usage ? (
           <Card style={styles.usageCard} variant="soft">
             <View style={styles.usageHead}>
-              <AppText variant="itemTitle">이번 달 처리 분량</AppText>
+              <AppText variant="itemTitle">{t('이번 달 처리 분량')}</AppText>
               <AppText tabular tone="muted" variant="meta">
-                {`${usage.minutes_used}분 / ${usage.minutes_limit}분`}
+                {minutesText(usage.minutes_used, usage.minutes_limit)}
               </AppText>
             </View>
             <ProgressBar
@@ -272,8 +278,12 @@ export default function SubscriptionScreen() {
             />
             <AppText tone="faint" variant="badge">
               {usage.minutes_used >= usage.minutes_limit
-                ? '이번 달 분량을 다 썼어요. 다음 달 1일에 다시 채워져요.'
-                : `${formatRenewalDate(usage.period_end) ?? '다음 달'}에 다시 채워져요.`}
+                ? t('이번 달 분량을 다 썼어요. 다음 달 1일에 다시 채워져요.')
+                : locale === 'en'
+                  ? formatRenewalDate(usage.period_end, 'en')
+                    ? `Refills on ${formatRenewalDate(usage.period_end, 'en')}.`
+                    : 'Refills next month.'
+                  : `${formatRenewalDate(usage.period_end) ?? '다음 달'}에 다시 채워져요.`}
             </AppText>
           </Card>
         ) : null}
@@ -282,14 +292,14 @@ export default function SubscriptionScreen() {
           <>
             <SegmentedControl<BillingCycle>
               onChange={setCycle}
-              options={cycleOptions}
+              options={cycleOptions.map((option) => ({ ...option, label: t(option.label) }))}
               value={cycle}
             />
 
             <Card style={styles.planCard} variant="soft">
               <View style={styles.planHead}>
-                <AppText variant="heading">스탠다드</AppText>
-                <StatusBadge label="추천" tone="brand" />
+                <AppText variant="heading">{t('스탠다드')}</AppText>
+                <StatusBadge label={t('추천')} tone="brand" />
               </View>
               <AppText variant="display">{copy.headline}</AppText>
               {copy.subline ? (
@@ -303,12 +313,12 @@ export default function SubscriptionScreen() {
 
         <View style={styles.section}>
           <AppText accessibilityRole="header" variant="heading">
-            스탠다드에 들어 있어요
+            {t('스탠다드에 들어 있어요')}
           </AppText>
           <Card padding={false}>
             <View style={styles.tableHead}>
               <AppText style={styles.labelCell} tone="muted" variant="meta">
-                혜택
+                {t('혜택')}
               </AppText>
               <AppText
                 align="center"
@@ -316,10 +326,10 @@ export default function SubscriptionScreen() {
                 tone="muted"
                 variant="meta"
               >
-                무료
+                {t('무료')}
               </AppText>
               <AppText align="center" style={styles.valueCell} variant="label">
-                스탠다드
+                {t('스탠다드')}
               </AppText>
             </View>
             {PLAN_BENEFITS.map((benefit, index) => (
@@ -333,20 +343,20 @@ export default function SubscriptionScreen() {
                 ]}
               >
                 <AppText style={styles.labelCell} variant="body">
-                  {benefit.label}
+                  {t(benefit.label)}
                 </AppText>
                 <View style={styles.valueCell}>
                   {benefit.free === false ? (
                     <Minus
                       {...decorative}
-                      accessibilityLabel="없음"
+                      accessibilityLabel={t.ctx('plan', '없음')}
                       color={colors.textFaint}
                       size={iconSizes.inline}
                       strokeWidth={2}
                     />
                   ) : (
                     <AppText align="center" tone="muted" variant="meta">
-                      {benefit.free}
+                      {t.ctx('plan', benefit.free)}
                     </AppText>
                   )}
                 </View>
@@ -354,14 +364,14 @@ export default function SubscriptionScreen() {
                   {benefit.standard === true ? (
                     <Check
                       {...decorative}
-                      accessibilityLabel="포함"
+                      accessibilityLabel={t.ctx('plan', '포함')}
                       color={colors.text}
                       size={iconSizes.section}
                       strokeWidth={2.4}
                     />
                   ) : (
                     <AppText align="center" variant="label">
-                      {benefit.standard}
+                      {t.ctx('plan', benefit.standard)}
                     </AppText>
                   )}
                 </View>
@@ -376,16 +386,16 @@ export default function SubscriptionScreen() {
         {canBuyHere && !subscribed ? (
           <Card style={styles.termsCard} variant="soft">
             <AppText accessibilityRole="header" variant="itemTitle">
-              결제 안내
+              {t('결제 안내')}
             </AppText>
             <AppText tone="muted" variant="body">
               {copy.billingLine}
             </AppText>
             <AppText tone="muted" variant="body">
-              {autoRenewLine(cycle)}
+              {autoRenewLine(cycle, locale)}
             </AppText>
             <AppText tone="muted" variant="body">
-              {cancelLine(surface)}
+              {cancelLine(surface, locale)}
             </AppText>
           </Card>
         ) : null}
@@ -393,14 +403,16 @@ export default function SubscriptionScreen() {
         <Card padding={false}>
           <View style={styles.manageCopy}>
             <AppText accessibilityRole="header" variant="heading">
-              구독을 관리해요
+              {t('구독을 관리해요')}
             </AppText>
             <AppText tone="muted" variant="body">
               {canBuyHere
                 ? surface === 'web'
-                  ? '결제와 해지는 PREMIND 웹에서 진행돼요.'
-                  : `결제와 해지는 ${surface === 'appstore' ? 'App Store' : 'Google Play'} 구독에서 관리돼요.`
-                : '지금 버전에서는 앱에서 바로 구독할 수 없어요. 스토어에서 앱을 업데이트하면 구독할 수 있어요.'}
+                  ? t('결제와 해지는 PREMIND 웹에서 진행돼요.')
+                  : t('결제와 해지는 {store} 구독에서 관리돼요.', {
+                      store: surface === 'appstore' ? 'App Store' : 'Google Play',
+                    })
+                : t('지금 버전에서는 앱에서 바로 구독할 수 없어요. 스토어에서 앱을 업데이트하면 구독할 수 있어요.')}
             </AppText>
           </View>
           <View style={styles.manageFacts}>
@@ -409,7 +421,7 @@ export default function SubscriptionScreen() {
             {usage ? (
               <ManageFact
                 label="이번 달 처리 분량"
-                value={`${usage.minutes_used}분 / ${usage.minutes_limit}분`}
+                value={minutesText(usage.minutes_used, usage.minutes_limit)}
               />
             ) : null}
           </View>
@@ -419,12 +431,12 @@ export default function SubscriptionScreen() {
               leadingIcon={CreditCard}
               onPress={() => openUrl(manageSubscriptionUrl(surface, manageProductId))}
               showChevron
-              subtitle={
+              subtitle={t(
                 surface === 'appstore'
                   ? 'App Store에서 해지하거나 결제 수단을 바꿔요'
-                  : 'Google Play에서 해지하거나 결제 수단을 바꿔요'
-              }
-              title="구독 관리"
+                  : 'Google Play에서 해지하거나 결제 수단을 바꿔요',
+              )}
+              title={t('구독 관리')}
             />
           ) : null}
           {/* Not shown to a non-subscriber: the bottom bar already carries
@@ -435,17 +447,17 @@ export default function SubscriptionScreen() {
               disabled={busy !== null}
               leadingIcon={RotateCcw}
               onPress={() => void restore()}
-              subtitle="다른 기기에서 산 구독을 가져와요"
-              title="구매 복원"
+              subtitle={t('다른 기기에서 산 구독을 가져와요')}
+              title={t('구매 복원')}
             />
           ) : null}
           <ListRow
             compact
             divider={false}
             leadingIcon={Mail}
-            onPress={() => openUrl(SUPPORT_MAILTO)}
+            onPress={() => openUrl(supportMailto(t('[PREMIND] 구독 문의')))}
             subtitle={SUPPORT_EMAIL}
-            title="문의하기"
+            title={t('문의하기')}
           />
         </Card>
 
@@ -455,7 +467,7 @@ export default function SubscriptionScreen() {
             leadingIcon={FileText}
             onPress={() => openUrl(TERMS_URL)}
             showChevron
-            title="이용약관"
+            title={t('이용약관')}
           />
           <ListRow
             compact
@@ -463,7 +475,7 @@ export default function SubscriptionScreen() {
             leadingIcon={ShieldCheck}
             onPress={() => openUrl(PRIVACY_URL)}
             showChevron
-            title="개인정보 처리방침"
+            title={t('개인정보 처리방침')}
           />
         </Card>
 
@@ -473,7 +485,7 @@ export default function SubscriptionScreen() {
             tone={state.notice.tone}
             variant="meta"
           >
-            {state.notice.text}
+            {t(state.notice.text)}
           </AppText>
         ) : null}
       </ScrollView>
@@ -486,13 +498,13 @@ export default function SubscriptionScreen() {
             size="large"
             variant="secondary"
           >
-            돌아가기
+            {t('돌아가기')}
           </Button>
         ) : isWeb ? (
           <>
             {webCheckout.error ? (
               <AppText accessibilityRole="alert" tone="muted" variant="meta">
-                {webCheckout.error}
+                {t(webCheckout.error)}
               </AppText>
             ) : null}
             <Button
@@ -535,7 +547,7 @@ export default function SubscriptionScreen() {
               size="large"
               variant="primary"
             >
-              웹에서 구독하기
+              {t('웹에서 구독하기')}
             </Button>
             <Button
               fullWidth
@@ -543,7 +555,7 @@ export default function SubscriptionScreen() {
               size="medium"
               variant="ghost"
             >
-              나중에 할게요
+              {t('나중에 할게요')}
             </Button>
           </>
         ) : storeBilling ? (
@@ -554,8 +566,7 @@ export default function SubscriptionScreen() {
                 or reviewed, so say that rather than showing a dead control. */}
             {!storePackage ? (
               <AppText accessibilityRole="alert" tone="muted" variant="meta">
-                지금은 구독 상품을 불러올 수 없어요. 스토어에 상품이 준비되면
-                바로 구독할 수 있어요.
+                {t('지금은 구독 상품을 불러올 수 없어요. 스토어에 상품이 준비되면 바로 구독할 수 있어요.')}
               </AppText>
             ) : null}
             <Button
@@ -566,7 +577,7 @@ export default function SubscriptionScreen() {
               size="large"
               variant="primary"
             >
-              구독 시작하기
+              {t('구독 시작하기')}
             </Button>
             <Button
               disabled={busy !== null}
@@ -576,7 +587,7 @@ export default function SubscriptionScreen() {
               size="medium"
               variant="ghost"
             >
-              구매 복원
+              {t('구매 복원')}
             </Button>
           </>
         ) : (
@@ -586,7 +597,7 @@ export default function SubscriptionScreen() {
             size="large"
             variant="secondary"
           >
-            돌아가기
+            {t('돌아가기')}
           </Button>
         )}
       </View>
