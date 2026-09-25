@@ -129,7 +129,9 @@ export function StudyChat({
   initialQuestion,
 }: StudyChatProps) {
   const t = useT();
-  const { isTablet } = useLayout();
+  const { breakpoint, isTablet } = useLayout();
+  /** A desktop window keeps the chat to a reading column, composer included. */
+  const readable = breakpoint === 'expanded' ? styles.readable : null;
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
   const listHeight = useRef(0);
@@ -291,7 +293,7 @@ export function StudyChat({
   return (
     <View style={styles.fill}>
       <ScrollView
-        contentContainerStyle={styles.messages}
+        contentContainerStyle={[styles.messages, readable]}
         keyboardShouldPersistTaps="handled"
         onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
         onLayout={handleListLayout}
@@ -385,10 +387,10 @@ export function StudyChat({
                           accessibilityRole="button"
                           key={citation.id}
                           onPress={() => openCitation(citation.timestampMs)}
-                          style={({ pressed }) => [
+                          style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
                             styles.citationRow,
                             index < citations.length - 1 ? styles.rowDivider : null,
-                            pressed ? styles.rowPressed : null,
+                            hovered || pressed ? styles.rowPressed : null,
                           ]}
                         >
                           <View style={styles.citationIndex}>
@@ -469,10 +471,10 @@ export function StudyChat({
                   accessibilityRole="button"
                   key={suggestion}
                   onPress={() => submitQuestion(suggestion)}
-                  style={({ pressed }) => [
+                  style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
                     styles.suggestionRow,
                     index < suggestions.length - 1 ? styles.rowDivider : null,
-                    pressed ? styles.rowPressed : null,
+                    hovered || pressed ? styles.rowPressed : null,
                   ]}
                 >
                   <AppText numberOfLines={2} style={styles.flex} variant="body">
@@ -498,6 +500,7 @@ export function StudyChat({
         <View
           style={[
             styles.composer,
+            readable,
             composerFocused ? styles.composerFocused : null,
           ]}
         >
@@ -573,6 +576,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   userBubbleTablet: { maxWidth: 520 },
+  readable: { alignSelf: 'center', maxWidth: 720, width: '100%' },
   answer: {
     gap: spacing.sm,
     minWidth: 0,
