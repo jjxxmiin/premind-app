@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui';
 import { formatSourcePosition } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, radii, spacing } from '@/theme/tokens';
 
 /**
@@ -22,6 +23,7 @@ export function TimeChip({
   /** Read the position as a page number: the material is a document. */
   page?: boolean;
 }) {
+  const t = useT();
   const label = (
     <AppText tabular tone="soft" variant="meta">
       {formatSourcePosition(timestampMs, page)}
@@ -32,7 +34,7 @@ export function TimeChip({
   }
   return (
     <Pressable
-      accessibilityHint={page ? '그 쪽으로 이동해요.' : '그 시점부터 재생해요.'}
+      accessibilityHint={page ? t('그 쪽으로 이동해요.') : t('그 시점부터 재생해요.')}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       hitSlop={10}

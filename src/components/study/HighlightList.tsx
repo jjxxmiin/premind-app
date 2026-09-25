@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText, Card, IconButton, SectionHeader } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatSourcePosition } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import type { SentenceSource } from '@/lib/highlights';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 
@@ -34,15 +35,16 @@ export function HighlightList({
   page = false,
   testID,
 }: HighlightListProps) {
+  const t = useT();
   return (
     <View style={styles.block} testID={testID}>
       <SectionHeader
         description={
           painted.length
-            ? `칠한 문장 ${painted.length}개예요. 누르면 그 부분을 들어요.`
+            ? t('칠한 문장 {n}개예요. 누르면 그 부분을 들어요.', { n: painted.length })
             : undefined
         }
-        title="형광펜"
+        title={t('형광펜')}
       />
       {painted.length === 0 ? (
         <Card style={styles.empty} variant="soft">
@@ -53,7 +55,7 @@ export function HighlightList({
             strokeWidth={1.9}
           />
           <AppText style={styles.emptyCopy} tone="muted" variant="meta">
-            문장을 눌러 칠하면 여기에 모여요. 암기 카드로도 나와요.
+            {t('문장을 눌러 칠하면 여기에 모여요. 암기 카드로도 나와요.')}
           </AppText>
         </Card>
       ) : (
@@ -73,8 +75,8 @@ export function HighlightList({
                   item.startMs === null
                     ? undefined
                     : page
-                      ? '그 쪽으로 이동해요.'
-                      : '그 시점부터 재생해요.'
+                      ? t('그 쪽으로 이동해요.')
+                      : t('그 시점부터 재생해요.')
                 }
                 accessibilityLabel={item.sentence}
                 accessibilityRole={item.startMs === null ? 'text' : 'button'}
@@ -104,7 +106,7 @@ export function HighlightList({
               </Pressable>
               <IconButton
                 icon={X}
-                label="형광펜 지우기"
+                label={t('형광펜 지우기')}
                 onPress={() => onClear(item.sentence)}
               />
             </View>

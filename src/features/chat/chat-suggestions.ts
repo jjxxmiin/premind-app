@@ -7,6 +7,8 @@
  * not before. These follow the material and keep going.
  */
 
+import { getLocale, translate, type AppLocale, type Vars } from '@/lib/i18n';
+import { EN } from '@/lib/i18n/en';
 import { josa } from '@/lib/mastery';
 import type { StudyMaterial } from '@/types';
 
@@ -37,25 +39,29 @@ function normalize(question: string): string {
 export function chatSuggestions(
   material: StudyMaterial,
   asked: readonly string[] = [],
+  locale: AppLocale = getLocale(),
 ): string[] {
-  const noun = sourceNoun(material);
+  // The questions go to the AI as the reader's own words, so they are written
+  // in the screen's language; Korean stays exactly as before.
+  const tx = (ko: string, vars?: Vars) => translate(locale, [EN], ko, vars);
+  const noun = translate(locale, [EN], sourceNoun(material), undefined, 'noun');
   const concepts = material.note?.concepts ?? [];
   const started = asked.length > 0;
 
-  const opening = `이 ${noun}를 한 문단으로 요약해줘`;
+  const opening = tx('이 {noun}를 한 문단으로 요약해줘', { noun });
   const conceptQuestions = concepts
     .slice(0, 3)
-    .map((concept) => `${concept.term}${josa(concept.term, '이')} 뭐야?`);
+    .map((concept) => tx('{term}{j} 뭐야?', { term: concept.term, j: josa(concept.term, '이') }));
   const deeper = concepts[0]
-    ? `${concepts[0].term}${josa(concepts[0].term, '을')} 예를 들어 설명해줘`
+    ? tx('{term}{j} 예를 들어 설명해줘', { term: concepts[0].term, j: josa(concepts[0].term, '을') })
     : null;
 
   const ordered = [
     ...(started ? [] : [opening]),
     ...conceptQuestions,
-    '가장 중요한 내용 세 가지만 알려줘',
+    tx('가장 중요한 내용 세 가지만 알려줘'),
     deeper,
-    `이 ${noun}에서 시험에 나올 만한 부분은 어디야?`,
+    tx('이 {noun}에서 시험에 나올 만한 부분은 어디야?', { noun }),
     ...(started ? [opening] : []),
   ].filter((question): question is string => Boolean(question));
 

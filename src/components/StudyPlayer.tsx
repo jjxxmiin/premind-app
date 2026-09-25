@@ -42,6 +42,7 @@ import {
   type RefreshPrivateMediaSource,
 } from '@/features/files/web-authenticated-media';
 import { formatDuration } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, palette, radii, sizes, spacing } from '@/theme/tokens';
 import type { MaterialKind } from '@/types';
 
@@ -108,6 +109,7 @@ export function StudyPlayer(props: StudyPlayerProps) {
 }
 
 function StudyPlayerState(props: StudyPlayerProps) {
+  const t = useT();
   const [usingFallback, setUsingFallback] = useState(false);
   const [nativeFallbackSource, setNativeFallbackSource] =
     useState<StudyPlayerFallbackSource | null>(null);
@@ -217,18 +219,18 @@ function StudyPlayerState(props: StudyPlayerProps) {
       <PlayerSourceState
         description={
           nativeRefreshPending
-            ? '재생 위치는 그대로 두고 연결을 다시 확인하고 있어요.'
+            ? t('재생 위치는 그대로 두고 연결을 다시 확인하고 있어요.')
             : sourceError
-            ? '원본은 안전하지만 이 기기에서 재생할 수 없어요. 다른 형식으로 다시 올려 주세요.'
+            ? t('원본은 안전하지만 이 기기에서 재생할 수 없어요. 다른 형식으로 다시 올려 주세요.')
             : usingFallback || resolved.usingFallback
-              ? '보관된 원본을 불러오고 있어요.'
-              : '이 기기에 저장된 원본을 확인하고 있어요.'
+              ? t('보관된 원본을 불러오고 있어요.')
+              : t('이 기기에 저장된 원본을 확인하고 있어요.')
         }
         kind={props.kind}
         title={
           nativeRefreshPending
-            ? '연결을 다시 확인하고 있어요'
-            : sourceError ?? '원본을 불러오고 있어요'
+            ? t('연결을 다시 확인하고 있어요')
+            : t(sourceError ?? '원본을 불러오고 있어요')
         }
       />
     );
@@ -424,6 +426,7 @@ function AudioStudyPlayer({
   onPlaybackReady,
   onPositionChange,
 }: StudyPlayerProps) {
+  const t = useT();
   const isDemo = uri.startsWith('mock://');
   const source = useMemo(
     () => (isDemo ? null : { uri, headers, name: title }),
@@ -543,10 +546,10 @@ function AudioStudyPlayer({
       rate={rate}
       sourceLabel={
         isDemo
-          ? '예시 오디오'
+          ? t('예시 오디오')
           : status.isBuffering
-            ? '오디오 불러오는 중'
-            : '원본 오디오'
+            ? t('오디오 불러오는 중')
+            : t('원본 오디오')
       }
       title={title}
     />
@@ -563,6 +566,7 @@ function VideoStudyPlayer({
   onPlaybackReady,
   onPositionChange,
 }: StudyPlayerProps) {
+  const t = useT();
   const isDemo = uri.startsWith('mock://');
   const source = useMemo(
     () =>
@@ -681,12 +685,12 @@ function VideoStudyPlayer({
   const changeRate = () => selectRate(nextPlaybackRate(rate));
 
   const sourceLabel = isDemo
-    ? '예시 영상'
+    ? t('예시 영상')
     : statusEvent.status === 'loading' || statusEvent.status === 'idle'
-      ? '영상 불러오는 중'
+      ? t('영상 불러오는 중')
       : statusEvent.status === 'error'
-        ? '영상을 불러오지 못했어요'
-        : '원본 영상';
+        ? t('영상을 불러오지 못했어요')
+        : t('원본 영상');
 
   return (
     <PlayerChrome
@@ -696,7 +700,7 @@ function VideoStudyPlayer({
         <View style={styles.videoFrame}>
           {isDemo ? (
             <View
-              accessibilityLabel={`${title} 예시 영상`}
+              accessibilityLabel={t('{title} 예시 영상', { title })}
               accessibilityRole="image"
               style={styles.demoVideo}
             >
@@ -707,13 +711,13 @@ function VideoStudyPlayer({
                 strokeWidth={1.6}
               />
               <AppText style={styles.stageMuted} variant="meta">
-                예시 영상
+                {t('예시 영상')}
               </AppText>
             </View>
           ) : (
             <>
               <VideoView
-                accessibilityLabel={`${title} 영상`}
+                accessibilityLabel={t('{title} 영상', { title })}
                 accessibilityRole="image"
                 contentFit="contain"
                 fullscreenOptions={{ enable: true }}
@@ -723,7 +727,7 @@ function VideoStudyPlayer({
                 style={styles.video}
               />
               <Pressable
-                accessibilityLabel="전체 화면"
+                accessibilityLabel={t('전체 화면')}
                 accessibilityRole="button"
                 hitSlop={spacing.sm}
                 onPress={() => void videoRef.current?.enterFullscreen()}
@@ -770,6 +774,7 @@ function PlayerChrome({
   onSeek,
   onTogglePlayback,
 }: PlayerChromeProps) {
+  const t = useT();
   const [trackWidth, setTrackWidth] = useState(1);
   const [rateMenuOpen, setRateMenuOpen] = useState(false);
   const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 0;
@@ -878,11 +883,11 @@ function PlayerChrome({
         aria-valuenow={positionRounded}
         aria-valuetext={`${formatDuration(safePosition)} / ${formatDuration(safeDuration)}`}
         accessibilityActions={[
-          { name: 'decrement', label: '15초 뒤로' },
-          { name: 'increment', label: '15초 앞으로' },
+          { name: 'decrement', label: t('15초 뒤로') },
+          { name: 'increment', label: t('15초 앞으로') },
         ]}
-        accessibilityHint="위아래로 쓸어 15초씩 옮기거나, 원하는 위치를 눌러요."
-        accessibilityLabel="재생 위치"
+        accessibilityHint={t('위아래로 쓸어 15초씩 옮기거나, 원하는 위치를 눌러요.')}
+        accessibilityLabel={t('재생 위치')}
         accessibilityRole="adjustable"
         accessibilityValue={{
           min: 0,
@@ -912,9 +917,9 @@ function PlayerChrome({
 
       <View style={styles.controls}>
         <Pressable
-          accessibilityActions={[{ name: 'increment', label: '다음 재생 속도' }]}
-          accessibilityHint="재생 속도 목록을 열어요."
-          accessibilityLabel={`재생 속도 ${rate}배`}
+          accessibilityActions={[{ name: 'increment', label: t('다음 재생 속도') }]}
+          accessibilityHint={t('재생 속도 목록을 열어요.')}
+          accessibilityLabel={t('재생 속도 {rate}배', { rate })}
           accessibilityRole="button"
           accessibilityState={{ expanded: rateMenuOpen }}
           hitSlop={spacing.sm}
@@ -937,7 +942,7 @@ function PlayerChrome({
         </Pressable>
         <View style={styles.controlCluster}>
           <Pressable
-            accessibilityLabel="15초 뒤로"
+            accessibilityLabel={t('15초 뒤로')}
             accessibilityRole="button"
             onPress={() => onSeek(safePosition - 15)}
             style={({ pressed }) => [
@@ -953,7 +958,7 @@ function PlayerChrome({
             />
           </Pressable>
           <Pressable
-            accessibilityLabel={playing ? '일시정지' : '재생'}
+            accessibilityLabel={playing ? t('일시정지') : t('재생')}
             accessibilityRole="button"
             onPress={onTogglePlayback}
             style={({ pressed }) => [
@@ -979,7 +984,7 @@ function PlayerChrome({
             )}
           </Pressable>
           <Pressable
-            accessibilityLabel="15초 앞으로"
+            accessibilityLabel={t('15초 앞으로')}
             accessibilityRole="button"
             onPress={() => onSeek(safePosition + 15)}
             style={({ pressed }) => [
@@ -999,12 +1004,12 @@ function PlayerChrome({
       </View>
 
       {rateMenuOpen ? (
-        <View accessibilityLabel="재생 속도 선택" style={styles.rateMenu}>
+        <View accessibilityLabel={t('재생 속도 선택')} style={styles.rateMenu}>
           {PLAYBACK_RATES.map((option) => {
             const selected = option === rate;
             return (
               <Pressable
-                accessibilityLabel={`${option}배속`}
+                accessibilityLabel={t('{rate}배속', { rate: option })}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
                 key={option}

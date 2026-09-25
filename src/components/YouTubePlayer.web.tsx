@@ -10,6 +10,7 @@ import {
 import { StyleSheet, View } from 'react-native';
 
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { youtubeEmbedUrl } from '@/lib/youtube';
 import { colors, palette, radii, spacing } from '@/theme/tokens';
 
@@ -95,6 +96,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
     { videoId, title, initialPositionMs = 0, onPositionChange },
     ref,
   ) {
+    const t = useT();
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const playerRef = useRef<YTPlayerInstance | null>(null);
     const lastReportedMs = useRef(-1);
@@ -187,7 +189,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
           <iframe
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
-            aria-label={`${title} 유튜브 영상`}
+            aria-label={t('{title} 유튜브 영상', { title })}
             key={`start-${startSeconds}`}
             onLoad={() => setFrameLoaded(true)}
             ref={iframeRef}
@@ -204,7 +206,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
                 strokeWidth={1.7}
               />
               <AppText style={styles.stageMuted} variant="meta">
-                유튜브 영상을 불러오고 있어요
+                {t('유튜브 영상을 불러오고 있어요')}
               </AppText>
             </View>
           ) : null}

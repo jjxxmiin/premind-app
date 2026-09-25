@@ -29,6 +29,7 @@ import { chatSuggestions, sourceNoun } from '@/features/chat/chat-suggestions';
 import { studyMaterialService } from '@/services/study-material-service';
 import { decorative } from '@/lib/a11y';
 import { formatSourcePosition } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { inputReset } from '@/theme/input-reset';
 import {
@@ -127,6 +128,7 @@ export function StudyChat({
   bottomInset = 0,
   initialQuestion,
 }: StudyChatProps) {
+  const t = useT();
   const { isTablet } = useLayout();
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
@@ -153,18 +155,20 @@ export function StudyChat({
     [messages],
   );
   const suggestions = useMemo(
-    () => chatSuggestions(material, asked),
-    [asked, material],
+    () => chatSuggestions(material, asked, t.locale),
+    [asked, material, t.locale],
   );
   /** A document cites pages, not timestamps, and opens rather than plays. */
   const isDocument = material.source.kind === 'document';
-  const noun = sourceNoun(material);
+  const noun = t.ctx('noun', sourceNoun(material));
   const citationAt = (timestampMs: number) =>
     formatSourcePosition(timestampMs, isDocument);
   const citationHint = isDocument
-    ? '그 쪽을 대본에서 열어요.'
-    : '그 시점부터 대본을 재생해요.';
-  const citationAction = isDocument ? '열기' : '부터 재생';
+    ? t('그 쪽을 대본에서 열어요.')
+    : t('그 시점부터 대본을 재생해요.');
+  /** "근거 2, 3쪽열기" / "근거 2, 1:05부터 재생": the position and the action read as one phrase. */
+  const citationA11y = (ko: string, index: number, timestampMs: number) =>
+    t(isDocument ? `${ko}열기` : `${ko}부터 재생`, { i: index + 1, pos: citationAt(timestampMs) });
 
   useEffect(
     () => () => {
@@ -237,6 +241,7 @@ export function StudyChat({
           {
             id: messageId('failed'),
             role: 'assistant',
+            // Kept in Korean and drawn through t(): the row renders `t(message.text)`.
             text: '답변을 만들지 못했어요. 다시 시도해 주세요.',
             failedQuestion: trimmed,
           },
@@ -298,7 +303,7 @@ export function StudyChat({
         {messages.map((message) => {
           if (message.role === 'user') {
             return (
-              <View accessibilityLabel="내 질문" key={message.id} style={styles.userRow}>
+              <View accessibilityLabel={t('내 질문')} key={message.id} style={styles.userRow}>
                 <View
                   style={[
                     styles.userBubble,
@@ -317,7 +322,7 @@ export function StudyChat({
           const expanded = Boolean(expandedSources[message.id]);
 
           return (
-            <View accessibilityLabel="답변" key={message.id} style={styles.answer}>
+            <View accessibilityLabel={t('답변')} key={message.id} style={styles.answer}>
               <View style={styles.answerLabel}>
                 <Sparkles
                   {...decorative}
@@ -325,14 +330,15 @@ export function StudyChat({
                   size={iconSizes.inline}
                   strokeWidth={2}
                 />
-                <AppText variant="label">답변</AppText>
+                <AppText variant="label">{t('답변')}</AppText>
               </View>
-              <AppText variant="body">{message.text}</AppText>
+              {/* An AI answer passes through unchanged; only the app's own lines have English. */}
+              <AppText variant="body">{t(message.text)}</AppText>
 
               {citations.length ? (
                 <View style={styles.sources}>
                   <Pressable
-                    accessibilityLabel={`근거 ${citations.length}개, ${expanded ? '접기' : '펼치기'}`}
+                    accessibilityLabel={t('근거 {n}개, {action}', { n: citations.length, action: expanded ? t('접기') : t('펼치기') })}
                     accessibilityRole="button"
                     accessibilityState={{ expanded }}
                     hitSlop={6}
@@ -340,7 +346,7 @@ export function StudyChat({
                     style={({ pressed }) => [styles.sourcesToggle, pressed ? styles.pressed : null]}
                   >
                     <AppText tone="muted" variant="label">
-                      근거 {citations.length}개
+                      {t('근거 {n}개', { n: citations.length })}
                     </AppText>
                     {expanded ? (
                       <ChevronUp
@@ -362,10 +368,10 @@ export function StudyChat({
                     {citations.map((citation, index) => (
                       <Chip
                         accessibilityHint={citationHint}
-                        accessibilityLabel={`근거 ${index + 1}, ${citationAt(citation.timestampMs)}${citationAction}`}
+                        accessibilityLabel={citationA11y('근거 {i}, {pos}', index, citation.timestampMs)}
                         icon={isDocument ? FileText : Play}
                         key={citation.id}
-                        label={`근거 ${citationAt(citation.timestampMs)}`}
+                        label={t('근거 {pos}', { pos: citationAt(citation.timestampMs) })}
                         onPress={() => openCitation(citation.timestampMs)}
                       />
                     ))}
@@ -375,7 +381,7 @@ export function StudyChat({
                       {citations.map((citation, index) => (
                         <Pressable
                           accessibilityHint={citationHint}
-                          accessibilityLabel={`근거 ${index + 1} 원문, ${citationAt(citation.timestampMs)}${citationAction}`}
+                          accessibilityLabel={citationA11y('근거 {i} 원문, {pos}', index, citation.timestampMs)}
                           accessibilityRole="button"
                           key={citation.id}
                           onPress={() => openCitation(citation.timestampMs)}
@@ -390,7 +396,7 @@ export function StudyChat({
                           </View>
                           <View style={styles.flex}>
                             <AppText variant="label">
-                              {sourceLabel(citation.sourceKind)} / {citationAt(citation.timestampMs)}
+                              {t.ctx('source', sourceLabel(citation.sourceKind))} / {citationAt(citation.timestampMs)}
                             </AppText>
                             <AppText numberOfLines={3} tone="muted" variant="meta">
                               {citation.excerpt}
@@ -405,24 +411,24 @@ export function StudyChat({
 
               {message.result?.status === 'insufficient-evidence' ? (
                 <AppText tone="muted" variant="meta">
-                  다른 말로 물어보거나 대본 탭에서 직접 찾아보세요.
+                  {t('다른 말로 물어보거나 대본 탭에서 직접 찾아보세요.')}
                 </AppText>
               ) : null}
 
               <View style={styles.answerActions}>
                 {message.failedQuestion ? (
                   <Chip
-                    accessibilityHint="같은 질문을 다시 보내요."
+                    accessibilityHint={t('같은 질문을 다시 보내요.')}
                     icon={RotateCcw}
-                    label="다시 시도"
+                    label={t('다시 시도')}
                     onPress={() => submitQuestion(message.failedQuestion)}
                   />
                 ) : (
                   <Chip
-                    accessibilityHint="답변을 클립보드에 복사해요."
+                    accessibilityHint={t('답변을 클립보드에 복사해요.')}
                     icon={copiedId === message.id ? Check : Copy}
-                    label={copiedId === message.id ? '복사했어요' : '복사'}
-                    onPress={() => void copyAnswer(message.id, message.text)}
+                    label={copiedId === message.id ? t('복사했어요') : t('복사')}
+                    onPress={() => void copyAnswer(message.id, t(message.text))}
                   />
                 )}
               </View>
@@ -439,10 +445,10 @@ export function StudyChat({
                 size={iconSizes.inline}
                 strokeWidth={2}
               />
-              <AppText variant="label">답변</AppText>
+              <AppText variant="label">{t('답변')}</AppText>
             </View>
             <AppText tone="muted" variant="body">
-              대본에서 근거를 찾고 있어요
+              {t('대본에서 근거를 찾고 있어요')}
             </AppText>
             <SkeletonLines lines={3} />
           </View>
@@ -454,7 +460,7 @@ export function StudyChat({
         {!thinking && suggestions.length ? (
           <View style={styles.suggestions}>
             <AppText tone="muted" variant="meta">
-              {messages.length === 0 ? '이런 걸 물어볼 수 있어요' : '이어서 물어보기'}
+              {messages.length === 0 ? t('이런 걸 물어볼 수 있어요') : t('이어서 물어보기')}
             </AppText>
             <Card padding={false}>
               {suggestions.map((suggestion, index) => (
@@ -496,7 +502,7 @@ export function StudyChat({
           ]}
         >
           <TextInput
-            accessibilityLabel="질문 입력"
+            accessibilityLabel={t('질문 입력')}
             blurOnSubmit={false}
             multiline
             numberOfLines={1}
@@ -504,7 +510,7 @@ export function StudyChat({
             onChangeText={setQuestion}
             onFocus={() => setComposerFocused(true)}
             onSubmitEditing={() => submitQuestion()}
-            placeholder={`이 ${noun}에서 궁금한 걸 물어보세요`}
+            placeholder={t('이 {noun}에서 궁금한 걸 물어보세요', { noun })}
             placeholderTextColor={colors.textFaint}
             ref={inputRef}
             returnKeyType="send"
@@ -512,7 +518,7 @@ export function StudyChat({
             value={question}
           />
           <Pressable
-            accessibilityLabel="질문 보내기"
+            accessibilityLabel={t('질문 보내기')}
             accessibilityRole="button"
             accessibilityState={{ disabled: !canSend }}
             disabled={!canSend}

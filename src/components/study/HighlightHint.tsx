@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, IconButton } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
 export interface HighlightHintProps {
@@ -21,10 +22,11 @@ export interface HighlightHintProps {
  * finds. The line is itself tappable so a thumb anywhere on it dismisses.
  */
 export function HighlightHint({ children, onDismiss, testID }: HighlightHintProps) {
+  const t = useT();
   return (
     <View style={styles.hint} testID={testID}>
       <Pressable
-        accessibilityHint="이 안내를 닫아요."
+        accessibilityHint={t('이 안내를 닫아요.')}
         accessibilityLabel={children}
         accessibilityRole="button"
         onPress={onDismiss}
@@ -40,7 +42,7 @@ export function HighlightHint({ children, onDismiss, testID }: HighlightHintProp
           {children}
         </AppText>
       </Pressable>
-      <IconButton icon={X} label="안내 닫기" onPress={onDismiss} />
+      <IconButton icon={X} label={t('안내 닫기')} onPress={onDismiss} />
     </View>
   );
 }

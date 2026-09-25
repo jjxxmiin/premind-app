@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import type {
   StudyConcept,
   StudyMaterial,
@@ -339,12 +340,12 @@ function rankChunks(
 function answerSentence(chunk: SourceChunk, citationNumber: number): string {
   const citation = `[${citationNumber}]`;
   if (chunk.sourceKind === 'summary') {
-    return `요약에는 “${chunk.text}”라고 정리돼 있어요. ${citation}`;
+    return tr('요약에는 “{text}”라고 정리돼 있어요. {citation}', { text: chunk.text, citation });
   }
   if (chunk.sourceKind === 'concept') {
-    return `요약에는 “${chunk.text}”라고 정리돼 있어요. ${citation}`;
+    return tr('요약에는 “{text}”라고 정리돼 있어요. {citation}', { text: chunk.text, citation });
   }
-  return `대본에서는 “${chunk.text}”라고 말해요. ${citation}`;
+  return tr('대본에서는 “{text}”라고 말해요. {citation}', { text: chunk.text, citation });
 }
 
 function refusal(

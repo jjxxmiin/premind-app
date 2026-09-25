@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { countCheckedPoints, toggleCheckedPoint } from '@/lib/study-notebook';
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
 
@@ -27,6 +28,7 @@ export function KeyPointChecklist({
   checkedPoints,
   onChange,
 }: KeyPointChecklistProps) {
+  const t = useT();
   const checkedCount = countCheckedPoints(keyPoints, checkedPoints);
   const allChecked = keyPoints.length > 0 && checkedCount === keyPoints.length;
 
@@ -34,7 +36,7 @@ export function KeyPointChecklist({
     <View style={styles.block}>
       <View style={styles.head}>
         <AppText accessibilityRole="header" style={styles.title} variant="heading">
-          꼭 기억할 내용
+          {t('꼭 기억할 내용')}
         </AppText>
         <AppText
           accessibilityLiveRegion="polite"
@@ -42,7 +44,7 @@ export function KeyPointChecklist({
           tone={allChecked ? 'positive' : 'muted'}
           variant="meta"
         >
-          {keyPoints.length}개 중 {checkedCount}개 확인
+          {t('{total}개 중 {n}개 확인', { total: keyPoints.length, n: checkedCount })}
         </AppText>
       </View>
       <View>
@@ -51,7 +53,7 @@ export function KeyPointChecklist({
           return (
             <Pressable
               aria-checked={checked}
-              accessibilityHint="이해했으면 체크해요."
+              accessibilityHint={t('이해했으면 체크해요.')}
               accessibilityLabel={point}
               accessibilityRole="checkbox"
               accessibilityState={{ checked }}

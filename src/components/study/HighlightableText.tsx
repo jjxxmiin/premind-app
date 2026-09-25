@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 
 import { AppText, type AppTextProps } from '@/components/ui';
 import { filterHighlighted, isHighlighted, splitSentences } from '@/lib/highlights';
+import { useT } from '@/lib/i18n';
 import { colors } from '@/theme/tokens';
 
 export interface HighlightableTextProps extends Omit<AppTextProps, 'children'> {
@@ -39,6 +40,7 @@ export function HighlightableText({
   style,
   ...props
 }: HighlightableTextProps) {
+  const t = useT();
   const sentences = useMemo(() => {
     const all = splitSentences(text);
     return paintedOnly ? filterHighlighted(all, highlights) : all;
@@ -66,8 +68,8 @@ export function HighlightableText({
               aria-checked={painted}
               accessibilityHint={
                 tapToPaint
-                  ? '눌러서 형광펜으로 칠하거나 지워요.'
-                  : '길게 눌러서 형광펜으로 칠하거나 지워요.'
+                  ? t('눌러서 형광펜으로 칠하거나 지워요.')
+                  : t('길게 눌러서 형광펜으로 칠하거나 지워요.')
               }
               accessibilityLabel={sentence}
               accessibilityRole="checkbox"

@@ -74,6 +74,7 @@ import {
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatDuration, formatSourcePosition } from '@/lib/format';
+import { tr, useT } from '@/lib/i18n';
 import {
   countHighlighted,
   highlightedSentences,
@@ -201,12 +202,12 @@ function shareText(
   if (painted.length) {
     parts.push(
       [
-        `형광펜 ${painted.length}개`,
+        tr('형광펜 {n}개', { n: painted.length }),
         ...painted.map((item) => `• ${item.sentence}`),
       ].join('\n'),
     );
   }
-  parts.push('PREMIND 마인드팩');
+  parts.push(tr('PREMIND 마인드팩'));
   return parts.join('\n\n');
 }
 
@@ -231,6 +232,7 @@ function authorizationHeader(source: {
 }
 
 export default function MaterialDetailScreen() {
+  const t = useT();
   const params = useLocalSearchParams<{
     id: string;
     tab?: string | string[];
@@ -609,8 +611,8 @@ export default function MaterialDetailScreen() {
   if (!material) {
     return (
       <Screen padded={false}>
-        <AppHeader onBack={() => goBackOrReplace('/(tabs)/library')} title="마인드팩" />
-        <ErrorState description="이 자료를 찾을 수 없어요. 내 자료에서 다시 골라 주세요." onRetry={() => router.replace('/(tabs)/library')} retryLabel="내 자료 보기" />
+        <AppHeader onBack={() => goBackOrReplace('/(tabs)/library')} title={t('마인드팩')} />
+        <ErrorState description={t('이 자료를 찾을 수 없어요. 내 자료에서 다시 골라 주세요.')} onRetry={() => router.replace('/(tabs)/library')} retryLabel={t('내 자료 보기')} />
       </Screen>
     );
   }
@@ -651,21 +653,21 @@ export default function MaterialDetailScreen() {
   const toggleSaved = () => {
     toggleSavedMaterial(material.id);
     void Haptics.selectionAsync();
-    showNotice(saved ? '저장을 해제했어요' : '저장했어요. 홈의 저장한 자료에서 볼 수 있어요');
+    showNotice(saved ? t('저장을 해제했어요') : t('저장했어요. 홈의 저장한 자료에서 볼 수 있어요'));
   };
 
   const shareSummary = async () => {
     const message = shareText(material, painted);
     if (Platform.OS === 'web') {
       await Clipboard.setStringAsync(message);
-      showNotice('요약을 복사했어요');
+      showNotice(t('요약을 복사했어요'));
       return;
     }
     try {
       await Share.share({ message, title: material.title });
     } catch {
       await Clipboard.setStringAsync(message);
-      showNotice('요약을 복사했어요');
+      showNotice(t('요약을 복사했어요'));
     }
   };
 
@@ -706,7 +708,7 @@ export default function MaterialDetailScreen() {
       pathname: '/chat/[id]',
       params: {
         id: material.id,
-        ask: confusionQuestion(reason, segment?.text ?? ''),
+        ask: confusionQuestion(reason, segment?.text ?? '', t.locale),
       },
     });
   };
@@ -718,11 +720,11 @@ export default function MaterialDetailScreen() {
         <AppHeader onBack={() => goBackOrReplace('/(tabs)/library')} title={material.title} />
         <View style={styles.notReady}>
           <EmptyState
-            actionLabel={material.status === 'imported' || material.status === 'failed' ? '마인드팩 만들기' : '진행 보기'}
-            description="원본은 안전하게 있어요. 마인드팩을 만들면 대본과 요약이 여기에 생겨요."
+            actionLabel={material.status === 'imported' || material.status === 'failed' ? t('마인드팩 만들기') : t('진행 보기')}
+            description={t('원본은 안전하게 있어요. 마인드팩을 만들면 대본과 요약이 여기에 생겨요.')}
             icon={Sparkles}
             onAction={() => router.replace({ pathname: '/processing/[id]', params: { id: material.id } })}
-            title={material.status === 'imported' ? '아직 마인드팩이 없어요' : '마인드팩을 만들고 있어요'}
+            title={material.status === 'imported' ? t('아직 마인드팩이 없어요') : t('마인드팩을 만들고 있어요')}
           />
         </View>
       </Screen>
@@ -740,12 +742,12 @@ export default function MaterialDetailScreen() {
           <View style={styles.headerActions}>
             <IconButton
               icon={saved ? BookmarkCheck : Bookmark}
-              label={saved ? '저장 취소' : '저장'}
+              label={saved ? t('저장 취소') : t('저장')}
               onPress={toggleSaved}
             />
             <IconButton
               icon={Share2}
-              label="요약 공유"
+              label={t('요약 공유')}
               onPress={() => void shareSummary()}
             />
           </View>
@@ -786,7 +788,7 @@ export default function MaterialDetailScreen() {
                     strokeWidth={1.9}
                   />
                   <AppText style={styles.flex} tone="muted" variant="meta">
-                    올린 문서를 읽었어요.
+                    {t('올린 문서를 읽었어요.')}
                   </AppText>
                 </Card>
               )}
@@ -823,7 +825,7 @@ export default function MaterialDetailScreen() {
         <View style={styles.tabsBlock}>
           <SegmentedControl<DetailTab>
             onChange={setTab}
-            options={tabOptions}
+            options={tabOptions.map((option) => ({ ...option, label: t(option.label) }))}
             value={tab}
           />
         </View>
@@ -898,11 +900,11 @@ export default function MaterialDetailScreen() {
                 strokeWidth={2}
               />
               <TextInput
-                accessibilityLabel="대본 검색"
+                accessibilityLabel={t('대본 검색')}
                 onChangeText={setSearch}
                 onBlur={() => setSearchFocused(false)}
                 onFocus={() => setSearchFocused(true)}
-                placeholder="대본에서 검색"
+                placeholder={t('대본에서 검색')}
                 placeholderTextColor={colors.textFaint}
                 style={[styles.searchInput, inputReset]}
                 value={search}
@@ -910,8 +912,8 @@ export default function MaterialDetailScreen() {
             </View>
             <View style={styles.transcriptTools}>
               <Chip
-                accessibilityHint="중요 표시한 문장만 보여줘요."
-                label="중요만"
+                accessibilityHint={t('중요 표시한 문장만 보여줘요.')}
+                label={t('중요만')}
                 onPress={() => setImportantOnly((value) => !value)}
                 selected={importantOnly}
               />
@@ -921,12 +923,12 @@ export default function MaterialDetailScreen() {
                 <Chip
                   accessibilityHint={
                     sectionsOn
-                      ? '대본에서 구간 제목을 숨겨요.'
-                      : '대본에 구간 제목을 넣어요.'
+                      ? t('대본에서 구간 제목을 숨겨요.')
+                      : t('대본에 구간 제목을 넣어요.')
                   }
-                  accessibilityLabel={`구간 표시 ${sectionsOn ? '켬' : '끔'}`}
+                  accessibilityLabel={t('구간 표시 {state}', { state: sectionsOn ? t('켬') : t('끔') })}
                   icon={ListTree}
-                  label="구간"
+                  label={t('구간')}
                   onPress={() => setSectionsOn((value) => !value)}
                   selected={sectionsOn}
                   testID="transcript-sections-chip"
@@ -939,12 +941,12 @@ export default function MaterialDetailScreen() {
                 <Chip
                   accessibilityHint={
                     pageSummaryOn
-                      ? '쪽 전체 내용을 다시 보여줘요.'
-                      : '쪽마다 한 줄 요약만 보여줘요.'
+                      ? t('쪽 전체 내용을 다시 보여줘요.')
+                      : t('쪽마다 한 줄 요약만 보여줘요.')
                   }
-                  accessibilityLabel={`쪽 요약 ${pageSummaryOn ? '켬' : '끔'}`}
+                  accessibilityLabel={t('쪽 요약 {state}', { state: pageSummaryOn ? t('켬') : t('끔') })}
                   icon={FileText}
-                  label="쪽 요약"
+                  label={t('쪽 요약')}
                   onPress={() => setPageSummaryOn((value) => !value)}
                   selected={pageSummaryOn}
                   testID="transcript-page-summary-chip"
@@ -957,11 +959,11 @@ export default function MaterialDetailScreen() {
               <Chip
                 accessibilityHint={
                   transcriptPaintedOnly
-                    ? '대본 전체를 다시 보여줘요.'
-                    : '칠한 문장이 있는 줄만 보여줘요.'
+                    ? t('대본 전체를 다시 보여줘요.')
+                    : t('칠한 문장이 있는 줄만 보여줘요.')
                 }
                 icon={Highlighter}
-                label={`형광펜 ${transcriptHighlightCount}개`}
+                label={t('형광펜 {n}개', { n: transcriptHighlightCount })}
                 onPress={() => setPaintedOnly((value) => !value)}
                 selected={transcriptPaintedOnly}
                 testID="transcript-highlight-filter"
@@ -973,7 +975,7 @@ export default function MaterialDetailScreen() {
                 onDismiss={() => setHintDismissed(true)}
                 testID="transcript-highlight-hint"
               >
-                {TRANSCRIPT_HINT}
+                {t(TRANSCRIPT_HINT)}
               </HighlightHint>
             )}
             {visibleTranscript.length ? (
@@ -1025,8 +1027,8 @@ export default function MaterialDetailScreen() {
                       <TimeChip
                         accessibilityLabel={
                           isDocument
-                            ? `${formatSourcePosition(segment.startMs, true)}으로 이동`
-                            : `${formatSourcePosition(segment.startMs, false)}부터 재생`
+                            ? t('{pos}으로 이동', { pos: formatSourcePosition(segment.startMs, true) })
+                            : t('{pos}부터 재생', { pos: formatSourcePosition(segment.startMs, false) })
                         }
                         onPress={() => jumpTo(segment.startMs)}
                         page={isDocument}
@@ -1038,12 +1040,12 @@ export default function MaterialDetailScreen() {
                               here rather than labelling its text 화자. */}
                           {isDocument ? null : (
                             <AppText tone="muted" variant="badge">
-                              {segment.speaker ?? '화자'}
+                              {segment.speaker ?? t('화자')}
                             </AppText>
                           )}
                           {important ? (
                             <StatusBadge
-                              label={relatedMarker?.source === 'ai' ? 'AI 중요' : '중요'}
+                              label={relatedMarker?.source === 'ai' ? t('AI 중요') : t('중요')}
                               tone="brand"
                             />
                           ) : null}
@@ -1069,8 +1071,8 @@ export default function MaterialDetailScreen() {
                         ) : null}
                         {settings.mode === 'student' ? (
                           <Pressable
-                            accessibilityHint="헷갈린 이유를 골라요."
-                            accessibilityLabel="이 대본 구간이 헷갈려요"
+                            accessibilityHint={t('헷갈린 이유를 골라요.')}
+                            accessibilityLabel={t('이 대본 구간이 헷갈려요')}
                             accessibilityRole="button"
                             onPress={() => setConfusionSegmentId(segment.id)}
                             style={({ pressed }) => [
@@ -1083,7 +1085,7 @@ export default function MaterialDetailScreen() {
                               color={colors.textMuted}
                               size={iconSizes.dense}
                             />
-                            <AppText tone="muted" variant="badge">여기가 헷갈려요</AppText>
+                            <AppText tone="muted" variant="badge">{t('여기가 헷갈려요')}</AppText>
                           </Pressable>
                         ) : null}
                       </View>
@@ -1098,16 +1100,16 @@ export default function MaterialDetailScreen() {
                 description={
                   material.transcript.length
                     ? importantOnly && !search.trim()
-                      ? '중요 표시한 문장이 아직 없어요. 필터를 끄면 전체 대본이 보여요.'
-                      : '다른 말로 찾아보세요.'
-                    : '대본을 만들지 못한 자료예요. 원본은 위에서 그대로 들을 수 있어요.'
+                      ? t('중요 표시한 문장이 아직 없어요. 필터를 끄면 전체 대본이 보여요.')
+                      : t('다른 말로 찾아보세요.')
+                    : t('대본을 만들지 못한 자료예요. 원본은 위에서 그대로 들을 수 있어요.')
                 }
                 title={
                   material.transcript.length
                     ? importantOnly && !search.trim()
-                      ? '중요 표시가 없어요'
-                      : '찾는 문장이 없어요'
-                    : '대본이 없어요'
+                      ? t('중요 표시가 없어요')
+                      : t('찾는 문장이 없어요')
+                    : t('대본이 없어요')
                 }
               />
             )}
@@ -1124,8 +1126,8 @@ export default function MaterialDetailScreen() {
         {/* Looks like a quiet input, acts like a button: it opens the chat
             screen with the keyboard up rather than taking text here. */}
         <Pressable
-          accessibilityHint="질문 화면을 열어요."
-          accessibilityLabel="이 자료에 물어보기"
+          accessibilityHint={t('질문 화면을 열어요.')}
+          accessibilityLabel={t('이 자료에 물어보기')}
           accessibilityRole="button"
           onPress={openChat}
           style={({ pressed }) => [
@@ -1141,7 +1143,7 @@ export default function MaterialDetailScreen() {
             strokeWidth={2}
           />
           <AppText numberOfLines={1} style={styles.flex} tone="faint" variant="body">
-            이 자료에 물어보기
+            {t('이 자료에 물어보기')}
           </AppText>
         </Pressable>
         {material.quiz.length ? (
@@ -1156,7 +1158,7 @@ export default function MaterialDetailScreen() {
             style={styles.quizButton}
             variant="primary"
           >
-            문제 풀기
+            {t('문제 풀기')}
           </Button>
         ) : null}
       </View>
@@ -1171,14 +1173,14 @@ export default function MaterialDetailScreen() {
       ) : null}
 
       <BottomSheetModal
-        description="고른 이유에 맞게 이 부분만 다시 설명해 드릴게요."
+        description={t('고른 이유에 맞게 이 부분만 다시 설명해 드릴게요.')}
         onClose={() => setConfusionSegmentId(null)}
-        title="어디가 헷갈렸어요?"
+        title={t('어디가 헷갈렸어요?')}
         visible={Boolean(confusionSegmentId)}
       >
         <View style={styles.reasonGrid}>
           {confusionReasons.map(([reason, label]) => (
-            <Chip key={reason} label={label} onPress={() => submitConfusion(reason)} />
+            <Chip key={reason} label={t(label)} onPress={() => submitConfusion(reason)} />
           ))}
         </View>
       </BottomSheetModal>
@@ -1249,6 +1251,7 @@ function SummaryPanel({
   positionMs: number;
   summaryView: SummaryView;
 }) {
+  const t = useT();
   const note = material.note;
   const summary = note?.summary.trim() ?? '';
   const keyPoints = note?.keyPoints ?? [];
@@ -1277,11 +1280,11 @@ function SummaryPanel({
         <Chip
           accessibilityHint={
             option.value === 'detail'
-              ? '구간별로 자세히 풀어 쓴 요약을 봐요.'
-              : '핵심만 짧게 봐요.'
+              ? t('구간별로 자세히 풀어 쓴 요약을 봐요.')
+              : t('핵심만 짧게 봐요.')
           }
           key={option.value}
-          label={option.label}
+          label={t(option.label)}
           onPress={() => onSummaryViewChange(option.value)}
           selected={view === option.value}
         />
@@ -1332,7 +1335,7 @@ function SummaryPanel({
         <Card style={styles.summaryCard}>
           <View style={styles.summaryHead}>
             <StatusBadge
-              label={note?.teacherVerified ? '검수됨' : 'AI 요약'}
+              label={note?.teacherVerified ? t('검수됨') : t('AI 요약')}
               tone={note?.teacherVerified ? 'positive' : 'neutral'}
             />
             {note?.estimatedReviewMinutes ? (
@@ -1344,7 +1347,7 @@ function SummaryPanel({
                   strokeWidth={2}
                 />
                 <AppText tone="muted" variant="meta">
-                  복습 {note.estimatedReviewMinutes}분
+                  {t('복습 {n}분', { n: note.estimatedReviewMinutes })}
                 </AppText>
               </View>
             ) : null}
@@ -1354,7 +1357,7 @@ function SummaryPanel({
               {/* With the switch above, its 한눈에 보기 segment is the title. */}
               {showViewSwitch ? null : (
                 <AppText accessibilityRole="header" variant="heading">
-                  한눈에 보기
+                  {t('한눈에 보기')}
                 </AppText>
               )}
               {/* A tap paints: nothing else in 요약 answers one. */}
@@ -1382,11 +1385,11 @@ function SummaryPanel({
           compact
           description={
             material.transcript.length
-              ? '이 자료에는 요약이 없어요. 대본 탭에서 원문을 볼 수 있어요.'
-              : '요약과 대본이 없어요. 원본은 위에서 들을 수 있어요.'
+              ? t('이 자료에는 요약이 없어요. 대본 탭에서 원문을 볼 수 있어요.')
+              : t('요약과 대본이 없어요. 원본은 위에서 들을 수 있어요.')
           }
           icon={Sparkles}
-          title="요약이 없어요"
+          title={t('요약이 없어요')}
         />
       )}
 
@@ -1412,14 +1415,14 @@ function SummaryPanel({
       ) : null}
 
       <SectionHeader
-        description="내가 표시한 곳과 AI가 찾은 강조 구간이에요"
-        title="중요한 순간"
+        description={t('내가 표시한 곳과 AI가 찾은 강조 구간이에요')}
+        title={t('중요한 순간')}
       />
       {material.markers.length ? (
         <Card padding={false}>
           {material.markers.map((marker, index) => (
             <Pressable
-              accessibilityHint="그 시점부터 재생해요."
+              accessibilityHint={t('그 시점부터 재생해요.')}
               accessibilityLabel={`${formatDuration(marker.timestampMs / 1000)}, ${marker.label}`}
               accessibilityRole="button"
               key={marker.id}
@@ -1435,8 +1438,8 @@ function SummaryPanel({
                 <AppText variant="itemTitle">{marker.label}</AppText>
                 <AppText tone="muted" variant="meta">
                   {marker.source === 'teacher'
-                    ? '내가 표시'
-                    : `AI 감지${marker.confidence ? `, 신뢰도 ${Math.round(marker.confidence * 100)}%` : ''}`}
+                    ? t('내가 표시')
+                    : `${t('AI 감지')}${marker.confidence ? t(', 신뢰도 {p}%', { p: Math.round(marker.confidence * 100) }) : ''}`}
                 </AppText>
                 {marker.reason ? <AppText tone="muted" variant="meta">{marker.reason}</AppText> : null}
               </View>
@@ -1454,8 +1457,8 @@ function SummaryPanel({
       ) : (
         <EmptyState
           compact
-          description="표시한 구간도, AI가 찾은 구간도 아직 없어요."
-          title="중요 표시가 없어요"
+          description={t('표시한 구간도, AI가 찾은 구간도 아직 없어요.')}
+          title={t('중요 표시가 없어요')}
         />
       )}
 
@@ -1470,8 +1473,8 @@ function SummaryPanel({
                 params: { id: material.id },
               })
             }
-            subtitle="근거와 먼저 고칠 것을 봐요"
-            title="평가 결과 보기"
+            subtitle={t('근거와 먼저 고칠 것을 봐요')}
+            title={t('평가 결과 보기')}
           />
         </Card>
       ) : (
@@ -1483,9 +1486,9 @@ function SummaryPanel({
             strokeWidth={1.9}
           />
           <View style={styles.flex}>
-            <AppText variant="itemTitle">아직 평가가 없어요</AppText>
+            <AppText variant="itemTitle">{t('아직 평가가 없어요')}</AppText>
             <AppText tone="muted" variant="meta">
-              말하기 탭의 발표에서 이 자료를 고르면 근거와 함께 평가해 줘요.
+              {t('말하기 탭의 발표에서 이 자료를 고르면 근거와 함께 평가해 줘요.')}
             </AppText>
           </View>
         </Card>
