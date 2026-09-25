@@ -25,5 +25,6 @@ export * from './SegmentedControl';
 export * from './SegmentedProgress';
 export * from './SettingsGroup';
 export * from './Skeleton';
+export * from './TextArea';
 export * from './Toast';
 export * from './Wordmark';

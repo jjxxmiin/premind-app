@@ -121,7 +121,15 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
           <Stack.Screen name="subscription" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="search" />
+          <Stack.Screen name="interview/prepare" />
+          <Stack.Screen name="interview/room/[id]" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="interview/preparing/[id]" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="interview/report/[id]" />
+          <Stack.Screen name="interview/history" />
+          <Stack.Screen name="interview/org" />
         </Stack.Protected>
+        {/* An invite link must open before sign-in too: it checks the code, then asks to sign in. */}
+        <Stack.Screen name="interview/join" />
       </Stack>
     </ThemeProvider>
   );

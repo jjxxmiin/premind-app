@@ -3,13 +3,16 @@ import {
   BarChart3,
   Gauge,
   Home,
+  MessagesSquare,
   PlusCircle,
   UserRound,
   type LucideIcon,
 } from 'lucide-react-native';
+import { useEffect } from 'react';
 import { StyleSheet, View, type ColorValue } from 'react-native';
 
 import { AppTabBar } from '@/components/AppTabBar';
+import { consumePendingJoinCode } from '@/features/interview/pending-join';
 import { decorative } from '@/lib/a11y';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes } from '@/theme/tokens';
@@ -29,7 +32,7 @@ function tabIcon(Icon: LucideIcon) {
 }
 
 /**
- * Five tabs (홈, 이해도, 녹음, 평가, MY) on a bar we draw ourselves (`AppTabBar`) so the bottom safe
+ * Six tabs (홈, 이해도, 추가, 평가, 면접, MY) on a bar we draw ourselves (`AppTabBar`) so the bottom safe
  * area is measured natively and labels never end up under the system bar.
  *
  * 홈 is the library; 녹음 is a launcher, not a tab — pressing it opens the
@@ -37,6 +40,12 @@ function tabIcon(Icon: LucideIcon) {
  */
 export default function TabsLayout() {
   const { breakpoint } = useLayout();
+  // An institution's invite link opened before sign-in: finish joining now.
+  useEffect(() => {
+    void consumePendingJoinCode().then((code) => {
+      if (code) router.push({ pathname: '/interview/join', params: { code } });
+    });
+  }, []);
   return (
     <Tabs
       screenOptions={{
@@ -95,6 +104,16 @@ export default function TabsLayout() {
           tabBarAccessibilityLabel: '발표 평가',
           tabBarIcon: tabIcon(BarChart3),
           tabBarLabel: '평가',
+        }}
+      />
+      {/* 2026-09-26: interview.premind.co.kr 이 앱 안으로 들어왔다. 연습, 결과, 기록, 기관 참여. */}
+      <Tabs.Screen
+        name="interview"
+        options={{
+          title: '면접',
+          tabBarAccessibilityLabel: '면접 연습',
+          tabBarIcon: tabIcon(MessagesSquare),
+          tabBarLabel: '면접',
         }}
       />
       <Tabs.Screen

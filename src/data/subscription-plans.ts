@@ -63,9 +63,6 @@ export const SUBSCRIPTION_WEB_URL = 'https://premind.co.kr/credits';
 export const TERMS_URL = 'https://premind.co.kr/terms';
 export const PRIVACY_URL = 'https://premind.co.kr/privacy';
 
-/** 면접 연습 웹. Same student account and plan (2026-09-26); opened in the browser. */
-export const INTERVIEW_URL = 'https://interview.premind.co.kr/interview';
-
 export function formatKrw(amount: number): string {
   return `${amount.toLocaleString('ko-KR')}원`;
 }
