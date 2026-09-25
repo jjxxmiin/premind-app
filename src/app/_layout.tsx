@@ -5,7 +5,7 @@ import { DefaultTheme, router, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFonts } from 'expo-font';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -15,6 +15,10 @@ import {
   subscribeToStudyNotificationResponses,
 } from '@/services/notifications';
 import { colors, fontFamilies } from '@/theme/tokens';
+import { captureInitialReturnTo, takeReturnTo } from '@/lib/return-to';
+
+// Before the router rewrites a signed-out visitor's address to /login.
+captureInitialReturnTo();
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -71,6 +75,22 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
       void SplashScreen.hideAsync();
     }
   }, [fontsReady, isHydrated]);
+
+  // Already signed in at launch: the address opened itself, so there is
+  // nothing to return to after a later sign-in. Only the launch counts.
+  const signedInAtLaunch = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!isHydrated || signedInAtLaunch.current !== null) return;
+    signedInAtLaunch.current = signedIn;
+    if (signedIn) takeReturnTo();
+  }, [isHydrated, signedIn]);
+  // Signed in after launch: login, index and signup all read the address, so
+  // forget it only once they have had their turn.
+  useEffect(() => {
+    if (!signedIn || signedInAtLaunch.current !== false) return;
+    const timer = setTimeout(() => takeReturnTo(), 1500);
+    return () => clearTimeout(timer);
+  }, [signedIn]);
 
   useEffect(() => {
     void configureStudyNotifications().catch(() => undefined);

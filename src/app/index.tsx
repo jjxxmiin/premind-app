@@ -1,7 +1,8 @@
-import { Redirect } from 'expo-router';
+import { Redirect, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { BrandSplash } from '@/components/BrandSplash';
+import { peekReturnTo } from '@/lib/return-to';
 import { useAppStore } from '@/state/app-store';
 
 /**
@@ -27,5 +28,7 @@ export default function EntryScreen() {
     return <BrandSplash />;
   }
 
-  return <Redirect href={session ? '/(tabs)' : '/login'} />;
+  // Signing in lands here (the protected stack falls back to index): a
+  // visitor who opened an address while signed out goes on to it.
+  return <Redirect href={session ? ((peekReturnTo() ?? '/(tabs)') as Href) : '/login'} />;
 }

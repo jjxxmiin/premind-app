@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -26,6 +26,7 @@ import { shouldOfferDemo } from '@/lib/demo-entry';
 import { hasConfiguredApi } from '@/services/api/client';
 import { useAppStore } from '@/state/app-store';
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
+import { peekReturnTo, returnsToInterview } from '@/lib/return-to';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const serverConfigured = hasConfiguredApi();
@@ -50,10 +51,12 @@ export default function LoginScreen() {
     'login' | 'demo' | 'social' | null
   >(null);
   const passwordInputRef = useRef<TextInput>(null);
+  // Sent here from the interview landing: say where sign-in leads.
+  const [toInterview] = useState(returnsToInterview);
 
   useEffect(() => {
     if (session) {
-      router.replace('/(tabs)');
+      router.replace((peekReturnTo() ?? '/(tabs)') as Href);
     }
   }, [session]);
 
@@ -120,12 +123,25 @@ export default function LoginScreen() {
           <AnimatedReveal delay={20} style={styles.brand}>
             <Wordmark width={112} />
             <View style={styles.headline}>
-              <AppText align="center" variant="heroTitle">
-                강의를 담기만 하면{'\n'}복습이 준비돼요
-              </AppText>
-              <AppText align="center" tone="muted" variant="body">
-                녹음 한 번으로 대본, 요약, 마인드맵, 문제까지
-              </AppText>
+              {toInterview ? (
+                <>
+                  <AppText align="center" variant="heroTitle">
+                    면접 연습을{'\n'}이어서 시작해요
+                  </AppText>
+                  <AppText align="center" tone="muted" variant="body">
+                    PREMIND 계정으로 로그인하면 면접 연습으로 바로 가요
+                  </AppText>
+                </>
+              ) : (
+                <>
+                  <AppText align="center" variant="heroTitle">
+                    강의를 담기만 하면{'\n'}복습이 준비돼요
+                  </AppText>
+                  <AppText align="center" tone="muted" variant="body">
+                    녹음 한 번으로 대본, 요약, 마인드맵, 문제까지
+                  </AppText>
+                </>
+              )}
             </View>
           </AnimatedReveal>
 

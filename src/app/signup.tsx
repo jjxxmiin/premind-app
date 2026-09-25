@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -27,6 +27,7 @@ import { SocialSignInButtons } from '@/components/SocialSignInButtons';
 import { ApiError, hasConfiguredApi } from '@/services/api/client';
 import { useAppStore } from '@/state/app-store';
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
+import { peekReturnTo } from '@/lib/return-to';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const TERMS_URL = 'https://premind.co.kr/terms';
@@ -77,7 +78,7 @@ export default function SignupScreen() {
 
   useEffect(() => {
     if (session) {
-      router.replace('/(tabs)');
+      router.replace((peekReturnTo() ?? '/(tabs)') as Href);
     }
   }, [session]);
 
