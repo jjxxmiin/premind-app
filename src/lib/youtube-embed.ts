@@ -10,6 +10,8 @@
  * Codes are YouTube's own IFrame API error values.
  */
 
+import { tr } from '@/lib/i18n';
+
 export type EmbedFailure =
   /** The IFrame API script never loaded: genuinely a network problem. */
   | 'offline'
@@ -77,46 +79,46 @@ export function embedFailureCopy(failure: EmbedFailure): EmbedFailureCopy {
     case 'embed-blocked':
       return {
         message:
-          '이 영상은 다른 앱에서 재생할 수 없게 설정돼 있어요. 유튜브에서 보고 돌아오세요. 대본과 요약은 그대로 볼 수 있어요.',
+          tr('이 영상은 다른 앱에서 재생할 수 없게 설정돼 있어요. 유튜브에서 보고 돌아오세요. 대본과 요약은 그대로 볼 수 있어요.'),
         offerYouTube: true,
         offerRetry: false,
       };
     case 'unavailable':
       return {
         message:
-          '영상을 찾을 수 없어요. 삭제됐거나 비공개로 바뀌었을 수 있어요. 대본과 요약은 그대로 볼 수 있어요.',
+          tr('영상을 찾을 수 없어요. 삭제됐거나 비공개로 바뀌었을 수 있어요. 대본과 요약은 그대로 볼 수 있어요.'),
         offerYouTube: true,
         offerRetry: false,
       };
     case 'bad-id':
       return {
-        message: '영상 주소를 읽지 못했어요. 링크를 다시 올려 주세요.',
+        message: tr('영상 주소를 읽지 못했어요. 링크를 다시 올려 주세요.'),
         offerYouTube: false,
         offerRetry: false,
       };
     case 'offline':
       return {
-        message: '영상을 불러오지 못했어요. 연결을 확인하고 다시 시도해 주세요.',
+        message: tr('영상을 불러오지 못했어요. 연결을 확인하고 다시 시도해 주세요.'),
         offerYouTube: true,
         offerRetry: true,
       };
     case 'player-error':
       return {
-        message: '재생하다가 멈췄어요. 다시 시도하거나 유튜브에서 보세요.',
+        message: tr('재생하다가 멈췄어요. 다시 시도하거나 유튜브에서 보세요.'),
         offerYouTube: true,
         offerRetry: true,
       };
     case 'embed-refused':
       return {
         message:
-          '이 영상을 앱 안에서 열지 못했어요. 다시 시도하거나 유튜브에서 보세요. 대본과 요약은 그대로 볼 수 있어요.',
+          tr('이 영상을 앱 안에서 열지 못했어요. 다시 시도하거나 유튜브에서 보세요. 대본과 요약은 그대로 볼 수 있어요.'),
         offerYouTube: true,
         offerRetry: true,
       };
     case 'no-player':
       return {
         message:
-          '영상이 열리지 않아요. 다시 시도하거나 유튜브에서 보세요. 대본과 요약은 그대로 볼 수 있어요.',
+          tr('영상이 열리지 않아요. 다시 시도하거나 유튜브에서 보세요. 대본과 요약은 그대로 볼 수 있어요.'),
         offerYouTube: true,
         offerRetry: true,
       };

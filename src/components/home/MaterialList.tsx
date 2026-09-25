@@ -7,6 +7,7 @@ import {
   formatMaterialLength,
   formatRelativeDate,
 } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/theme/tokens';
 import type { Project, StudyMaterial } from '@/types';
 
@@ -50,16 +51,17 @@ export const MaterialList = memo(function MaterialList({
   onOpen,
   onMore,
 }: MaterialListProps) {
+  const t = useT();
   const grid = view === 'card' && columns > 1;
 
   const renderItem: ListRenderItem<StudyMaterial> = useCallback(
     ({ item, index }) => {
       const isRunning = processingMaterialIds.includes(item.id);
       const isEvaluating = evaluatingMaterialIds.includes(item.id);
-      const projectTitle = projectById.get(item.projectId)?.title ?? '폴더 없음';
+      const projectTitle = projectById.get(item.projectId)?.title ?? t('폴더 없음');
 
       if (view === 'card') {
-        const status = libraryStatusPresentation(item, isRunning);
+        const status = libraryStatusPresentation(item, isRunning, t);
         const thumbnail = youtubeThumbnail(item);
         const card = (
           <MediaCard
@@ -71,10 +73,10 @@ export const MaterialList = memo(function MaterialList({
             kind={item.source.kind}
             metadata={
               thumbnail
-                ? `${formatRelativeDate(item.updatedAt)}, 유튜브`
+                ? `${formatRelativeDate(item.updatedAt)}, ${t('유튜브')}`
                 : `${formatRelativeDate(item.updatedAt)}, ${formatBytes(item.source.sizeBytes)}`
             }
-            moreLabel={`${item.title} 메뉴`}
+            moreLabel={t('{title} 메뉴', { title: item.title })}
             onPress={() => onOpen(item)}
             onMorePress={() => onMore(item)}
             progress={isRunning ? item.progress * 100 : undefined}
@@ -117,6 +119,7 @@ export const MaterialList = memo(function MaterialList({
       onOpen,
       processingMaterialIds,
       projectById,
+      t,
       view,
     ],
   );

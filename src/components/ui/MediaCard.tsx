@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
 import { AppText } from './AppText';
@@ -73,10 +74,12 @@ export function MediaCard({
   disabled = false,
   onPress,
   onMorePress,
-  moreLabel = '더보기',
+  moreLabel: moreLabelProp,
   style,
   testID,
 }: MediaCardProps) {
+  const t = useT();
+  const moreLabel = moreLabelProp ?? t('더보기');
   const KindIcon = kindIcons[kind];
   const accessibilitySummary = [title, subtitle, statusLabel, progressLabel]
     .filter(Boolean)
@@ -91,7 +94,7 @@ export function MediaCard({
       testID={testID}
     >
       <Pressable
-        accessibilityLabel={`${accessibilitySummary}. 미리보기 열기`}
+        accessibilityLabel={t('{summary}. 미리보기 열기', { summary: accessibilitySummary })}
         accessibilityRole={onPress ? 'button' : undefined}
         accessibilityState={{ disabled: disabled || !onPress }}
         disabled={disabled || !onPress}

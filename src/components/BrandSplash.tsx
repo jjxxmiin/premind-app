@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 
+import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/theme/tokens';
 
 import { AppText } from './ui/AppText';
@@ -28,6 +29,7 @@ const useNativeDriver = Platform.OS !== 'web';
  * underneath it.
  */
 export function BrandSplash() {
+  const t = useT();
   // `useState` rather than `useRef`: the value is read while rendering (the
   // tagline interpolates from it), which is exactly what a ref must not be used for.
   const [entry] = useState(() => new Animated.Value(0));
@@ -69,7 +71,7 @@ export function BrandSplash() {
       />
       <Animated.View style={{ opacity: entry }}>
         <AppText align="center" tone="muted" variant="body">
-          수업을 담기만 하면 복습이 준비돼요
+          {t('수업을 담기만 하면 복습이 준비돼요')}
         </AppText>
       </Animated.View>
     </View>

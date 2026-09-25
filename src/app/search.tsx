@@ -7,6 +7,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { MaterialRow } from '@/components/home/MaterialRow';
 import { matchesQuery, normalizeQuery, sortMaterials } from '@/components/home/library';
 import { AppText, AuthField, EmptyState, IconButton, Screen } from '@/components/ui';
+import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useAppStore } from '@/state/app-store';
@@ -18,6 +19,7 @@ import type { StudyMaterial } from '@/types';
  * own screen so the home list keeps its first screen for the list.
  */
 export default function SearchScreen() {
+  const t = useT();
   const { evaluatingMaterialIds, materials, processingMaterialIds, projects } =
     useAppStore();
   const { gutter } = useLayout();
@@ -58,7 +60,7 @@ export default function SearchScreen() {
         isRunning={processingMaterialIds.includes(item.id)}
         material={item}
         onPress={openMaterial}
-        projectTitle={projectById.get(item.projectId)?.title ?? '폴더 없음'}
+        projectTitle={projectById.get(item.projectId)?.title ?? t('폴더 없음')}
       />
     ),
     [
@@ -68,27 +70,28 @@ export default function SearchScreen() {
       processingMaterialIds,
       projectById,
       results.length,
+      t,
     ],
   );
 
   return (
     <Screen padded={false}>
-      <AppHeader onBack={() => goBackOrReplace('/(tabs)')} title="검색" />
+      <AppHeader onBack={() => goBackOrReplace('/(tabs)')} title={t('검색')} />
       <View style={[styles.field, { paddingHorizontal: gutter }]}>
         <AuthField
           autoCapitalize="none"
           autoCorrect={false}
           autoFocus
-          label="검색어"
+          label={t('검색어')}
           onChangeText={setQuery}
-          placeholder="제목, 파일명, 폴더"
+          placeholder={t('제목, 파일명, 폴더')}
           returnKeyType="search"
           trailing={
             query ? (
               <IconButton
                 icon={X}
                 iconSize={iconSizes.inline}
-                label="검색어 지우기"
+                label={t('검색어 지우기')}
                 onPress={() => setQuery('')}
               />
             ) : undefined
@@ -105,16 +108,16 @@ export default function SearchScreen() {
         ListEmptyComponent={
           normalized ? (
             <EmptyState
-              description="다른 말로 다시 찾아보세요"
+              description={t('다른 말로 다시 찾아보세요')}
               icon={Search}
-              title="검색 결과가 없어요"
+              title={t('검색 결과가 없어요')}
             />
           ) : (
             <EmptyState
               compact
-              description="자료 제목과 파일 이름, 폴더 이름에서 찾아요. 대본은 자료를 연 뒤 그 안에서 검색해요."
+              description={t('자료 제목과 파일 이름, 폴더 이름에서 찾아요. 대본은 자료를 연 뒤 그 안에서 검색해요.')}
               icon={Search}
-              title="무엇을 찾을까요?"
+              title={t('무엇을 찾을까요?')}
             />
           )
         }
@@ -127,7 +130,7 @@ export default function SearchScreen() {
                 tone="muted"
                 variant="meta"
               >
-                “{query.trim()}” 검색 결과 {results.length}개
+                {t('“{query}” 검색 결과 {n}개', { query: query.trim(), n: results.length })}
               </AppText>
             </View>
           ) : null

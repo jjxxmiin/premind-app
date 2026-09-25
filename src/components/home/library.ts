@@ -1,3 +1,4 @@
+import { makeT, type T } from '@/lib/i18n/core';
 import { youtubeThumbnailUrl } from '@/lib/youtube';
 import type { Project, StudyMaterial } from '@/types';
 
@@ -6,6 +7,9 @@ import type { StatusTone } from '../ui/Chip';
 export type LibraryView = 'card' | 'list';
 export type StatusFilter = 'all' | 'ready' | 'processing' | 'failed';
 export type LibrarySort = 'recent' | 'oldest' | 'title';
+
+/** Korean as written: the default `t` when a caller (a test) passes none. */
+const KO: T = makeT('ko', []);
 
 export const SORT_OPTIONS: readonly { value: LibrarySort; label: string }[] = [
   { value: 'recent', label: '최신순' },
@@ -47,11 +51,16 @@ export function materialCountLabel(
   total: number,
   visible: number,
   filters: LibraryFilters,
+  t: T = KO,
 ): string {
-  const noun = filters.savedOnly ? '저장한 자료' : '자료';
-  if (total === 0) return `${noun} 없음`;
-  if (filters.status !== 'all') return `${noun} ${total}개 중 ${visible}개`;
-  return `${noun} ${total}개`;
+  if (filters.savedOnly) {
+    if (total === 0) return t('저장한 자료 없음');
+    if (filters.status !== 'all') return t('저장한 자료 {total}개 중 {n}개', { total, n: visible });
+    return t('저장한 자료 {n}개', { n: total });
+  }
+  if (total === 0) return t('자료 없음');
+  if (filters.status !== 'all') return t('자료 {total}개 중 {n}개', { total, n: visible });
+  return t('자료 {n}개', { n: total });
 }
 
 /** Filters that narrow the list. The view mode is presentation, not a filter. */
@@ -66,40 +75,42 @@ export function activeFilterCount(filters: LibraryFilters): number {
 export function libraryStatusPresentation(
   material: StudyMaterial,
   isRunning: boolean,
+  t: T = KO,
 ): { label: string; tone: StatusTone; detail: string } {
   if (material.status === 'ready') {
-    return { label: '완료', tone: 'positive', detail: '마인드팩이 준비됐어요' };
+    return { label: t('완료'), tone: 'positive', detail: t('마인드팩이 준비됐어요') };
   }
   if (material.status === 'failed') {
     return {
-      label: '확인 필요',
+      label: t('확인 필요'),
       tone: 'negative',
-      detail: material.lastError ?? '만들지 못했어요. 눌러서 다시 시도해 주세요.',
+      detail: t(material.lastError ?? '만들지 못했어요. 눌러서 다시 시도해 주세요.'),
     };
   }
   if (material.status === 'imported') {
     return {
-      label: '가져옴',
+      label: t('가져옴'),
       tone: 'neutral',
-      detail: '원본만 저장했어요. 눌러서 마인드팩을 만들어요.',
+      detail: t('원본만 저장했어요. 눌러서 마인드팩을 만들어요.'),
     };
   }
   if (!isRunning) {
     return {
-      label: '이어가기',
+      label: t('이어가기'),
       tone: 'warning',
-      detail: '멈춰 있어요. 눌러서 이어가요.',
+      detail: t('멈춰 있어요. 눌러서 이어가요.'),
     };
   }
   return {
-    label:
+    label: t(
       material.status === 'queued'
         ? '준비 중'
         : material.status === 'transcribing'
           ? '대본 생성'
           : '생성 중',
+    ),
     tone: 'brand',
-    detail: material.progressLabel,
+    detail: t(material.progressLabel),
   };
 }
 

@@ -2,6 +2,7 @@ import { AudioLines, FileText, FileVideo2, Sparkles } from 'lucide-react-native'
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import type { MaterialKind, MaterialStatus } from '@/types';
 import { colors, radii, spacing } from '@/theme/tokens';
 
@@ -24,6 +25,7 @@ const WAVEFORM = [10, 18, 26, 14, 22, 32, 18, 12, 24, 16, 28, 12] as const;
  * Deliberately not illustrated, so a list of thirty rows stays calm.
  */
 export function MediaArtwork({ kind, status, label, compact = false, style }: MediaArtworkProps) {
+  const t = useT();
   const Icon =
     kind === 'video' ? FileVideo2 : kind === 'document' ? FileText : AudioLines;
   const processing = status && !['ready', 'failed', 'imported'].includes(status);
@@ -64,7 +66,7 @@ export function MediaArtwork({ kind, status, label, compact = false, style }: Me
       {!compact && processing ? (
         <View accessibilityLiveRegion="polite" style={styles.processing}>
           <Sparkles color={colors.brandText} size={12} />
-          <AppText tone="brand" variant="badge">AI 정리 중</AppText>
+          <AppText tone="brand" variant="badge">{t('AI 정리 중')}</AppText>
         </View>
       ) : !compact && label ? (
         <View style={styles.processing}>

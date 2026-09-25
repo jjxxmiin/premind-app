@@ -62,6 +62,7 @@ import {
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatMaterialLength } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { parseYouTubeId } from '@/lib/youtube';
 import { useAppStore } from '@/state/app-store';
@@ -93,6 +94,7 @@ function errorMessage(error: unknown, fallback: string): string {
  * screen is the list itself.
  */
 export default function HomeScreen() {
+  const t = useT();
   const { newProject: rawNewProjectRequest, add: rawAddRequest } =
     useLocalSearchParams<{
       newProject?: string | string[];
@@ -218,12 +220,12 @@ export default function HomeScreen() {
 
   const pages = useMemo<SubjectPage[]>(
     () => [
-      { key: ALL_PAGE_KEY, label: '전체' },
+      { key: ALL_PAGE_KEY, label: t('전체') },
       // Saved materials need somewhere to live: the bookmark on a material is
       // otherwise a state with no screen. The page appears once there is one
       // to show, so a new account never sees an empty tab.
       ...(savedMaterialIds.length
-        ? [{ key: SAVED_PAGE_KEY, label: '저장함', savedOnly: true as const }]
+        ? [{ key: SAVED_PAGE_KEY, label: t('저장함'), savedOnly: true as const }]
         : []),
       ...projects.map((project) => ({
         key: project.id,
@@ -231,7 +233,7 @@ export default function HomeScreen() {
         projectId: project.id,
       })),
     ],
-    [projects, savedMaterialIds.length],
+    [projects, savedMaterialIds.length, t],
   );
   const safePageIndex = Math.min(pageIndex, pages.length - 1);
   const currentPage = pages[safePageIndex] ?? pages[0];
@@ -310,30 +312,30 @@ export default function HomeScreen() {
     () => [
       {
         value: 'all' as const,
-        label: '전체',
-        accessibilityLabel: `전체 ${currentSubjectMaterials.length}개`,
+        label: t('전체'),
+        accessibilityLabel: t('전체 {n}개', { n: currentSubjectMaterials.length }),
       },
       {
         value: 'ready' as const,
-        label: '완료',
-        accessibilityLabel: `완료 ${readyCount}개`,
+        label: t('완료'),
+        accessibilityLabel: t('완료 {n}개', { n: readyCount }),
       },
       {
         value: 'processing' as const,
-        label: '진행 중',
-        accessibilityLabel: `진행 중 ${activeCount}개`,
+        label: t('진행 중'),
+        accessibilityLabel: t('진행 중 {n}개', { n: activeCount }),
       },
       ...(failedCount > 0 || filters.status === 'failed'
         ? [
             {
               value: 'failed' as const,
-              label: '확인 필요',
-              accessibilityLabel: `확인 필요 ${failedCount}개`,
+              label: t('확인 필요'),
+              accessibilityLabel: t('확인 필요 {n}개', { n: failedCount }),
             },
           ]
         : []),
     ],
-    [activeCount, currentSubjectMaterials.length, failedCount, filters.status, readyCount],
+    [activeCount, currentSubjectMaterials.length, failedCount, filters.status, readyCount, t],
   );
   const narrowed = isNarrowed(filters);
 
@@ -510,12 +512,12 @@ export default function HomeScreen() {
   const submitYoutube = async () => {
     const url = youtubeUrl.trim();
     if (!parseYouTubeId(url)) {
-      setYoutubeError('공개 유튜브 영상 주소를 확인해 주세요.');
+      setYoutubeError(t('공개 유튜브 영상 주소를 확인해 주세요.'));
       return;
     }
     const projectId = selectedProjectId ?? activeProjectId ?? projects[0]?.id;
     if (!projectId) {
-      setYoutubeError('먼저 폴더를 만들어 주세요.');
+      setYoutubeError(t('먼저 폴더를 만들어 주세요.'));
       return;
     }
     setYoutubeBusy(true);
@@ -529,7 +531,7 @@ export default function HomeScreen() {
     } catch (error) {
       setYoutubeBusy(false);
       setYoutubeError(
-        errorMessage(error, '링크를 가져오지 못했어요. 주소를 확인하고 다시 시도해 주세요.'),
+        t(errorMessage(error, '링크를 가져오지 못했어요. 주소를 확인하고 다시 시도해 주세요.')),
       );
     }
   };
@@ -560,14 +562,14 @@ export default function HomeScreen() {
       if (projectSheetTrigger.current) return;
     }
     document
-      .querySelector<HTMLElement>('[aria-label="새 폴더"]')
+      .querySelector<HTMLElement>(`[aria-label="${t('새 폴더')}"]`)
       ?.focus();
   };
 
   const submitProject = () => {
     const title = projectTitle.trim();
     if (!title) {
-      setProjectError('폴더 이름을 입력해 주세요.');
+      setProjectError(t('폴더 이름을 입력해 주세요.'));
       return;
     }
     try {
@@ -581,7 +583,7 @@ export default function HomeScreen() {
       setCourseName('');
       closeProjectSheet();
     } catch (error) {
-      setProjectError(errorMessage(error, '폴더를 만들지 못했어요. 다시 시도해 주세요.'));
+      setProjectError(t(errorMessage(error, '폴더를 만들지 못했어요. 다시 시도해 주세요.')));
     }
   };
 
@@ -604,8 +606,8 @@ export default function HomeScreen() {
     }
     if (material.status !== 'ready') {
       setNotice({
-        title: '아직 평가할 수 없어요',
-        message: '마인드팩이 준비되면 평가할 수 있어요.',
+        title: t('아직 평가할 수 없어요'),
+        message: t('마인드팩이 준비되면 평가할 수 있어요.'),
       });
       return;
     }
@@ -614,8 +616,8 @@ export default function HomeScreen() {
       router.push({ pathname: '/report/[id]', params: { id: evaluated.id } });
     } catch (error) {
       setNotice({
-        title: '평가를 시작하지 못했어요',
-        message: errorMessage(error, '잠시 후 다시 시도해 주세요.'),
+        title: t('평가를 시작하지 못했어요'),
+        message: t(errorMessage(error, '잠시 후 다시 시도해 주세요.')),
       });
     }
   };
@@ -650,11 +652,11 @@ export default function HomeScreen() {
     try {
       await moveMaterial(material.id, projectId);
       const folder = projects.find((project) => project.id === projectId);
-      toast.show(`${folder?.title ?? '폴더'}(으)로 옮겼어요`);
+      toast.show(t('{folder}(으)로 옮겼어요', { folder: folder?.title ?? t('폴더') }));
     } catch (error) {
       setNotice({
-        title: '옮기지 못했어요',
-        message: error instanceof Error ? error.message : '잠시 후 다시 시도해 주세요.',
+        title: t('옮기지 못했어요'),
+        message: t(error instanceof Error ? error.message : '잠시 후 다시 시도해 주세요.'),
       });
     }
   };
@@ -678,7 +680,7 @@ export default function HomeScreen() {
     if (!renameTarget) return;
     const title = renameTitle.trim();
     if (!title) {
-      setRenameError('제목을 입력해 주세요.');
+      setRenameError(t('제목을 입력해 주세요.'));
       return;
     }
     if (title === renameTarget.title) {
@@ -692,7 +694,7 @@ export default function HomeScreen() {
       setRenameTarget(null);
     } catch (error) {
       setRenameBusy(false);
-      setRenameError(errorMessage(error, '이름을 바꾸지 못했어요. 다시 시도해 주세요.'));
+      setRenameError(t(errorMessage(error, '이름을 바꾸지 못했어요. 다시 시도해 주세요.')));
     }
   };
 
@@ -721,8 +723,8 @@ export default function HomeScreen() {
       setTimeout(
         () =>
           setNotice({
-            title: '삭제하지 못했어요',
-            message: errorMessage(error, '잠시 후 다시 시도해 주세요.'),
+            title: t('삭제하지 못했어요'),
+            message: t(errorMessage(error, '잠시 후 다시 시도해 주세요.')),
           }),
         motion.duration.deliberate,
       );
@@ -737,7 +739,7 @@ export default function HomeScreen() {
     const wasSaved = savedMaterialIds.includes(selectedMaterial.id);
     toggleSavedMaterial(selectedMaterial.id);
     closeMaterialSheet();
-    toast.show(wasSaved ? '저장을 해제했어요' : '저장함에 담았어요');
+    toast.show(t(wasSaved ? '저장을 해제했어요' : '저장함에 담았어요'));
   };
 
   const selectedIsEvaluating = selectedMaterial
@@ -746,18 +748,20 @@ export default function HomeScreen() {
 
   // ---- Page rendering ----------------------------------------------------
 
-  const emptyTitle =
+  const emptyTitle = t(
     filters.status !== 'all'
       ? '이 상태의 자료가 없어요'
       : filters.savedOnly
         ? '저장한 자료가 없어요'
-        : '아직 자료가 없어요';
-  const emptyDescription =
+        : '아직 자료가 없어요',
+  );
+  const emptyDescription = t(
     filters.status !== 'all'
       ? '필터를 바꾸면 다른 자료를 볼 수 있어요.'
       : filters.savedOnly
         ? '자료 메뉴에서 저장하면 여기에 모여요.'
-        : '녹음하거나 파일을 올리면 대본, 요약, 마인드맵, 문제가 여기에 모여요';
+        : '녹음하거나 파일을 올리면 대본, 요약, 마인드맵, 문제가 여기에 모여요',
+  );
   const showEmptyAction = filters.status === 'all' && !filters.savedOnly;
 
   const renderPage = ({ item: page }: { item: SubjectPage }) => {
@@ -768,14 +772,14 @@ export default function HomeScreen() {
       <>
         {isAllPage && showChecklist ? (
           <Card
-            accessibilityLabel={`시작하기 3단계, ${checklistDone}/3 완료`}
+            accessibilityLabel={t('시작하기 3단계, {done}/3 완료', { done: checklistDone })}
             padding={false}
             variant="soft"
           >
             <View style={styles.checklistRow}>
               <Pressable
-                accessibilityHint="사용 가이드를 열어요"
-                accessibilityLabel={`시작하기 3단계, ${checklistDone}/3 완료`}
+                accessibilityHint={t('사용 가이드를 열어요')}
+                accessibilityLabel={t('시작하기 3단계, {done}/3 완료', { done: checklistDone })}
                 accessibilityRole="button"
                 onPress={() => router.push('/guide')}
                 style={({ pressed }) => [
@@ -789,7 +793,7 @@ export default function HomeScreen() {
                   </AppText>
                 </View>
                 <AppText numberOfLines={1} style={styles.flex} variant="itemTitle">
-                  시작하기 3단계
+                  {t('시작하기 3단계')}
                 </AppText>
                 <ChevronRight
                   {...decorative}
@@ -801,7 +805,7 @@ export default function HomeScreen() {
               <IconButton
                 icon={X}
                 iconSize={iconSizes.inline}
-                label="안내 닫기"
+                label={t('안내 닫기')}
                 onPress={() => updateSettings({ homeChecklistDismissed: true })}
                 size="small"
               />
@@ -819,14 +823,15 @@ export default function HomeScreen() {
               pageTotal,
               pageMaterials.length,
               page.savedOnly ? { ...filters, savedOnly: true } : filters,
+              t,
             )}
           </AppText>
           <Pressable
-            accessibilityHint="정렬, 상태, 보기 방식을 바꿔요"
+            accessibilityHint={t('정렬, 상태, 보기 방식을 바꿔요')}
             accessibilityLabel={
               narrowed
-                ? `${SORT_LABELS[filters.sort]}, 필터 적용됨`
-                : SORT_LABELS[filters.sort]
+                ? t('{sort}, 필터 적용됨', { sort: t(SORT_LABELS[filters.sort]) })
+                : t(SORT_LABELS[filters.sort])
             }
             accessibilityRole="button"
             hitSlop={spacing.sm}
@@ -834,7 +839,7 @@ export default function HomeScreen() {
             style={({ pressed }) => [styles.sortControl, pressed ? styles.pressed : null]}
           >
             <AppText numberOfLines={1} variant="label">
-              {SORT_LABELS[filters.sort]}
+              {t(SORT_LABELS[filters.sort])}
             </AppText>
             <ChevronDown
               {...decorative}
@@ -849,7 +854,7 @@ export default function HomeScreen() {
     );
     const empty = (
       <EmptyState
-        actionLabel={showEmptyAction ? '녹음 시작' : undefined}
+        actionLabel={showEmptyAction ? t('녹음 시작') : undefined}
         actionVariant="primary"
         // The first-run state is the one that decides whether anyone stays, so
         // it gets the drawing of what the app makes. A list emptied by a
@@ -890,12 +895,12 @@ export default function HomeScreen() {
             <>
               <IconButton
                 icon={Search}
-                label="검색"
+                label={t('검색')}
                 onPress={() => router.push('/search')}
               />
               <IconButton
                 icon={Bell}
-                label="알림"
+                label={t('알림')}
                 onPress={() => router.push('/notifications')}
               />
             </>
@@ -920,7 +925,7 @@ export default function HomeScreen() {
           style={styles.pagerHost}
         >
           <FlatList
-            accessibilityLabel={`폴더별 자료, ${currentPage?.label ?? '전체'}. 좌우로 밀어 폴더를 바꿔요`}
+            accessibilityLabel={t('폴더별 자료, {folder}. 좌우로 밀어 폴더를 바꿔요', { folder: currentPage?.label ?? t('전체') })}
             bounces={false}
             data={pages}
             extraData={visibleMaterialsByPage}
@@ -958,47 +963,47 @@ export default function HomeScreen() {
       {/* Every way to start a 마인드팩, in one place. The tab bar's middle
           button opens this, so "어디서 올리지" has one answer. */}
       <BottomSheetModal
-        description="녹음하거나 파일을 올리면 마인드팩이 만들어져요."
+        description={t('녹음하거나 파일을 올리면 마인드팩이 만들어져요.')}
         onClose={() => setUploadSheetVisible(false)}
         scrollable={false}
-        title="자료 추가"
+        title={t('자료 추가')}
         visible={uploadSheetVisible}
       >
         <Card padding={false}>
           <ListRow
-            accessibilityHint="바로 녹음을 시작해요"
+            accessibilityHint={t('바로 녹음을 시작해요')}
             leadingIcon={Mic}
             onPress={() => {
               setUploadSheetVisible(false);
               setTimeout(() => router.push('/record'), motion.duration.deliberate);
             }}
-            subtitle="강의나 발표를 그 자리에서"
-            title="녹음하기"
+            subtitle={t('강의나 발표를 그 자리에서')}
+            title={t('녹음하기')}
           />
           <ListRow
-            accessibilityHint="파일 앱에서 골라요"
+            accessibilityHint={t('파일 앱에서 골라요')}
             leadingIcon={FileText}
             onPress={openImport}
-            subtitle="PDF, 슬라이드, 영상, 음성"
-            title="파일 올리기"
+            subtitle={t('PDF, 슬라이드, 영상, 음성')}
+            title={t('파일 올리기')}
           />
           <ListRow
-            accessibilityHint="공개 유튜브 영상 주소를 붙여 넣어요"
+            accessibilityHint={t('공개 유튜브 영상 주소를 붙여 넣어요')}
             divider={false}
             leadingIcon={Link2}
             onPress={openYoutubeDialog}
-            subtitle="공개 영상 주소를 붙여 넣어요"
-            title="유튜브 링크"
+            subtitle={t('공개 영상 주소를 붙여 넣어요')}
+            title={t('유튜브 링크')}
           />
         </Card>
       </BottomSheetModal>
 
       <BottomSheetModal
-        description="이 자료를 담을 폴더를 골라요."
+        description={t('이 자료를 담을 폴더를 골라요.')}
         onClose={() => setMoveTarget(null)}
         scrollable={false}
         testID="move-material-sheet"
-        title="폴더 옮기기"
+        title={t('폴더 옮기기')}
         visible={moveTarget !== null}
       >
         {projects.length ? (
@@ -1007,7 +1012,7 @@ export default function HomeScreen() {
               const current = project.id === moveTarget?.projectId;
               return (
                 <ListRow
-                  accessibilityHint={current ? '이미 이 폴더에 있어요.' : '이 폴더로 옮겨요.'}
+                  accessibilityHint={t(current ? '이미 이 폴더에 있어요.' : '이 폴더로 옮겨요.')}
                   compact
                   disabled={current}
                   divider={index < projects.length - 1}
@@ -1015,7 +1020,7 @@ export default function HomeScreen() {
                   leadingIcon={FolderOpen}
                   onPress={() => void moveTo(project.id)}
                   showChevron={false}
-                  subtitle={current ? '지금 이 폴더에 있어요' : undefined}
+                  subtitle={current ? t('지금 이 폴더에 있어요') : undefined}
                   title={project.title}
                   trailing={
                     current ? (
@@ -1033,9 +1038,9 @@ export default function HomeScreen() {
           </Card>
         ) : (
           <EmptyState
-            actionLabel="폴더 만들기"
+            actionLabel={t('폴더 만들기')}
             compact
-            description="자료를 담을 폴더가 아직 없어요"
+            description={t('자료를 담을 폴더가 아직 없어요')}
             icon={FolderOpen}
             onAction={() => {
               setMoveTarget(null);
@@ -1044,7 +1049,7 @@ export default function HomeScreen() {
                 params: { newProject: Date.now().toString(36) },
               });
             }}
-            title="폴더가 없어요"
+            title={t('폴더가 없어요')}
           />
         )}
       </BottomSheetModal>
@@ -1052,12 +1057,12 @@ export default function HomeScreen() {
       <BottomSheetModal
         description={
           selectedMaterial
-            ? `${projectById.get(selectedMaterial.projectId)?.title ?? '폴더 없음'} / ${formatMaterialLength(selectedMaterial.source.kind, selectedMaterial.source.durationMs, selectedMaterial.transcript.length)}`
+            ? `${projectById.get(selectedMaterial.projectId)?.title ?? t('폴더 없음')} / ${formatMaterialLength(selectedMaterial.source.kind, selectedMaterial.source.durationMs, selectedMaterial.transcript.length)}`
             : undefined
         }
         onClose={closeMaterialSheet}
         scrollable={false}
-        title={selectedMaterial?.title ?? '자료 메뉴'}
+        title={selectedMaterial?.title ?? t('자료 메뉴')}
         visible={Boolean(selectedMaterial)}
       >
         {selectedMaterial ? (
@@ -1067,7 +1072,7 @@ export default function HomeScreen() {
               leadingIcon={BookOpen}
               onPress={openSelectedMaterial}
               showChevron={false}
-              title={selectedMaterial.status === 'ready' ? '마인드팩 열기' : '진행 상황 보기'}
+              title={t(selectedMaterial.status === 'ready' ? '마인드팩 열기' : '진행 상황 보기')}
             />
             <ListRow
               compact
@@ -1077,35 +1082,35 @@ export default function HomeScreen() {
               showChevron={false}
               subtitle={
                 selectedIsEvaluating
-                  ? '평가하고 있어요'
+                  ? t('평가하고 있어요')
                   : selectedMaterial.lensReport
-                    ? '평가 결과 보기'
+                    ? t('평가 결과 보기')
                     : undefined
               }
-              title="평가하기"
+              title={t('평가하기')}
             />
             <ListRow
               compact
               leadingIcon={selectedIsSaved ? BookmarkCheck : Bookmark}
               onPress={() => toggleSelectedSaved()}
               showChevron={false}
-              title={selectedIsSaved ? '저장 취소' : '저장하기'}
+              title={t(selectedIsSaved ? '저장 취소' : '저장하기')}
             />
             <ListRow
               compact
               leadingIcon={Pencil}
               onPress={openRenameDialog}
               showChevron={false}
-              title="이름 바꾸기"
+              title={t('이름 바꾸기')}
             />
             <ListRow
               compact
               leadingIcon={FolderOpen}
               onPress={openMoveSheet}
               subtitle={
-                projectById.get(selectedMaterial.projectId)?.title ?? '폴더 없음'
+                projectById.get(selectedMaterial.projectId)?.title ?? t('폴더 없음')
               }
-              title="폴더 옮기기"
+              title={t('폴더 옮기기')}
             />
             <ListRow
               compact
@@ -1113,14 +1118,14 @@ export default function HomeScreen() {
               leadingIcon={Trash2}
               onPress={openDeleteDialog}
               showChevron={false}
-              title="삭제"
+              title={t('삭제')}
             />
           </Card>
         ) : null}
       </BottomSheetModal>
 
       <BottomSheetModal
-        description="폴더별로 자료를 묶어 두면 찾기 쉬워요."
+        description={t('폴더별로 자료를 묶어 두면 찾기 쉬워요.')}
         footer={
           <View style={styles.sheetFooter}>
             <Button
@@ -1128,29 +1133,29 @@ export default function HomeScreen() {
               style={styles.footerButton}
               variant="secondary"
             >
-              취소
+              {t('취소')}
             </Button>
             <Button
               onPress={submitProject}
               style={styles.footerButton}
               variant="primary"
             >
-              만들기
+              {t('만들기')}
             </Button>
           </View>
         }
         onDismiss={restoreProjectSheetFocus}
         onClose={closeProjectSheet}
-        title="새 폴더"
+        title={t('새 폴더')}
         visible={projectSheetVisible}
       >
         <View style={styles.form}>
           <View style={styles.field}>
             <AppText tone="soft" variant="meta">
-              폴더 이름
+              {t('폴더 이름')}
             </AppText>
             <TextInput
-              accessibilityLabel="폴더 이름"
+              accessibilityLabel={t('폴더 이름')}
               autoFocus
               maxLength={60}
               onBlur={() => setProjectTitleFocused(false)}
@@ -1159,7 +1164,7 @@ export default function HomeScreen() {
                 setProjectError(null);
               }}
               onFocus={() => setProjectTitleFocused(true)}
-              placeholder="예: 인공지능 개론"
+              placeholder={t('예: 인공지능 개론')}
               placeholderTextColor={colors.textFaint}
               returnKeyType="next"
               style={[
@@ -1173,16 +1178,16 @@ export default function HomeScreen() {
           </View>
           <View style={styles.field}>
             <AppText tone="soft" variant="meta">
-              학기 (선택)
+              {t('학기 (선택)')}
             </AppText>
             <TextInput
-              accessibilityLabel="학기"
+              accessibilityLabel={t('학기')}
               maxLength={80}
               onBlur={() => setCourseNameFocused(false)}
               onChangeText={setCourseName}
               onFocus={() => setCourseNameFocused(true)}
               onSubmitEditing={submitProject}
-              placeholder="예: 2026학년도 2학기"
+              placeholder={t('예: 2026학년도 2학기')}
               placeholderTextColor={colors.textFaint}
               returnKeyType="done"
               style={[
@@ -1202,15 +1207,15 @@ export default function HomeScreen() {
       </BottomSheetModal>
 
       <Dialog
-        cancel={{ label: '취소', onPress: closeYoutubeDialog, disabled: youtubeBusy }}
+        cancel={{ label: t('취소'), onPress: closeYoutubeDialog, disabled: youtubeBusy }}
         confirm={{
-          label: '가져오기',
+          label: t('가져오기'),
           loading: youtubeBusy,
           onPress: () => void submitYoutube(),
         }}
-        description="공개 영상 주소를 붙여 넣어 주세요. 영상은 내려받지 않아요."
+        description={t('공개 영상 주소를 붙여 넣어 주세요. 영상은 내려받지 않아요.')}
         onRequestClose={closeYoutubeDialog}
-        title="유튜브 링크"
+        title={t('유튜브 링크')}
         visible={youtubeDialogVisible}
       >
         <AuthField
@@ -1220,7 +1225,7 @@ export default function HomeScreen() {
           editable={!youtubeBusy}
           error={youtubeError}
           keyboardType="url"
-          label="유튜브 주소"
+          label={t('유튜브 주소')}
           onChangeText={(value) => {
             setYoutubeUrl(value);
             setYoutubeError(null);
@@ -1234,28 +1239,28 @@ export default function HomeScreen() {
       </Dialog>
 
       <Dialog
-        cancel={{ label: '취소', onPress: closeRenameDialog, disabled: renameBusy }}
+        cancel={{ label: t('취소'), onPress: closeRenameDialog, disabled: renameBusy }}
         confirm={{
-          label: '저장',
+          label: t('저장'),
           loading: renameBusy,
           onPress: () => void submitRename(),
         }}
         onRequestClose={closeRenameDialog}
-        title="이름 바꾸기"
+        title={t('이름 바꾸기')}
         visible={Boolean(renameTarget)}
       >
         <AuthField
           autoFocus
           editable={!renameBusy}
           error={renameError}
-          label="제목"
+          label={t('제목')}
           maxLength={120}
           onChangeText={(value) => {
             setRenameTitle(value);
             setRenameError(null);
           }}
           onSubmitEditing={() => void submitRename()}
-          placeholder="자료 제목"
+          placeholder={t('자료 제목')}
           returnKeyType="done"
           selectTextOnFocus
           value={renameTitle}
@@ -1263,24 +1268,24 @@ export default function HomeScreen() {
       </Dialog>
 
       <Dialog
-        cancel={{ label: '취소', onPress: closeDeleteDialog, disabled: deleteBusy }}
+        cancel={{ label: t('취소'), onPress: closeDeleteDialog, disabled: deleteBusy }}
         confirm={{
-          label: '삭제',
+          label: t('삭제'),
           loading: deleteBusy,
           onPress: () => void confirmDelete(),
         }}
         description={
           deleteTarget
-            ? `“${deleteTarget.title}”의 원본, 대본, 마인드팩이 모두 지워져요. 되돌릴 수 없어요.`
+            ? t('“{title}”의 원본, 대본, 마인드팩이 모두 지워져요. 되돌릴 수 없어요.', { title: deleteTarget.title })
             : undefined
         }
         onRequestClose={closeDeleteDialog}
-        title="자료를 삭제할까요?"
+        title={t('자료를 삭제할까요?')}
         visible={Boolean(deleteTarget)}
       />
 
       <Dialog
-        confirm={{ label: '확인', onPress: () => setNotice(null) }}
+        confirm={{ label: t('확인'), onPress: () => setNotice(null) }}
         description={notice?.message}
         onRequestClose={() => setNotice(null)}
         title={notice?.title ?? ''}

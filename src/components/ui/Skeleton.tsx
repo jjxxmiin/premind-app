@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, radii, spacing } from '@/theme/tokens';
 
 import { useReducedMotion } from './Motion';
@@ -83,8 +84,9 @@ export function SkeletonLines({
   lines?: number;
   style?: StyleProp<ViewStyle>;
 }) {
+  const t = useT();
   return (
-    <View accessibilityLabel="불러오는 중" style={[styles.lines, style]}>
+    <View accessibilityLabel={t('불러오는 중')} style={[styles.lines, style]}>
       {Array.from({ length: lines }, (_, index) => (
         <Skeleton
           height={12}

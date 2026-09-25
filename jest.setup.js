@@ -20,3 +20,10 @@ jest.mock('expo-secure-store', () => {
     }),
   };
 });
+
+// The app follows the device language when none was chosen (src/lib/i18n/locale-store.ts).
+// jsdom reports 'en-US', which would turn web tests' screens English; tests assert the
+// Korean screens, so pin the browser language to Korean.
+if (typeof navigator !== 'undefined') {
+  Object.defineProperty(navigator, 'language', { configurable: true, value: 'ko-KR' });
+}

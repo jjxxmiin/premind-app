@@ -10,6 +10,7 @@
  */
 
 import { formatBytes } from '@/lib/format';
+import { tr } from '@/lib/i18n';
 
 /** What the phone is connected through, as far as the warning cares. */
 export type ConnectionKind = 'wifi' | 'cellular' | 'unknown' | 'offline';
@@ -49,9 +50,9 @@ export function meteredUploadWarning(
   if (kind !== 'cellular') return null;
   const size = sizeBytes && sizeBytes > 0 ? formatBytes(sizeBytes) : null;
   return {
-    title: 'Wi-Fi가 아니에요',
+    title: tr('Wi-Fi가 아니에요'),
     description: size
-      ? `지금 올리면 이동통신 데이터로 ${size}를 보내요. 요금이 나올 수 있어요.`
-      : '지금 올리면 이동통신 데이터로 보내요. 요금이 나올 수 있어요.',
+      ? tr('지금 올리면 이동통신 데이터로 {size}를 보내요. 요금이 나올 수 있어요.', { size })
+      : tr('지금 올리면 이동통신 데이터로 보내요. 요금이 나올 수 있어요.'),
   };
 }

@@ -13,6 +13,7 @@ import {
 
 import { AppText } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, motion, sizes, spacing } from '@/theme/tokens';
 
 /**
@@ -85,6 +86,7 @@ export function SubjectTabs({
   onAddPress,
   gutter = spacing.gutter,
 }: SubjectTabsProps) {
+  const t = useT();
   const reduced = usePrefersReducedMotion();
   const scrollRef = useRef<ScrollView>(null);
   const layoutsRef = useRef<Map<string, TabLayout>>(new Map());
@@ -173,8 +175,8 @@ export function SubjectTabs({
             <Pressable
               accessibilityLabel={
                 tab.count === undefined
-                  ? `${tab.label} 자료`
-                  : `${tab.label} 자료 ${tab.count}개`
+                  ? t('{folder} 자료', { folder: tab.label })
+                  : t('{folder} 자료 {n}개', { folder: tab.label, n: tab.count })
               }
               accessibilityRole="tab"
               accessibilityState={{ selected }}
@@ -233,8 +235,8 @@ export function SubjectTabs({
           ))}
         </View>
         <Pressable
-          accessibilityHint="새 폴더를 만들어요"
-          accessibilityLabel="새 폴더"
+          accessibilityHint={t('새 폴더를 만들어요')}
+          accessibilityLabel={t('새 폴더')}
           accessibilityRole="button"
           onPress={onAddPress}
           style={({ pressed }) => [styles.addButton, pressed ? styles.pressed : null]}

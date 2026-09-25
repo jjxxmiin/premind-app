@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { colors, illustration, radii, spacing } from '@/theme/tokens';
 
@@ -56,6 +57,7 @@ const PEEK = 32;
  * one-line headline and a short link. No body copy, no shadows.
  */
 export function PromoCarousel({ slides, gutter, style }: PromoCarouselProps) {
+  const t = useT();
   const { width, contentMaxWidth, isTablet } = useLayout();
   const [active, setActive] = useState(0);
   const lastIndex = useRef(0);
@@ -82,7 +84,7 @@ export function PromoCarousel({ slides, gutter, style }: PromoCarouselProps) {
   return (
     <View style={style}>
       <ScrollView
-        accessibilityLabel="PREMIND 활용 팁"
+        accessibilityLabel={t('PREMIND 활용 팁')}
         contentContainerStyle={{ gap: CARD_GAP, paddingHorizontal: gutter }}
         decelerationRate="fast"
         horizontal
@@ -113,12 +115,13 @@ export function PromoCarousel({ slides, gutter, style }: PromoCarouselProps) {
 }
 
 function PromoCard({ slide, width }: { slide: PromoSlide; width: number }) {
+  const t = useT();
   const tone = toneStyles[slide.tone ?? 'brand'];
   const Icon = slide.icon;
 
   return (
     <Pressable
-      accessibilityHint={slide.onPress ? '두 번 탭하면 열려요.' : undefined}
+      accessibilityHint={slide.onPress ? t('두 번 탭하면 열려요.') : undefined}
       accessibilityLabel={[slide.badge, slide.title, slide.description]
         .filter(Boolean)
         .join('. ')}
@@ -152,7 +155,7 @@ function PromoCard({ slide, width }: { slide: PromoSlide; width: number }) {
       </View>
       {slide.onPress ? (
         <View style={styles.cta}>
-          <AppText variant="label">{slide.ctaLabel ?? '바로가기'}</AppText>
+          <AppText variant="label">{slide.ctaLabel ?? t('바로가기')}</AppText>
           <ArrowUpRight color={colors.text} size={14} strokeWidth={2.2} />
         </View>
       ) : null}

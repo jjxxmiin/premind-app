@@ -9,6 +9,7 @@ import {
   type SegmentOption,
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
 import {
@@ -47,6 +48,7 @@ export function FilterSheet({
   statusOptions,
   savedCount,
 }: FilterSheetProps) {
+  const t = useT();
   const activeCount = activeFilterCount(filters);
   const update = (patch: Partial<LibraryFilters>) =>
     onChange({ ...filters, ...patch });
@@ -58,24 +60,24 @@ export function FilterSheet({
         // button at the foot of the sheet reads as a control that is broken.
         activeCount > 0 ? (
           <Button
-            accessibilityHint="정렬과 필터를 처음 상태로 되돌려요"
+            accessibilityHint={t('정렬과 필터를 처음 상태로 되돌려요')}
             fullWidth
             onPress={() => onChange({ ...DEFAULT_FILTERS, view: filters.view })}
             variant="ghost"
           >
-            초기화
+            {t('초기화')}
           </Button>
         ) : undefined
       }
       onClose={onClose}
       scrollable={false}
-      title="정렬과 필터"
+      title={t('정렬과 필터')}
       visible={visible}
     >
       <View style={styles.sections}>
         <View style={styles.section}>
           <AppText tone="soft" variant="meta">
-            정렬
+            {t('정렬')}
           </AppText>
           <View accessibilityRole="radiogroup" style={styles.radioGroup}>
             {SORT_OPTIONS.map((option, index) => {
@@ -97,7 +99,7 @@ export function FilterSheet({
                     style={styles.rowLabel}
                     variant={checked ? 'bodyStrong' : 'body'}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </AppText>
                   {checked ? (
                     <Check
@@ -115,9 +117,9 @@ export function FilterSheet({
 
         <View style={styles.section}>
           <AppText tone="soft" variant="meta">
-            상태
+            {t('상태')}
           </AppText>
-          <View accessibilityLabel="자료 상태 필터">
+          <View accessibilityLabel={t('자료 상태 필터')}>
             <SegmentedControl
               onChange={(status) => update({ status })}
               options={statusOptions}
@@ -127,7 +129,7 @@ export function FilterSheet({
         </View>
 
         <Pressable
-          accessibilityLabel={`저장한 자료만 보기, ${savedCount}개`}
+          accessibilityLabel={t('저장한 자료만 보기, {n}개', { n: savedCount })}
           accessibilityRole="switch"
           accessibilityState={{ checked: filters.savedOnly }}
           aria-checked={filters.savedOnly}
@@ -135,9 +137,9 @@ export function FilterSheet({
           style={({ pressed }) => [styles.switchRow, pressed ? styles.pressed : null]}
         >
           <View style={styles.switchCopy}>
-            <AppText variant="body">저장한 자료만</AppText>
+            <AppText variant="body">{t('저장한 자료만')}</AppText>
             <AppText tone="muted" variant="meta">
-              저장한 자료 {savedCount}개
+              {t('저장한 자료 {n}개', { n: savedCount })}
             </AppText>
           </View>
           <View
@@ -152,11 +154,11 @@ export function FilterSheet({
 
         <View style={styles.section}>
           <AppText tone="soft" variant="meta">
-            보기
+            {t('보기')}
           </AppText>
           <SegmentedControl
             onChange={(view) => update({ view })}
-            options={VIEW_OPTIONS}
+            options={VIEW_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
             value={filters.view}
           />
         </View>

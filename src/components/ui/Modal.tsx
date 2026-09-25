@@ -21,6 +21,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, radii, shadows, sizes, spacing } from '@/theme/tokens';
 
 import { AppText } from './AppText';
@@ -56,12 +57,14 @@ export function BottomSheetModal({
   footer,
   dismissOnBackdropPress = true,
   scrollable = true,
-  closeLabel = '닫기',
+  closeLabel: closeLabelProp,
   maxHeightRatio = 0.88,
   contentStyle,
   children,
   testID,
 }: PropsWithChildren<BottomSheetModalProps>) {
+  const t = useT();
+  const closeLabel = closeLabelProp ?? t('닫기');
   const sheetRef = useRef<View>(null);
   const insets = useSafeAreaInsets();
   const { height, width } = useWindowDimensions();
@@ -144,7 +147,7 @@ export function BottomSheetModal({
 
   return (
     <NativeModal
-      accessibilityLabel={Platform.OS === 'web' ? title ?? '대화상자' : undefined}
+      accessibilityLabel={Platform.OS === 'web' ? title ?? t('대화상자') : undefined}
       animationType="fade"
       onDismiss={onDismiss}
       onRequestClose={onClose}
@@ -173,7 +176,7 @@ export function BottomSheetModal({
           ]}
         >
           <View
-            accessibilityLabel={title ?? '대화상자'}
+            accessibilityLabel={title ?? t('대화상자')}
             accessibilityViewIsModal
             ref={sheetRef}
             role={Platform.OS === 'web' ? undefined : 'dialog'}

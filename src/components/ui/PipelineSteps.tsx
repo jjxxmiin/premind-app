@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { decorative } from '@/lib/a11y';
+import { useT, type T } from '@/lib/i18n';
 import { colors, iconSizes, motion, radii, spacing } from '@/theme/tokens';
 
 import { AppText } from './AppText';
@@ -50,21 +51,28 @@ const PULSE_DURATION = 1600;
  */
 export function PipelineSteps({
   active = true,
-  label = '진행 단계',
+  label: labelProp,
   progress,
   stageIndex,
   steps,
   style,
 }: PipelineStepsProps) {
+  const t = useT();
+  const label = labelProp ?? t('진행 단계');
   const count = steps.length;
   const ratio = stageRatio(progress, stageIndex, count);
   const spoken = steps
-    .map((step, index) => `${step} ${stateWord(index, stageIndex)}`)
+    .map((step, index) => `${t(step)} ${stateWord(index, stageIndex, t)}`)
     .join(', ');
 
   return (
     <View
-      accessibilityLabel={`${label}. ${count}단계 중 ${Math.min(stageIndex + 1, count)}단계. ${spoken}`}
+      accessibilityLabel={t('{label}. {count}단계 중 {n}단계. {spoken}', {
+        label,
+        count,
+        n: Math.min(stageIndex + 1, count),
+        spoken,
+      })}
       accessible
       style={[styles.wrap, style]}
     >
@@ -97,7 +105,7 @@ export function PipelineSteps({
             tone={index > stageIndex ? 'faint' : 'default'}
             variant={index === stageIndex ? 'bodyStrong' : 'meta'}
           >
-            {step}
+            {t(step)}
           </AppText>
         ))}
       </View>
@@ -107,10 +115,10 @@ export function PipelineSteps({
 
 type StepState = 'complete' | 'current' | 'upcoming';
 
-function stateWord(index: number, stageIndex: number): string {
-  if (index < stageIndex) return '완료';
-  if (index === stageIndex) return '진행 중';
-  return '대기';
+function stateWord(index: number, stageIndex: number, t: T): string {
+  if (index < stageIndex) return t('완료');
+  if (index === stageIndex) return t('진행 중');
+  return t('대기');
 }
 
 function StepNode({ active, state }: { active: boolean; state: StepState }) {

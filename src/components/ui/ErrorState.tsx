@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
 import { AppText } from './AppText';
@@ -29,11 +30,11 @@ export interface ErrorStateProps {
 }
 
 export function ErrorState({
-  title = '문제가 생겼어요',
+  title: titleProp,
   description,
   icon: Icon = CircleAlert,
   artwork,
-  retryLabel = '다시 시도',
+  retryLabel: retryLabelProp,
   onRetry,
   retryVariant = 'primary',
   retryDisabled = false,
@@ -42,6 +43,9 @@ export function ErrorState({
   style,
   testID,
 }: ErrorStateProps) {
+  const t = useT();
+  const title = titleProp ?? t('문제가 생겼어요');
+  const retryLabel = retryLabelProp ?? t('다시 시도');
   return (
     <View
       accessibilityLiveRegion="polite"

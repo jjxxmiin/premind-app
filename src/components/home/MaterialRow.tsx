@@ -7,6 +7,7 @@ import { MediaArtwork } from '@/components/MediaArtwork';
 import { AppText, IconButton, ProgressBar, StatusBadge } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatMaterialLength, formatRelativeDate } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
 
@@ -40,7 +41,8 @@ export const MaterialRow = memo(function MaterialRow({
   gutter = spacing.gutter,
   divider = true,
 }: MaterialRowProps) {
-  const status = libraryStatusPresentation(material, isRunning);
+  const t = useT();
+  const status = libraryStatusPresentation(material, isRunning, t);
   const thumbnail = youtubeThumbnail(material);
   // The 40pt icon well sits centred in its 44pt touch column; pulling the
   // column in by the 2pt difference puts the well's edge on the gutter line.
@@ -50,7 +52,7 @@ export const MaterialRow = memo(function MaterialRow({
     <View style={[styles.row, divider ? styles.divider : null]}>
       <View style={styles.head}>
         <Pressable
-          accessibilityHint="자료를 열어요"
+          accessibilityHint={t('자료를 열어요')}
           accessibilityLabel={`${material.title}, ${status.label}. ${status.detail}`}
           accessibilityRole="button"
           onPress={() => onPress(material)}
@@ -97,7 +99,7 @@ export const MaterialRow = memo(function MaterialRow({
                   <StatusBadge label={status.label} tone={status.tone} />
                 ) : null}
                 {isEvaluating ? (
-                  <StatusBadge label="평가 중" showDot tone="brand" />
+                  <StatusBadge label={t('평가 중')} showDot tone="brand" />
                 ) : null}
               </View>
             ) : null}
@@ -107,7 +109,7 @@ export const MaterialRow = memo(function MaterialRow({
           <View style={[styles.menuColumn, { marginRight: menuGutter }]}>
             <IconButton
               icon={MoreHorizontal}
-              label={`${material.title} 메뉴`}
+              label={t('{title} 메뉴', { title: material.title })}
               onPress={() => onMorePress(material)}
             />
           </View>

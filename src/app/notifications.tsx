@@ -22,12 +22,13 @@ import {
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatRelativeDate } from '@/lib/format';
+import { useT, type T } from '@/lib/i18n';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
 
-function presentation(material: StudyMaterial): {
+function presentation(material: StudyMaterial, t: T): {
   icon: LucideIcon;
   label: string;
   tone: 'positive' | 'negative' | 'brand';
@@ -37,31 +38,32 @@ function presentation(material: StudyMaterial): {
   if (material.status === 'ready') {
     return {
       icon: BadgeCheck,
-      label: '준비 완료',
+      label: t('준비 완료'),
       tone: 'positive',
-      title: '마인드팩이 준비됐어요',
-      description: '대본, 요약, 마인드맵, 문제를 바로 볼 수 있어요.',
+      title: t('마인드팩이 준비됐어요'),
+      description: t('대본, 요약, 마인드맵, 문제를 바로 볼 수 있어요.'),
     };
   }
   if (material.status === 'failed') {
     return {
       icon: TriangleAlert,
-      label: '확인 필요',
+      label: t('확인 필요'),
       tone: 'negative',
-      title: '마인드팩을 만들지 못했어요',
-      description: material.lastError ?? '원본은 그대로 있어요. 눌러서 다시 시도해 주세요.',
+      title: t('마인드팩을 만들지 못했어요'),
+      description: t(material.lastError ?? '원본은 그대로 있어요. 눌러서 다시 시도해 주세요.'),
     };
   }
   return {
     icon: Headphones,
-    label: '진행 중',
+    label: t('진행 중'),
     tone: 'brand',
-    title: '마인드팩을 만들고 있어요',
-    description: material.progressLabel,
+    title: t('마인드팩을 만들고 있어요'),
+    description: t(material.progressLabel),
   };
 }
 
 export default function NotificationsScreen() {
+  const t = useT();
   const { materials, settings } = useAppStore();
   const notifications = [...materials]
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
@@ -87,11 +89,11 @@ export default function NotificationsScreen() {
         right={
           <IconButton
             icon={SlidersHorizontal}
-            label="설정"
+            label={t('설정')}
             onPress={() => router.push('/(tabs)/profile')}
           />
         }
-        title="알림"
+        title={t('알림')}
       />
 
       <View style={styles.content}>
@@ -102,9 +104,9 @@ export default function NotificationsScreen() {
                 <BellOff color={colors.text} size={iconSizes.section} strokeWidth={1.9} />
               </View>
               <View style={styles.flex}>
-                <AppText variant="itemTitle">알림이 꺼져 있어요</AppText>
+                <AppText variant="itemTitle">{t('알림이 꺼져 있어요')}</AppText>
                 <AppText tone="muted" variant="meta">
-                  켜면 마인드팩이 준비될 때 알려드려요.
+                  {t('켜면 마인드팩이 준비될 때 알려드려요.')}
                 </AppText>
               </View>
               <Button
@@ -112,7 +114,7 @@ export default function NotificationsScreen() {
                 size="small"
                 variant="primary"
               >
-                켜기
+                {t('켜기')}
               </Button>
             </View>
           </Card>
@@ -120,18 +122,18 @@ export default function NotificationsScreen() {
 
         {notifications.length === 0 ? (
           <EmptyState
-            description="마인드팩을 만들면 진행 소식이 여기에 모여요"
+            description={t('마인드팩을 만들면 진행 소식이 여기에 모여요')}
             icon={BellOff}
-            title="아직 알림이 없어요"
+            title={t('아직 알림이 없어요')}
           />
         ) : (
           <View style={styles.list}>
             <AppText style={styles.listCaption} tone="muted" variant="meta">
-              최근 소식
+              {t('최근 소식')}
             </AppText>
             <Card padding={false}>
               {notifications.map((material, index) => {
-                const item = presentation(material);
+                const item = presentation(material, t);
                 const Icon = item.icon;
                 const last = index === notifications.length - 1;
                 return (
