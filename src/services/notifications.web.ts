@@ -1,3 +1,5 @@
+import { tr } from '@/lib/i18n';
+
 const responseListeners = new Set<(materialId: string) => void>();
 
 /** Whether the browser prompt was put in front of the learner, and the answer. */
@@ -48,8 +50,8 @@ export async function notifyStudyPackReady(input: {
     return false;
   }
 
-  const notification = new window.Notification('마인드팩이 준비됐어요', {
-    body: `${input.title}의 대본, 요약, 문제를 열어 보세요.`,
+  const notification = new window.Notification(tr('마인드팩이 준비됐어요'), {
+    body: tr('{title}의 대본, 요약, 문제를 열어 보세요.', { title: input.title }),
     icon: '/favicon.ico',
     tag: `premind-study-ready-${input.materialId}`,
   });

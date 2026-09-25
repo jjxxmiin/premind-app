@@ -1,6 +1,8 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
+import { tr } from '@/lib/i18n';
+
 type NotificationsModule = typeof import('expo-notifications');
 
 /**
@@ -83,8 +85,8 @@ export function configureStudyNotifications(): Promise<void> {
       await Notifications.setNotificationChannelAsync(
         STUDY_READY_CHANNEL_ID,
         {
-          name: '마인드팩 준비 알림',
-          description: '대본, 요약, 문제가 준비되면 알려 줘요.',
+          name: tr('마인드팩 준비 알림'),
+          description: tr('대본, 요약, 문제가 준비되면 알려 줘요.'),
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 180, 120, 180],
         },
@@ -165,8 +167,8 @@ export async function notifyStudyPackReady(input: {
   }
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: '마인드팩이 준비됐어요',
-      body: `${input.title}의 대본, 요약, 문제를 열어 보세요.`,
+      title: tr('마인드팩이 준비됐어요'),
+      body: tr('{title}의 대본, 요약, 문제를 열어 보세요.', { title: input.title }),
       sound: 'default',
       data: {
         materialId: input.materialId,

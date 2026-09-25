@@ -72,6 +72,7 @@ import {
 } from '@/features/recording/use-premind-recorder';
 import { decorative } from '@/lib/a11y';
 import { createId, formatDuration } from '@/lib/format';
+import { enShortDate, getLocale, useT } from '@/lib/i18n';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, motion, radii, sizes, spacing } from '@/theme/tokens';
@@ -188,6 +189,9 @@ function firstParam(value: string | string[] | undefined): string | undefined {
 }
 
 function defaultRecordingTitle(): string {
+  if (getLocale() === 'en') {
+    return `Lecture recording, ${enShortDate(new Date())}`;
+  }
   const date = new Intl.DateTimeFormat('ko-KR', {
     month: 'long',
     day: 'numeric',
@@ -293,6 +297,7 @@ function recordingPresentation(input: {
 }
 
 export default function RecordScreen() {
+  const t = useT();
   const navigation = useNavigation();
   const params = useLocalSearchParams<{
     projectId?: string | string[];
@@ -686,14 +691,16 @@ export default function RecordScreen() {
     try {
       const marker = addRecorderMarker('중요 표시');
       setMarkerNotice(
-        `${formatDuration(marker.timestampMillis / 1_000)}에 중요 표시했어요.`,
+        t('{time}에 중요 표시했어요.', {
+          time: formatDuration(marker.timestampMillis / 1_000),
+        }),
       );
       void snapshotHandleRef.current?.flush().catch(() => undefined);
       void Haptics.selectionAsync().catch(() => undefined);
     } catch (error) {
       setScreenError(errorMessage(error));
     }
-  }, [addRecorderMarker]);
+  }, [addRecorderMarker, t]);
 
   const togglePause = useCallback(async () => {
     try {
@@ -865,8 +872,8 @@ export default function RecordScreen() {
       if (
         Platform.OS === 'web' &&
         confirmInBrowser(
-          '복구 목록에서 지울까요?',
-          '녹음 파일은 남기고 기록만 지워요.',
+          t('복구 목록에서 지울까요?'),
+          t('녹음 파일은 남기고 기록만 지워요.'),
         )
       ) {
         removeMetadata();
@@ -874,19 +881,19 @@ export default function RecordScreen() {
       }
       if (Platform.OS === 'web') return;
       Alert.alert(
-        '복구 목록에서 지울까요?',
-        '녹음 파일은 남기고 기록만 지워요.',
+        t('복구 목록에서 지울까요?'),
+        t('녹음 파일은 남기고 기록만 지워요.'),
         [
-          { text: '취소', style: 'cancel' },
+          { text: t('취소'), style: 'cancel' },
           {
-            text: '기록 지우기',
+            text: t('기록 지우기'),
             style: 'destructive',
             onPress: removeMetadata,
           },
         ],
       );
     },
-    [],
+    [t],
   );
 
   const finishRecording = useCallback(async () => {
@@ -1036,7 +1043,9 @@ export default function RecordScreen() {
       await snapshotHandleRef.current?.flush().catch(() => undefined);
       if (mountedRef.current) {
         setScreenError(
-          `${errorMessage(error)} 이 화면을 닫기 전에 원본 보관을 다시 시도해 주세요.`,
+          t('{error} 이 화면을 닫기 전에 원본 보관을 다시 시도해 주세요.', {
+            error: t(errorMessage(error)),
+          }),
         );
       }
     } finally {
@@ -1045,7 +1054,7 @@ export default function RecordScreen() {
         setIsFinalizing(false);
       }
     }
-  }, [stopRecorder]);
+  }, [stopRecorder, t]);
 
   const requestBack = useCallback(() => {
     if (isStarting || recorderPhase === 'preparing') {
@@ -1054,9 +1063,9 @@ export default function RecordScreen() {
         return;
       }
       Alert.alert(
-        '마이크를 준비하고 있어요',
-        '권한과 저장공간 확인이 끝나면 안전하게 종료할 수 있어요.',
-        [{ text: '확인' }],
+        t('마이크를 준비하고 있어요'),
+        t('권한과 저장공간 확인이 끝나면 안전하게 종료할 수 있어요.'),
+        [{ text: t('확인') }],
       );
       return;
     }
@@ -1066,9 +1075,9 @@ export default function RecordScreen() {
         return;
       }
       Alert.alert(
-        '녹음을 보관하고 있어요',
-        '기기 저장이 끝날 때까지 잠시만 기다려 주세요.',
-        [{ text: '확인' }],
+        t('녹음을 보관하고 있어요'),
+        t('기기 저장이 끝날 때까지 잠시만 기다려 주세요.'),
+        [{ text: t('확인') }],
       );
       return;
     }
@@ -1076,8 +1085,8 @@ export default function RecordScreen() {
       if (Platform.OS === 'web') {
         if (
           confirmInBrowser(
-            '녹음을 보관하고 나갈까요?',
-            '지금까지 녹음한 원본을 브라우저에 저장해요.',
+            t('녹음을 보관하고 나갈까요?'),
+            t('지금까지 녹음한 원본을 브라우저에 저장해요.'),
           )
         ) {
           void preserveAndLeave();
@@ -1085,12 +1094,12 @@ export default function RecordScreen() {
         return;
       }
       Alert.alert(
-        '녹음을 보관하고 나갈까요?',
-        '지금까지 녹음한 내용은 기기에 남고, 나중에 다시 찾을 수 있어요.',
+        t('녹음을 보관하고 나갈까요?'),
+        t('지금까지 녹음한 내용은 기기에 남고, 나중에 다시 찾을 수 있어요.'),
         [
-          { text: '계속 녹음', style: 'cancel' },
+          { text: t('계속 녹음'), style: 'cancel' },
           {
-            text: '보관 후 나가기',
+            text: t('보관 후 나가기'),
             style: 'destructive',
             onPress: () => void preserveAndLeave(),
           },
@@ -1114,6 +1123,7 @@ export default function RecordScreen() {
     preserveAndLeave,
     recoverable?.needsPreservation,
     recorderPhase,
+    t,
   ]);
 
   const openMicrophoneSettings = () => {
@@ -1167,7 +1177,7 @@ export default function RecordScreen() {
         padded={false}
         safeAreaEdges={['top', 'left', 'right', 'bottom']}
       >
-        <AppHeader onBack={requestBack} title="녹음" />
+        <AppHeader onBack={requestBack} title={t.ctx('record', '녹음')} />
         <ScrollView
           contentContainerStyle={styles.setupContent}
           keyboardShouldPersistTaps="handled"
@@ -1179,20 +1189,21 @@ export default function RecordScreen() {
               <SectionHeader
                 description={
                   recoverableSourceCount > 0
-                    ? '원본을 고르면 이어서 마인드팩을 만들어요.'
+                    ? t('원본을 고르면 이어서 마인드팩을 만들어요.')
                     : undefined
                 }
                 title={
                   recoverableSourceCount > 0
-                    ? `이어갈 녹음 ${recoverableSourceCount}개`
-                    : '녹음 기록'
+                    ? t('이어갈 녹음 {n}개', { n: recoverableSourceCount })
+                    : t('녹음 기록')
                 }
               />
 
               {metadataOnlyCount > 0 ? (
                 <AppText tone="negative" variant="meta">
-                  원본이 없는 기록이 {metadataOnlyCount}개 있어요. 아래에서 지울 수
-                  있어요.
+                  {t('원본이 없는 기록이 {n}개 있어요. 아래에서 지울 수 있어요.', {
+                    n: metadataOnlyCount,
+                  })}
                 </AppText>
               ) : null}
 
@@ -1218,12 +1229,12 @@ export default function RecordScreen() {
                           </AppText>
                           {!hasRecoverableRecordingSource(snapshot) ? (
                             <AppText tone="negative" variant="meta">
-                              원본을 찾을 수 없어요. 기록만 지울 수 있어요.
+                              {t('원본을 찾을 수 없어요. 기록만 지울 수 있어요.')}
                             </AppText>
                           ) : null}
                         </View>
                         <StatusBadge
-                          label={recoveryStatusLabel(snapshot.status)}
+                          label={t(recoveryStatusLabel(snapshot.status))}
                           tone={recoveryStatusTone(snapshot.status)}
                         />
                       </View>
@@ -1238,7 +1249,7 @@ export default function RecordScreen() {
                           size="small"
                           variant="primary"
                         >
-                          마인드팩 만들기
+                          {t('마인드팩 만들기')}
                         </Button>
                         <Button
                           disabled={recoveryBusyId !== null}
@@ -1246,7 +1257,7 @@ export default function RecordScreen() {
                           size="small"
                           variant="ghost"
                         >
-                          기록 지우기
+                          {t('기록 지우기')}
                         </Button>
                       </View>
                     </View>
@@ -1257,14 +1268,14 @@ export default function RecordScreen() {
               {recoveryLoadError ? (
                 <View style={styles.errorBox}>
                   <AppText style={styles.errorCopy} tone="negative" variant="meta">
-                    {recoveryLoadError}
+                    {t(recoveryLoadError)}
                   </AppText>
                   <Button
                     onPress={() => void loadRecoverableSessions()}
                     size="small"
                     variant="ghost"
                   >
-                    다시 불러오기
+                    {t('다시 불러오기')}
                   </Button>
                 </View>
               ) : null}
@@ -1274,8 +1285,8 @@ export default function RecordScreen() {
           <View style={styles.readyGroup}>
             <AnimatedReveal style={styles.readyBlock}>
               <Pressable
-                accessibilityHint="녹음을 시작해요"
-                accessibilityLabel="녹음 시작"
+                accessibilityHint={t('녹음을 시작해요')}
+                accessibilityLabel={t('녹음 시작')}
                 accessibilityRole="button"
                 accessibilityState={{ busy: isStarting, disabled: isStarting }}
                 disabled={isStarting}
@@ -1299,10 +1310,10 @@ export default function RecordScreen() {
               </Pressable>
               <View style={styles.readyCopy}>
                 <AppText align="center" variant="heading">
-                  탭하면 바로 시작돼요
+                  {t('탭하면 바로 시작돼요')}
                 </AppText>
                 <AppText align="center" tone="muted" variant="meta">
-                  원본은 기기에 먼저 저장돼요
+                  {t('원본은 기기에 먼저 저장돼요')}
                 </AppText>
               </View>
             </AnimatedReveal>
@@ -1327,9 +1338,9 @@ export default function RecordScreen() {
                 <MicOff {...decorative} color={colors.negativeStrong} size={iconSizes.section} />
               </View>
               <View style={styles.flex}>
-                <AppText variant="itemTitle">마이크 권한이 필요해요</AppText>
+                <AppText variant="itemTitle">{t('마이크 권한이 필요해요')}</AppText>
                 <AppText tone="muted" variant="meta">
-                  설정에서 마이크를 허용한 뒤 다시 시작해 주세요.
+                  {t('설정에서 마이크를 허용한 뒤 다시 시작해 주세요.')}
                 </AppText>
                 <Button
                   leftIcon={<Settings color={colors.text} size={iconSizes.inline} />}
@@ -1338,7 +1349,7 @@ export default function RecordScreen() {
                   style={styles.inlineAction}
                   variant="outline"
                 >
-                  {Platform.OS === 'web' ? '권한 안내' : '설정 열기'}
+                  {Platform.OS === 'web' ? t('권한 안내') : t('설정 열기')}
                 </Button>
               </View>
             </Card>
@@ -1348,10 +1359,10 @@ export default function RecordScreen() {
             <View style={styles.errorBox}>
               <View style={styles.errorCopy}>
                 <AppText tone="negative" variant="bodyStrong">
-                  녹음을 시작하지 못했어요
+                  {t('녹음을 시작하지 못했어요')}
                 </AppText>
                 <AppText tone="muted" variant="meta">
-                  {screenError}
+                  {t(screenError)}
                 </AppText>
               </View>
             </View>
@@ -1361,8 +1372,8 @@ export default function RecordScreen() {
             <Lock {...decorative} color={colors.textFaint} size={iconSizes.inline} strokeWidth={1.9} />
             <AppText style={styles.flex} tone="muted" variant="meta">
               {Platform.OS === 'web'
-                ? '녹음 중에도 원본을 브라우저에 저장해 두어 새로고침해도 이어갈 수 있어요.'
-                : '화면이 잠겨도 녹음은 계속돼요. 원본은 기기에 남아요.'}
+                ? t('녹음 중에도 원본을 브라우저에 저장해 두어 새로고침해도 이어갈 수 있어요.')
+                : t('화면이 잠겨도 녹음은 계속돼요. 원본은 기기에 남아요.')}
             </AppText>
           </View>
         </ScrollView>
@@ -1381,8 +1392,8 @@ export default function RecordScreen() {
   });
   const visibleSafety =
     screenError && activeControls
-      ? '원본은 그대로 있어요. 아래 안내를 확인해 주세요.'
-      : recordingState.safety;
+      ? t('원본은 그대로 있어요. 아래 안내를 확인해 주세요.')
+      : t(recordingState.safety);
   const recordingStatusTone: StatusTone = isSaving
     ? 'neutral'
     : isRecording
@@ -1408,7 +1419,7 @@ export default function RecordScreen() {
         <AppHeader
           inverse
           onBack={requestBack}
-          title={title.trim() || '강의 녹음'}
+          title={title.trim() || t('강의 녹음')}
         />
 
         <ScrollView
@@ -1420,7 +1431,7 @@ export default function RecordScreen() {
             <View accessibilityLiveRegion="polite" style={styles.statusLine}>
               <BreathingView active={isRecording}>
                 <StatusBadge
-                  label={recordingState.label}
+                  label={t.ctx('state', recordingState.label)}
                   showDot
                   tone={recordingStatusTone}
                 />
@@ -1429,7 +1440,9 @@ export default function RecordScreen() {
 
             <View style={styles.timerBlock}>
               <AppText
-                accessibilityLabel={`녹음 시간 ${formatDuration(displayDurationMillis / 1_000)}`}
+                accessibilityLabel={t('녹음 시간 {time}', {
+                  time: formatDuration(displayDurationMillis / 1_000),
+                })}
                 align="center"
                 tabular
                 tone="inverse"
@@ -1449,8 +1462,8 @@ export default function RecordScreen() {
                 accessible
                 accessibilityLabel={
                   isRecording
-                    ? '마이크 입력 신호를 표시하고 있어요'
-                    : '마이크 입력을 기록하지 않고 있어요'
+                    ? t('마이크 입력 신호를 표시하고 있어요')
+                    : t('마이크 입력을 기록하지 않고 있어요')
                 }
                 style={styles.waveform}
               >
@@ -1467,7 +1480,7 @@ export default function RecordScreen() {
             </BreathingView>
 
             <AppText align="center" style={styles.stageMuted} variant="meta">
-              {recordingState.description}
+              {t(recordingState.description)}
             </AppText>
 
             <MarkerTimeline
@@ -1489,7 +1502,10 @@ export default function RecordScreen() {
             <Card style={styles.stageStateCard} variant="stage">
               <View
                 accessible
-                accessibilityLabel={`현재 상태 ${recordingState.label}. ${visibleSafety}`}
+                accessibilityLabel={t('현재 상태 {state}. {safety}', {
+                  safety: visibleSafety,
+                  state: t.ctx('state', recordingState.label),
+                })}
                 style={styles.stageStateContent}
               >
                 <View style={styles.stageStateIcon}>
@@ -1497,7 +1513,7 @@ export default function RecordScreen() {
                 </View>
                 <View style={styles.flex}>
                   <AppText style={styles.stageMuted} variant="badge">
-                    원본 상태
+                    {t('원본 상태')}
                   </AppText>
                   <AppText tone="inverse" variant="meta">
                     {visibleSafety}
@@ -1512,11 +1528,11 @@ export default function RecordScreen() {
               <Card style={styles.stageErrorCard} variant="stage">
                 <AppText style={styles.stageNegativeText} variant="bodyStrong">
                   {activeControls
-                    ? '녹음은 계속되고 있어요'
-                    : '원본 상태를 확인해 주세요'}
+                    ? t('녹음은 계속되고 있어요')
+                    : t('원본 상태를 확인해 주세요')}
                 </AppText>
                 <AppText style={styles.stageMuted} variant="meta">
-                  {screenError}
+                  {t(screenError)}
                 </AppText>
               </Card>
             </AnimatedReveal>
@@ -1527,37 +1543,37 @@ export default function RecordScreen() {
           <AnimatedReveal delay={80} style={styles.controlReveal}>
             {isSaving ? (
               <Button
-                accessibilityLabel="원본 저장 중"
+                accessibilityLabel={t('원본 저장 중')}
                 disabled
                 fullWidth
                 leftIcon={<HardDrive color={colors.text} size={iconSizes.section} />}
                 size="large"
                 variant="secondary"
               >
-                원본 저장 중
+                {t('원본 저장 중')}
               </Button>
             ) : activeControls ? (
               <View style={styles.recordingActions}>
                 <RecordingAction
                   accent={isPaused}
-                  hint={isPaused ? '녹음을 다시 이어가요' : '녹음을 잠시 멈춰요'}
+                  hint={isPaused ? t('녹음을 다시 이어가요') : t('녹음을 잠시 멈춰요')}
                   icon={isPaused ? Play : Pause}
-                  label={isPaused ? '계속하기' : '일시정지'}
+                  label={isPaused ? t.ctx('record', '계속하기') : t.ctx('record', '일시정지')}
                   onPress={() => void togglePause()}
                   prominent={isPaused}
                 />
                 <RecordingAction
                   accent={!isPaused}
-                  hint="지금 시점을 표시해요"
+                  hint={t('지금 시점을 표시해요')}
                   icon={Star}
-                  label="중요 표시"
+                  label={t('중요 표시')}
                   onPress={addMarker}
                   prominent={!isPaused}
                 />
                 <RecordingAction
-                  hint="녹음을 끝내고 원본을 저장해요"
+                  hint={t('녹음을 끝내고 원본을 저장해요')}
                   icon={CircleStop}
-                  label="종료"
+                  label={t.ctx('record', '종료')}
                   onPress={() => setStopConfirmationVisible(true)}
                 />
               </View>
@@ -1570,7 +1586,7 @@ export default function RecordScreen() {
                   size="large"
                   variant="brand"
                 >
-                  {recoverable?.needsPreservation ? '다시 저장' : '마인드팩 만들기'}
+                  {recoverable?.needsPreservation ? t('다시 저장') : t('마인드팩 만들기')}
                 </Button>
                 {!recoverable?.needsPreservation ? (
                   <Button
@@ -1579,7 +1595,7 @@ export default function RecordScreen() {
                     size="large"
                     variant="secondary"
                   >
-                    나중에 하기
+                    {t('나중에 하기')}
                   </Button>
                 ) : null}
               </View>
@@ -1590,7 +1606,7 @@ export default function RecordScreen() {
                 size="large"
                 variant="secondary"
               >
-                나가기
+                {t.ctx('record', '나가기')}
               </Button>
             )}
           </AnimatedReveal>
@@ -1602,10 +1618,10 @@ export default function RecordScreen() {
                 ? visibleSafety
                 : isRecording
                   ? Platform.OS === 'web'
-                    ? '이 탭을 열어 두세요. 종료하면 원본을 브라우저에 저장해요.'
-                    : '화면을 잠가도 녹음은 계속돼요. 전화가 오면 원본을 자동으로 저장해요.'
+                    ? t('이 탭을 열어 두세요. 종료하면 원본을 브라우저에 저장해요.')
+                    : t('화면을 잠가도 녹음은 계속돼요. 전화가 오면 원본을 자동으로 저장해요.')
                   : isPaused
-                    ? '멈춘 동안은 녹음하지 않아요. 지금까지의 원본과 중요 표시는 그대로 있어요.'
+                    ? t('멈춘 동안은 녹음하지 않아요. 지금까지의 원본과 중요 표시는 그대로 있어요.')
                     : visibleSafety}
             </AppText>
           </View>
@@ -1615,33 +1631,35 @@ export default function RecordScreen() {
       <Dialog
         cancel={{
           disabled: isFinalizing,
-          label: '계속 녹음',
+          label: t('계속 녹음'),
           onPress: () => setStopConfirmationVisible(false),
         }}
         confirm={{
-          label: '녹음 종료',
+          label: t('녹음 종료'),
           loading: isFinalizing,
           onPress: () => void finishRecording(),
         }}
         description={
           Platform.OS === 'web'
-            ? '원본을 브라우저에 저장한 뒤 마인드팩을 만들어요.'
-            : '원본을 기기에 저장한 뒤 마인드팩을 만들어요.'
+            ? t('원본을 브라우저에 저장한 뒤 마인드팩을 만들어요.')
+            : t('원본을 기기에 저장한 뒤 마인드팩을 만들어요.')
         }
         onRequestClose={() => {
           if (!isFinalizing) setStopConfirmationVisible(false);
         }}
-        title="녹음을 종료할까요?"
+        title={t('녹음을 종료할까요?')}
         visible={stopConfirmationVisible}
       >
         <View style={styles.stopSummary}>
           <ShieldCheck {...decorative} color={colors.positiveStrong} size={iconSizes.section} />
           <View style={styles.flex}>
             <AppText variant="itemTitle">
-              {formatDuration(displayDurationMillis / 1_000)} 녹음됨
+              {t('{time} 녹음됨', {
+                time: formatDuration(displayDurationMillis / 1_000),
+              })}
             </AppText>
             <AppText tone="muted" variant="meta">
-              중요 표시 {displayMarkers.length}개도 함께 저장돼요.
+              {t('중요 표시 {n}개도 함께 저장돼요.', { n: displayMarkers.length })}
             </AppText>
           </View>
         </View>
@@ -1683,12 +1701,13 @@ function SetupOptions({
   selectedProject: Project | undefined;
   titleFocused: boolean;
 }) {
+  const t = useT();
   const [titleDialogVisible, setTitleDialogVisible] = useState(false);
   const [draftTitle, setDraftTitle] = useState(recordingTitle);
   const [subjectSheetVisible, setSubjectSheetVisible] = useState(false);
   const canSaveTitle = draftTitle.trim().length > 0;
-  const visibleTitle = recordingTitle.trim() || '제목 없음';
-  const visibleSubject = selectedProject?.title ?? '폴더 없음';
+  const visibleTitle = recordingTitle.trim() || t('제목 없음');
+  const visibleSubject = selectedProject?.title ?? t('폴더 없음');
 
   const openTitleDialog = () => {
     setDraftTitle(recordingTitle);
@@ -1708,50 +1727,50 @@ function SetupOptions({
     <>
       <Card padding={false}>
         <ListRow
-          accessibilityHint="녹음 제목을 바꿔요"
-          accessibilityLabel={`제목, ${visibleTitle}`}
+          accessibilityHint={t('녹음 제목을 바꿔요')}
+          accessibilityLabel={t('제목, {title}', { title: visibleTitle })}
           compact
           disabled={disabled}
           onPress={openTitleDialog}
           testID="record-title-row"
-          title="제목"
+          title={t('제목')}
           trailing={<OptionValue value={visibleTitle} />}
         />
         <ListRow
-          accessibilityHint="폴더를 골라요"
-          accessibilityLabel={`폴더, ${visibleSubject}`}
+          accessibilityHint={t('폴더를 골라요')}
+          accessibilityLabel={t('폴더, {folder}', { folder: visibleSubject })}
           compact
           disabled={disabled}
           divider={false}
           onPress={() => setSubjectSheetVisible(true)}
           testID="record-subject-row"
-          title="폴더"
+          title={t('폴더')}
           trailing={<OptionValue value={visibleSubject} />}
         />
       </Card>
 
       <Dialog
-        cancel={{ label: '취소', onPress: closeTitleDialog }}
-        confirm={{ disabled: !canSaveTitle, label: '저장', onPress: saveTitle }}
+        cancel={{ label: t('취소'), onPress: closeTitleDialog }}
+        confirm={{ disabled: !canSaveTitle, label: t('저장'), onPress: saveTitle }}
         onRequestClose={closeTitleDialog}
         testID="record-title-dialog"
-        title="녹음 제목"
+        title={t('녹음 제목')}
         visible={titleDialogVisible}
       >
         <AuthField
           autoFocus
           hint={
             titleFocused
-              ? '최대 80자까지 입력할 수 있어요.'
-              : '나중에 찾기 쉬운 이름이 좋아요.'
+              ? t('최대 80자까지 입력할 수 있어요.')
+              : t('나중에 찾기 쉬운 이름이 좋아요.')
           }
-          label="제목"
+          label={t('제목')}
           maxLength={80}
           onBlur={() => onTitleFocusChange(false)}
           onChangeText={setDraftTitle}
           onFocus={() => onTitleFocusChange(true)}
           onSubmitEditing={saveTitle}
-          placeholder="예: 인공지능 개론 5주차"
+          placeholder={t('예: 인공지능 개론 5주차')}
           returnKeyType="done"
           value={draftTitle}
         />
@@ -1761,7 +1780,7 @@ function SetupOptions({
         onClose={() => setSubjectSheetVisible(false)}
         scrollable={false}
         testID="record-subject-sheet"
-        title="폴더 선택"
+        title={t('폴더 선택')}
         visible={subjectSheetVisible}
       >
         {projects.length > 0 ? (
@@ -1782,8 +1801,8 @@ function SetupOptions({
           </Card>
         ) : (
           <EmptyState
-            actionLabel="폴더 만들기"
-            description="녹음을 담을 폴더가 필요해요"
+            actionLabel={t('폴더 만들기')}
+            description={t('녹음을 담을 폴더가 필요해요')}
             icon={FolderOpen}
             onAction={() => {
               setSubjectSheetVisible(false);
@@ -1792,7 +1811,7 @@ function SetupOptions({
                 params: { newProject: Date.now().toString(36) },
               });
             }}
-            title="폴더가 없어요"
+            title={t('폴더가 없어요')}
           />
         )}
       </BottomSheetModal>
@@ -1823,10 +1842,11 @@ function ProjectRow({
   project: Project;
   selected: boolean;
 }) {
+  const t = useT();
   return (
     <Pressable
       aria-pressed={selected}
-      accessibilityLabel={`${project.title} 폴더`}
+      accessibilityLabel={t('{title} 폴더', { title: project.title })}
       accessibilityRole="button"
       accessibilityState={{ disabled, selected }}
       disabled={disabled}
@@ -1866,13 +1886,14 @@ function MarkerTimeline({
   durationMillis: number;
   markers: readonly PremindRecordingMarker[];
 }) {
+  const t = useT();
   const lastMarker = markers.at(-1);
   return (
     <View
       accessibilityLabel={
         markers.length > 0
-          ? `중요 표시 ${markers.length}개`
-          : '아직 중요 표시가 없어요'
+          ? t('중요 표시 {n}개', { n: markers.length })
+          : t('아직 중요 표시가 없어요')
       }
       style={styles.markerBlock}
     >
@@ -1892,8 +1913,11 @@ function MarkerTimeline({
       </View>
       <AppText align="center" style={styles.stageMuted} variant="meta">
         {lastMarker
-          ? `중요 표시 ${markers.length}개, 마지막 ${formatDuration(lastMarker.timestampMillis / 1_000)}`
-          : '기억할 순간에 중요 표시를 남겨요'}
+          ? t('중요 표시 {n}개, 마지막 {time}', {
+              n: markers.length,
+              time: formatDuration(lastMarker.timestampMillis / 1_000),
+            })
+          : t('기억할 순간에 중요 표시를 남겨요')}
       </AppText>
     </View>
   );
