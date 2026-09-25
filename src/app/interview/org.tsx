@@ -277,7 +277,7 @@ export default function InterviewOrgScreen() {
                       <AuthField keyboardType="number-pad" label="사용 기간(일)" maxLength={3} onChangeText={setValidDays} value={validDays} />
                     </View>
                   </View>
-                  <Button leftIcon={<Plus color={colors.textInverse} size={iconSizes.inline} />} loading={creating} onPress={() => void createInvite()}>
+                  <Button variant="primary" leftIcon={<Plus color={colors.textInverse} size={iconSizes.inline} />} loading={creating} onPress={() => void createInvite()}>
                     초대 코드 만들기
                   </Button>
                 </Card>

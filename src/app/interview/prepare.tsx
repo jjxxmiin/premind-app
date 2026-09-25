@@ -316,11 +316,11 @@ export default function InterviewPrepareScreen() {
       ) : null}
       {step === 'questions' ? (
         from === 'resume' && questions.length === 0 ? (
-          <Button fullWidth loading={preparing} onPress={() => void prepareFromResume()} size="large">
+          <Button variant="primary" fullWidth loading={preparing} onPress={() => void prepareFromResume()} size="large">
             질문 만들기
           </Button>
         ) : (
-          <Button disabled={expanding} fullWidth onPress={toModeStep} size="large">
+          <Button variant="primary" disabled={expanding} fullWidth onPress={toModeStep} size="large">
             다음
           </Button>
         )

@@ -117,7 +117,7 @@ export default function InterviewJoinScreen() {
                 trailing={<Ticket {...decorative} color={colors.textFaint} size={iconSizes.inline} />}
                 value={code}
               />
-              <Button fullWidth loading={checking} onPress={() => void check(code)} rightIcon={<ArrowRight color={colors.textInverse} size={iconSizes.inline} />} size="large">
+              <Button variant="primary" fullWidth loading={checking} onPress={() => void check(code)} rightIcon={<ArrowRight color={colors.textInverse} size={iconSizes.inline} />} size="large">
                 코드 확인하기
               </Button>
               <AppText tone="muted" variant="meta">
@@ -134,7 +134,7 @@ export default function InterviewJoinScreen() {
                 <>
                   <AppText variant="pageTitle">먼저 로그인해 주세요.</AppText>
                   <AppText tone="muted" variant="body">{`PREMIND 계정으로 로그인하거나 가입한 뒤, 이 화면으로 돌아와 참여해 주세요. ${seatCopy(invite)}`}</AppText>
-                  <Button
+                  <Button variant="primary"
                     fullWidth
                     onPress={() => {
                       void rememberPendingJoinCode(code).then(() => router.replace('/login'));
@@ -161,7 +161,7 @@ export default function InterviewJoinScreen() {
                       {error}
                     </AppText>
                   ) : null}
-                  <Button disabled={!age14 || !consent} fullWidth loading={joining} onPress={() => void join()} size="large">
+                  <Button variant="primary" disabled={!age14 || !consent} fullWidth loading={joining} onPress={() => void join()} size="large">
                     참여하고 시작하기
                   </Button>
                 </>

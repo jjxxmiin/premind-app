@@ -130,7 +130,7 @@ export default function InterviewHistoryScreen() {
         <View style={styles.block}>
           <AuthField error={dayError} keyboardType="numbers-and-punctuation" label="면접 날짜" maxLength={10} onChangeText={setDayInput} placeholder="2026-10-15" value={dayInput} />
           <View style={styles.inline}>
-            <Button onPress={() => void saveDay()} size="small">
+            <Button variant="primary" onPress={() => void saveDay()} size="small">
               저장
             </Button>
             {dday ? (

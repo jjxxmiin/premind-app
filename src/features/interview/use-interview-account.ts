@@ -8,7 +8,7 @@
  * trial still unused, and seeds two example practices once.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 import { sessionManager } from '@/services/api/session-manager';
 import { useAppStore } from '@/state/app-store';
@@ -81,21 +81,30 @@ export function refreshInterviewAccount(): Promise<InterviewAccount> {
   return inflight;
 }
 
+const LOADING: InterviewAccount = { status: 'loading' };
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function snapshot(): typeof cache {
+  return cache;
+}
+
 export function useInterviewAccount(): InterviewAccount & { refresh: () => Promise<InterviewAccount> } {
   const { session } = useAppStore();
   const id = session?.user.id ?? '';
-  const [, setTick] = useState(0);
+  // An external store: React Compiler must not memoize a read of module state.
+  const current = useSyncExternalStore(subscribe, snapshot, snapshot);
 
   useEffect(() => {
-    const listener = () => setTick((value) => value + 1);
-    listeners.add(listener);
     if (!cache || cache.accountId !== id) void refreshInterviewAccount();
-    return () => {
-      listeners.delete(listener);
-    };
   }, [id]);
 
   const refresh = useCallback(() => refreshInterviewAccount(), []);
-  const value: InterviewAccount = cache && cache.accountId === id ? cache.value : { status: 'loading' };
+  const value = current && current.accountId === id ? current.value : LOADING;
   return { ...value, refresh };
 }

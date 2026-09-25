@@ -21,8 +21,10 @@ function renewDate(ms: number | null): string | null {
 export function AllowanceCard({ allowance, demo = false }: { allowance: InterviewAllowance | null; demo?: boolean }) {
   const standard = allowance?.plan === 'standard';
   const left = allowance ? (allowance.ai.freeTrial ? 1 : Math.max(0, allowance.ai.limit - allowance.ai.used)) : null;
-  const headline = !allowance
-    ? '남은 횟수를 확인하고 있어요'
+  const headline = demo
+    ? '데모에서는 기본 연습만 할 수 있어요'
+    : !allowance
+      ? '남은 횟수를 확인하고 있어요'
     : allowance.ai.freeTrial
       ? 'AI 피드백 무료 체험 1회가 남았어요'
       : standard
@@ -53,7 +55,7 @@ export function AllowanceCard({ allowance, demo = false }: { allowance: Intervie
         />
       ) : null}
       <AppText tone="muted" variant="meta">
-        {demo ? '데모에서는 AI 피드백 없이 기본 연습만 할 수 있어요.' : detail}
+        {demo ? '로그인하면 AI 피드백 연습 첫 회를 무료로 해 볼 수 있어요.' : detail}
       </AppText>
       {!standard ? (
         <Button fullWidth onPress={() => router.push('/subscription')} variant="outline">

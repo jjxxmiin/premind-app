@@ -125,7 +125,12 @@ export default function InterviewReportScreen() {
   }
 
   const questions = source.questions;
-  const selectedQuestion = questions.find((question) => question.id === selectedQuestionId) ?? questions.find((question) => byQuestion.has(question.id)) ?? questions[0];
+  // Open on the first answer that has feedback; otherwise the first one answered.
+  const selectedQuestion =
+    questions.find((question) => question.id === selectedQuestionId) ??
+    questions.find((question) => latestAttempt(byQuestion.get(question.id))?.analysis?.evaluation.status === 'ready') ??
+    questions.find((question) => byQuestion.has(question.id)) ??
+    questions[0];
   const attempts = selectedQuestion ? byQuestion.get(selectedQuestion.id) ?? [] : [];
   const selectedAttempt = attempts.find((attempt) => attempt.id === selectedAttemptId) ?? latestAttempt(attempts);
   const ai = session.feedbackMode === 'ai' || session.attempts.some((attempt) => attempt.analysis);
@@ -260,7 +265,7 @@ export default function InterviewReportScreen() {
 
         <View style={[styles.actions, breakpoint !== 'compact' ? styles.actionsRow : null]}>
           {!remote ? (
-            <Button
+            <Button variant="primary"
               leftIcon={<RotateCcw color={colors.textInverse} size={iconSizes.inline} />}
               onPress={() => router.push({ pathname: '/interview/prepare', params: { again: session.id } })}
               style={styles.action}
@@ -419,7 +424,7 @@ function QuestionDetail({
                         : '말한 내용이 너무 짧아요. 빠진 말이 있다면 적어주세요.'}
                     </AppText>
                     <View style={styles.inlineActions}>
-                      <Button
+                      <Button variant="primary"
                         disabled={saving || classifyInterviewTranscript(editing) !== 'ready'}
                         leftIcon={<RefreshCw color={colors.textInverse} size={iconSizes.dense} />}
                         loading={saving}

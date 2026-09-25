@@ -465,7 +465,7 @@ export default function InterviewRoomScreen() {
       </View>
       {!retrying && questions.length > 0 ? (
         <View style={{ paddingHorizontal: gutter }}>
-          <ProgressBar height={4} max={questions.length} tone="brand" value={Math.min(questions.length, questionIndex + (phase === 'next' ? 1 : 0))} />
+          <ProgressBar height={4} max={questions.length} tone="brand" value={Math.min(questions.length, questionIndex + 1)} />
         </View>
       ) : null}
 
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
   stageRow: { alignItems: 'center', flexDirection: 'row' },
   preview: { alignSelf: 'center', maxWidth: 360, width: '100%' },
   previewWide: { flex: 1, maxWidth: 420 },
-  questionColumn: { flex: 1, maxWidth: 680, minWidth: 0, width: '100%' },
+  questionColumn: { alignSelf: 'center', flex: 1, maxWidth: 680, minWidth: 0, width: '100%' },
   block: { gap: spacing.lg },
   clockRow: { minHeight: 96, justifyContent: 'center' },
   clock: {

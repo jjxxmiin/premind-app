@@ -144,6 +144,7 @@ Korean AI note-takers: the list is the home.
 | 이해도 | 이해도 | Per-material 이해도 (quiz accuracy + checked key points, computed on device), 이번 주 card, rows open `/mastery/[id]`. |
 | 추가 | — | Not a tab: opens the 자료 추가 sheet on 홈 with 녹음하기, 파일 올리기 (PDF, 슬라이드, 영상, 음성) and 유튜브 링크. One place for every way to start a 마인드팩. |
 | 평가 | 발표 평가 | 내 발표 연습: PREMIND Lens on the learner's own recording (`/report/[id]`), 새 평가 시작 sheet, 추이 card. Evaluation only ever starts from here; the server refuses a recording with too little real speech (422), and every run is kept, so the report shows 평가 이력. |
+| 면접 | 면접 연습 | (2026-09-26, interview.premind.co.kr 을 앱으로) 이어서 하기, 연습 시작(자기소개서, 질문 세트, 직접 만들기), 이번 달 AI 피드백 횟수, 최근 연습, 초대 코드와 기관 현황. 준비(`/interview/prepare`) → 면접실(`/interview/room/[id]`, 어두운 stage) → 결과 준비 → 결과(`/interview/report/[id]`). 점수, 합격 가능성, 성격은 말하지 않는다. 녹음과 영상은 기기에만, 글은 계정 백업(`/api/interview/backups`). |
 | MY | 설정 | Notifications, upload policy, recording quality, 구독 (informational on native, checkout on the web only), 사용 가이드, 문의, terms, privacy, account. |
 
 The product is for studying alone (2026-09-06): there is a single learner mode, and

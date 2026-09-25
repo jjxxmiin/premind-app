@@ -176,7 +176,7 @@ export default function LensScreen() {
 
         <AnimatedReveal delay={230}>
           <View style={styles.section}>
-            <SectionHeader description="같은 계정, 같은 요금제로 써요." title="면접도 연습해요" />
+            <SectionHeader description="면접 탭에서 같은 계정, 같은 요금제로 연습해요." title="면접도 연습해요" />
             <InterviewPracticeCard />
           </View>
         </AnimatedReveal>

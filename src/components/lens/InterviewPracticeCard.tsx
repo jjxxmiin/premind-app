@@ -25,7 +25,7 @@ export function InterviewPracticeCard({ style }: InterviewPracticeCardProps) {
         <View style={styles.flex}>
           <AppText variant="itemTitle">면접 연습</AppText>
           <AppText tone="muted" variant="body">
-            자기소개서로 나올 질문에 답하고, 내가 한 말로 피드백을 받아요. 같은 계정, 같은 요금제로 써요.
+            자기소개서로 나올 질문에 답하고, 내가 한 말로 피드백을 받아요.
           </AppText>
         </View>
       </View>

@@ -110,7 +110,7 @@ export default function InterviewPreparingScreen() {
           <AppText align="center" tone="muted" variant="body">
             연습 기록에서 다시 확인해 주세요.
           </AppText>
-          <Button fullWidth onPress={() => router.replace('/interview/history')}>
+          <Button variant="primary" fullWidth onPress={() => router.replace('/interview/history')}>
             연습 기록으로
           </Button>
         </Card>
