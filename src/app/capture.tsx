@@ -38,6 +38,7 @@ import {
 } from '@/features/import/pick-study-source';
 import { preservePickedStudySource } from '@/features/import/preserve-study-source';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
@@ -56,6 +57,7 @@ interface PreservedSource {
 }
 
 export default function CaptureScreen() {
+  const t = useT();
   const params = useLocalSearchParams<{
     mode?: string | string[];
     projectId?: string | string[];
@@ -202,7 +204,7 @@ export default function CaptureScreen() {
     >
       <AppHeader
         onBack={() => goBackOrReplace('/(tabs)/create')}
-        title="파일 올리기"
+        title={t('파일 올리기')}
       />
 
       <ScrollView
@@ -213,9 +215,9 @@ export default function CaptureScreen() {
       >
         <AnimatedReveal delay={30}>
           <View style={styles.intro}>
-            <AppText variant="pageTitle">영상, 음성, 문서를 골라요</AppText>
+            <AppText variant="pageTitle">{t('영상, 음성, 문서를 골라요')}</AppText>
             <AppText tone="muted" variant="meta">
-              원본은 기기에 먼저 저장돼요
+              {t('원본은 기기에 먼저 저장돼요')}
             </AppText>
           </View>
         </AnimatedReveal>
@@ -223,18 +225,20 @@ export default function CaptureScreen() {
         <AnimatedReveal delay={90}>
           <Card padding={false}>
             <ListRow
-              accessibilityHint="폴더를 골라요"
-              accessibilityLabel={`폴더, ${selectedProject?.title ?? '폴더 없음'}`}
+              accessibilityHint={t('폴더를 골라요')}
+              accessibilityLabel={t('폴더, {folder}', {
+                folder: selectedProject?.title ?? t('폴더 없음'),
+              })}
               compact
               disabled={isPicking}
               divider={false}
               onPress={() => setSubjectSheetVisible(true)}
               testID="capture-subject-row"
-              title="폴더"
+              title={t('폴더')}
               trailing={
                 <View style={styles.optionValue}>
                   <AppText numberOfLines={1} tone="muted" variant="body">
-                    {selectedProject?.title ?? '폴더 없음'}
+                    {selectedProject?.title ?? t('폴더 없음')}
                   </AppText>
                 </View>
               }
@@ -245,17 +249,17 @@ export default function CaptureScreen() {
         {errorMessage ? (
           <ErrorState
             compact
-            description={errorMessage}
+            description={t(errorMessage)}
             onRetry={() => void pickFile()}
-            retryLabel="다시 선택"
-            title="파일을 올리지 못했어요"
+            retryLabel={t('다시 선택')}
+            title={t('파일을 올리지 못했어요')}
           />
         ) : null}
 
         {notice ? (
           <View accessibilityLiveRegion="polite" style={styles.notice}>
             <AppText tone="muted" variant="meta">
-              {notice}
+              {t(notice)}
             </AppText>
           </View>
         ) : null}
@@ -263,17 +267,17 @@ export default function CaptureScreen() {
         <AnimatedReveal delay={150}>
           <Card style={styles.formatCard} variant="soft">
             <View style={styles.formatHeading}>
-              <AppText variant="itemTitle">지원하는 파일</AppText>
-              <StatusBadge label="최대 4GB" />
+              <AppText variant="itemTitle">{t('지원하는 파일')}</AppText>
+              <StatusBadge label={t('최대 4GB')} />
             </View>
             <View style={styles.formatRow}>
               <View style={styles.formatIcon}>
                 <FileVideo2 {...decorative} color={colors.text} size={iconSizes.section} strokeWidth={1.9} />
               </View>
               <View style={styles.flex}>
-                <AppText variant="bodyStrong">영상</AppText>
+                <AppText variant="bodyStrong">{t('영상')}</AppText>
                 <AppText tone="muted" variant="meta">
-                  MP4, MOV, WEBM, MKV, AVI 등
+                  {t('MP4, MOV, WEBM, MKV, AVI 등')}
                 </AppText>
               </View>
             </View>
@@ -282,9 +286,9 @@ export default function CaptureScreen() {
                 <AudioLines {...decorative} color={colors.text} size={iconSizes.section} strokeWidth={1.9} />
               </View>
               <View style={styles.flex}>
-                <AppText variant="bodyStrong">음성</AppText>
+                <AppText variant="bodyStrong">{t('음성')}</AppText>
                 <AppText tone="muted" variant="meta">
-                  M4A, MP3, WAV, AAC, OGG 등
+                  {t('M4A, MP3, WAV, AAC, OGG 등')}
                 </AppText>
               </View>
             </View>
@@ -293,18 +297,19 @@ export default function CaptureScreen() {
                 <FileText {...decorative} color={colors.text} size={iconSizes.section} strokeWidth={1.9} />
               </View>
               <View style={styles.flex}>
-                <AppText variant="bodyStrong">문서</AppText>
+                <AppText variant="bodyStrong">{t('문서')}</AppText>
                 <AppText tone="muted" variant="meta">
                   PDF, PPTX
                 </AppText>
               </View>
             </View>
             <AppText tone="muted" variant="meta">
-              문서는 쪽 단위로 읽어요. 소리가 없으니 재생 대신 쪽 번호가 붙어요.
-              스캔한 이미지 PDF는 글자가 없어서 읽지 못해요.
+              {t(
+                '문서는 쪽 단위로 읽어요. 소리가 없으니 재생 대신 쪽 번호가 붙어요. 스캔한 이미지 PDF는 글자가 없어서 읽지 못해요.',
+              )}
             </AppText>
             <AppText tone="muted" variant="meta">
-              일부 파일은 기기에 따라 재생이 안 될 수 있어요.
+              {t('일부 파일은 기기에 따라 재생이 안 될 수 있어요.')}
             </AppText>
           </Card>
         </AnimatedReveal>
@@ -312,7 +317,7 @@ export default function CaptureScreen() {
         <View style={styles.localNote}>
           <ShieldCheck {...decorative} color={colors.textFaint} size={iconSizes.inline} strokeWidth={1.9} />
           <AppText style={styles.flex} tone="muted" variant="meta">
-            원본은 기기에 먼저 저장돼요. 중간에 멈춰도 원본은 남아 있어요.
+            {t('원본은 기기에 먼저 저장돼요. 중간에 멈춰도 원본은 남아 있어요.')}
           </AppText>
         </View>
       </ScrollView>
@@ -325,7 +330,7 @@ export default function CaptureScreen() {
           size="large"
           variant="primary"
         >
-          파일 선택
+          {t('파일 선택')}
         </Button>
       </View>
 
@@ -333,7 +338,7 @@ export default function CaptureScreen() {
         onClose={() => setSubjectSheetVisible(false)}
         scrollable={false}
         testID="capture-subject-sheet"
-        title="폴더 선택"
+        title={t('폴더 선택')}
         visible={subjectSheetVisible}
       >
         {projects.length > 0 ? (
@@ -354,31 +359,31 @@ export default function CaptureScreen() {
           </Card>
         ) : (
           <EmptyState
-            actionLabel="폴더 만들기"
-            description="자료를 담을 폴더가 필요해요"
+            actionLabel={t('폴더 만들기')}
+            description={t('자료를 담을 폴더가 필요해요')}
             icon={FolderOpen}
             onAction={openLibrary}
-            title="폴더가 없어요"
+            title={t('폴더가 없어요')}
           />
         )}
       </BottomSheetModal>
 
       <Dialog
         cancel={{
-          label: '취소',
+          label: t('취소'),
           onPress: () => setPendingUpload(null),
         }}
         confirm={{
-          label: '그대로 올리기',
+          label: t('그대로 올리기'),
           onPress: () => {
             const picked = pendingUpload?.picked;
             if (picked) void startImport(picked);
           },
         }}
-        description={pendingUpload?.warning.description ?? ''}
+        description={t(pendingUpload?.warning.description ?? '')}
         onRequestClose={() => setPendingUpload(null)}
         testID="capture-metered-warning"
-        title={pendingUpload?.warning.title ?? ''}
+        title={t(pendingUpload?.warning.title ?? '')}
         visible={pendingUpload !== null}
       />
     </Screen>
@@ -398,10 +403,11 @@ function ProjectRow({
   project: Project;
   selected: boolean;
 }) {
+  const t = useT();
   return (
     <Pressable
       aria-pressed={selected}
-      accessibilityLabel={`${project.title} 폴더`}
+      accessibilityLabel={t('{title} 폴더', { title: project.title })}
       accessibilityRole="button"
       accessibilityState={{ disabled, selected }}
       disabled={disabled}

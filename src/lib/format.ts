@@ -1,3 +1,5 @@
+import { enShortDate } from '@/lib/i18n/core';
+import { getLocale } from '@/lib/i18n/locale-store';
 import type { MaterialKind } from '@/types';
 
 /**
@@ -13,6 +15,7 @@ export function formatSourcePosition(
   isDocument: boolean,
 ): string {
   if (isDocument) {
+    if (getLocale() === 'en') return `p. ${pageNumberOf(positionMs)}`;
     return `${pageNumberOf(positionMs)}쪽`;
   }
   return formatDuration(positionMs / 1000);
@@ -39,7 +42,7 @@ export function formatDuration(totalSeconds: number): string {
 /** Avoid presenting an unknown media duration as the factual value `00:00`. */
 export function formatMediaDuration(durationMs?: number): string {
   if (!durationMs || !Number.isFinite(durationMs) || durationMs <= 0) {
-    return '길이 확인 중';
+    return getLocale() === 'en' ? 'Checking length' : '길이 확인 중';
   }
   return formatDuration(durationMs / 1_000);
 }
@@ -58,13 +61,20 @@ export function formatMaterialLength(
   pageCount = 0,
 ): string {
   if (kind === 'document') {
+    if (getLocale() === 'en') {
+      return pageCount > 0
+        ? `${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`
+        : 'Document';
+    }
     return pageCount > 0 ? `${pageCount}쪽` : '문서';
   }
   return formatMediaDuration(durationMs);
 }
 
 export function formatBytes(bytes?: number): string {
-  if (!bytes || bytes <= 0) return '크기 확인 중';
+  if (!bytes || bytes <= 0) {
+    return getLocale() === 'en' ? 'Checking size' : '크기 확인 중';
+  }
   const units = ['B', 'KB', 'MB', 'GB'];
   const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
   const value = bytes / 1024 ** index;
@@ -76,6 +86,12 @@ export function formatRelativeDate(isoDate: string): string {
   const diff = Date.now() - target.getTime();
   const days = Math.floor(diff / 86_400_000);
 
+  if (getLocale() === 'en') {
+    if (days <= 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days} days ago`;
+    return enShortDate(target);
+  }
   if (days <= 0) return '오늘';
   if (days === 1) return '어제';
   if (days < 7) return `${days}일 전`;
