@@ -128,7 +128,7 @@ export function DocumentPageViewer({
             testID="page-viewer-position"
             variant="label"
           >
-            {t('{page}쪽 · {i} / {n}', { page: current, i: indexOfPage(current) + 1, n: segments.length })}
+            {t('{page}쪽 ({i} / {n})', { page: current, i: indexOfPage(current) + 1, n: segments.length })}
           </AppText>
           <View style={styles.iconButton} />
         </View>

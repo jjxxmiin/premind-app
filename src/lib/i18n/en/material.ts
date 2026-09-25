@@ -92,7 +92,7 @@ export const EN_MATERIAL: EnDict = {
   '말하기 탭의 발표에서 이 자료를 고르면 근거와 함께 평가해 줘요.': 'Pick this material under Presentation in the Speaking tab to get a review with evidence.',
   // 공부 부품 (components/study)
   '닫기': 'Close',
-  '{page}쪽 · {i} / {n}': 'Page {page} ({i} of {n})',
+  '{page}쪽 ({i} / {n})': 'Page {page} ({i} of {n})',
   '{n}쪽': 'Page {n}',
   '이 쪽을 대본에서 열어요.': 'Opens this page in the transcript.',
   '대본에서 보기': 'View in transcript',
