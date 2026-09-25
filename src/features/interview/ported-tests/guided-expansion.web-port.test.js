@@ -1,4 +1,5 @@
 // Ported from apps/interview/test (node:test) so the copied logic keeps the web behaviour.
+/* global test */
 import assert from "node:assert/strict";
 
 import {

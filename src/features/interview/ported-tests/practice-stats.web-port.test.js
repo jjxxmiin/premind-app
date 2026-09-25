@@ -1,6 +1,9 @@
 // Ported from apps/interview/test (node:test) so the copied logic keeps the web behaviour.
+/* global test */
 import assert from "node:assert/strict";
 import { computePracticeStats, latestNextPractice } from "../practice-stats";
+
+import { daysUntil, planFor } from "../dday";
 
 const at = (y, m, d, h = 10) => new Date(y, m - 1, d, h).toISOString();
 const session = (id, attempts, extra = {}) => ({ id, attempts, createdAt: attempts[0]?.recordedAt ?? at(2026, 9, 1), status: "completed", companyId: "", currentQuestionIndex: 0, ...extra });
@@ -38,8 +41,6 @@ test("next practice comes from the most recent AI summary only", () => {
     withSummary("blank", at(2026, 9, 22), "  "),
   ]), { text: "결과를 숫자로 덧붙여 보세요.", sessionId: "new" });
 });
-
-import { daysUntil, planFor } from "../dday";
 test("d-day plan scales the daily goal and never scores", () => {
   const now = new Date(2026, 8, 25, 10);
   assert.equal(daysUntil("2026-10-02", now), 7);
