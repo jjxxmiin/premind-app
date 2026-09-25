@@ -1,3 +1,4 @@
+import { enShortDate, type AppLocale } from '@/lib/i18n/core';
 import type { LensHistoryEntry } from '@/types';
 
 /**
@@ -78,15 +79,16 @@ function twoDigits(value: number): string {
 }
 
 /** "9월 7일", in the device's own time zone. Empty for a date that will not parse. */
-export function formatEvaluatedDay(isoDate: string): string {
+export function formatEvaluatedDay(isoDate: string, locale: AppLocale = 'ko'): string {
   const date = new Date(isoDate);
   if (Number.isNaN(date.getTime())) return '';
+  if (locale === 'en') return enShortDate(date);
   return `${date.getMonth() + 1}월 ${date.getDate()}일`;
 }
 
 /** "9월 7일 14:02", for telling two evaluations of the same day apart. */
-export function formatEvaluatedAt(isoDate: string): string {
+export function formatEvaluatedAt(isoDate: string, locale: AppLocale = 'ko'): string {
   const date = new Date(isoDate);
   if (Number.isNaN(date.getTime())) return '';
-  return `${formatEvaluatedDay(isoDate)} ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
+  return `${formatEvaluatedDay(isoDate, locale)} ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
 }

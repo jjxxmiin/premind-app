@@ -3,6 +3,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { AppText, Button, Card, StatusBadge } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
 export interface LensIntroCardProps {
@@ -21,6 +22,8 @@ const RUBRIC_CHIPS = ['구조', '명료성', '근거', '전달력', '말하기 �
  * and the two ways in. Replaced by the latest report once one exists.
  */
 export function LensIntroCard({ onPick, onRecord, style }: LensIntroCardProps) {
+  const t = useT();
+  const chips = RUBRIC_CHIPS.map((label) => ({ key: label, label: t.ctx('rubric', label) }));
   return (
     <Card style={[styles.card, style]} variant="soft">
       <View style={styles.head}>
@@ -29,21 +32,22 @@ export function LensIntroCard({ onPick, onRecord, style }: LensIntroCardProps) {
         </View>
         <View style={styles.copy}>
           <AppText accessibilityRole="header" variant="heading">
-            내 발표를 채점해요
+            {t('내 발표를 채점해요')}
           </AppText>
           <AppText tone="muted" variant="meta">
-            발표, 스피치, 면접 연습을 녹음하거나 올리면 대본을 근거로 점수와 먼저 고칠 것 하나를
-            알려줘요
+            {t(
+              '발표, 스피치, 면접 연습을 녹음하거나 올리면 대본을 근거로 점수와 먼저 고칠 것 하나를 알려줘요',
+            )}
           </AppText>
         </View>
       </View>
       <View
-        accessibilityLabel={`채점 항목: ${RUBRIC_CHIPS.join(', ')}`}
+        accessibilityLabel={t('채점 항목: {items}', { items: chips.map((chip) => chip.label).join(', ') })}
         accessible
         style={styles.chips}
       >
-        {RUBRIC_CHIPS.map((label) => (
-          <StatusBadge key={label} label={label} style={styles.chip} tone="neutral" />
+        {chips.map(({ key, label }) => (
+          <StatusBadge key={key} label={label} style={styles.chip} tone="neutral" />
         ))}
       </View>
       <View style={styles.actions}>
@@ -53,10 +57,10 @@ export function LensIntroCard({ onPick, onRecord, style }: LensIntroCardProps) {
           onPress={onRecord}
           variant="primary"
         >
-          발표 녹음하기
+          {t('발표 녹음하기')}
         </Button>
         <Button fullWidth onPress={onPick} variant="outline">
-          가진 자료로 평가
+          {t('가진 자료로 평가')}
         </Button>
       </View>
     </Card>

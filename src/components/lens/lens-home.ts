@@ -1,4 +1,5 @@
 import type { StatusTone } from '@/components/ui';
+import type { AppLocale } from '@/lib/i18n/core';
 import type { StudyMaterial } from '@/types';
 
 import type { ScoreTrendEntry } from './ScoreTrend';
@@ -55,10 +56,11 @@ export function lensRowMeta(
   projectTitle: string,
   dateLabel: string,
   lensCount: number | undefined,
+  locale: AppLocale = 'ko',
 ): string {
   const parts = [projectTitle, dateLabel];
   if ((lensCount ?? 0) > 1) {
-    parts.push(`평가 ${lensCount}회`);
+    parts.push(locale === 'en' ? `${lensCount} reviews` : `평가 ${lensCount}회`);
   }
   return parts.join(' / ');
 }

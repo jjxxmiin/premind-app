@@ -30,6 +30,7 @@ import {
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatMaterialLength, formatRelativeDate } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
@@ -37,6 +38,7 @@ import type { StudyMaterial } from '@/types';
 
 /** 말하기 탭의 발표 쪽. `switcher` 는 발표, 면접을 고르는 줄(머리 바로 아래). */
 export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
+  const t = useT();
   const { evaluatingMaterialIds, materials, projects, requestLens } = useAppStore();
   const { gutter } = useLayout();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -45,7 +47,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
 
   const projectTitle = (material: StudyMaterial) =>
     projects.find((project) => project.id === material.projectId)?.title ??
-    '폴더 없음';
+    t('폴더 없음');
 
   const isEvaluating = (id: string) => evaluatingMaterialIds.includes(id);
   const { candidates, history, latest, rows, showRows, showTips } = lensHome(
@@ -83,7 +85,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
         right={
           <IconButton
             icon={Bell}
-            label="알림"
+            label={t('알림')}
             onPress={() => router.push('/notifications')}
           />
         }
@@ -93,11 +95,10 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
         {switcher}
         <AnimatedReveal>
           <View style={styles.heading}>
-            <AppText variant="pageTitle">발표 평가</AppText>
+            <AppText variant="pageTitle">{t('발표 평가')}</AppText>
             {latest ? (
               <AppText tone="muted" variant="body">
-                발표나 스피치를 대본으로 채점해요. 녹음, 올린 영상,
-                유튜브 링크 다 돼요.
+                {t('발표나 스피치를 대본으로 채점해요. 녹음, 올린 영상, 유튜브 링크 다 돼요.')}
               </AppText>
             ) : null}
           </View>
@@ -123,7 +124,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
                   size="large"
                   variant="primary"
                 >
-                  새 평가 시작
+                  {t('새 평가 시작')}
                 </Button>
                 <Button
                   fullWidth
@@ -131,7 +132,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
                   onPress={openRecorder}
                   variant="outline"
                 >
-                  발표 녹음하기
+                  {t('발표 녹음하기')}
                 </Button>
               </View>
             </View>
@@ -149,7 +150,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
         {showRows ? (
           <AnimatedReveal delay={200}>
             <View style={styles.section}>
-              <SectionHeader title="지난 평가" />
+              <SectionHeader title={t('지난 평가')} />
               <Card padding={false}>
                 {rows.map((material, index) =>
                   isEvaluating(material.id) ? (
@@ -179,8 +180,8 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
           <AnimatedReveal delay={260}>
             <View style={styles.section}>
               <SectionHeader
-                description="점수가 제대로 나오는 녹음이에요."
-                title="이렇게 써요"
+                description={t('점수가 제대로 나오는 녹음이에요.')}
+                title={t('이렇게 써요')}
               />
               <LensTipsCard />
             </View>
@@ -189,7 +190,9 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
       </View>
 
       <BottomSheetModal
-        description="평가할 자료를 골라 주세요. 녹음, 올린 영상이나 음성, 유튜브 링크 다 돼요. 말소리가 없는 PDF와 PPTX는 평가하지 않아요."
+        description={t(
+          '평가할 자료를 골라 주세요. 녹음, 올린 영상이나 음성, 유튜브 링크 다 돼요. 말소리가 없는 PDF와 PPTX는 평가하지 않아요.',
+        )}
         footer={
           <View style={styles.sheetFooter}>
             <Card style={styles.sheetNote} variant="soft">
@@ -200,8 +203,9 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
                 strokeWidth={2}
               />
               <AppText style={styles.flex} tone="muted" variant="meta">
-                여기서 평가 시작을 눌러야 채점해요. 자료를 올려도 알아서 평가하지
-                않아요. 말이 담긴 자료면 무엇이든 골라도 돼요.
+                {t(
+                  '여기서 평가 시작을 눌러야 채점해요. 자료를 올려도 알아서 평가하지 않아요. 말이 담긴 자료면 무엇이든 골라도 돼요.',
+                )}
               </AppText>
             </Card>
             <Button
@@ -212,12 +216,12 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
               size="large"
               variant="primary"
             >
-              평가 시작
+              {t('평가 시작')}
             </Button>
           </View>
         }
         onClose={() => setPickerOpen(false)}
-        title="새 평가 시작"
+        title={t('새 평가 시작')}
         visible={pickerOpen}
       >
         {candidates.length > 0 ? (
@@ -235,24 +239,26 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
           </Card>
         ) : (
           <EmptyState
-            actionLabel="녹음 시작"
+            actionLabel={t('녹음 시작')}
             compact
-            description="발표를 녹음하거나, 영상이나 음성 파일 또는 유튜브 링크를 올려 주세요. PDF와 PPTX는 말소리가 없어서 평가할 수 없어요."
+            description={t(
+              '발표를 녹음하거나, 영상이나 음성 파일 또는 유튜브 링크를 올려 주세요. PDF와 PPTX는 말소리가 없어서 평가할 수 없어요.',
+            )}
             icon={Mic}
             onAction={() => {
               setPickerOpen(false);
               openRecorder();
             }}
-            title="평가할 자료가 없어요"
+            title={t('평가할 자료가 없어요')}
           />
         )}
       </BottomSheetModal>
 
       <Dialog
-        confirm={{ label: '확인', onPress: () => setFailure(null) }}
-        description={failure?.message}
+        confirm={{ label: t('확인'), onPress: () => setFailure(null) }}
+        description={failure ? t(failure.message) : undefined}
         onRequestClose={() => setFailure(null)}
-        title={failure?.title ?? '평가를 시작하지 못했어요'}
+        title={t(failure?.title ?? '평가를 시작하지 못했어요')}
         visible={failure !== null}
       />
     </Screen>
@@ -284,7 +290,8 @@ function CandidateRow({
   projectTitle: string;
   selected: boolean;
 }) {
-  const kind = sourceLabel(material);
+  const t = useT();
+  const kind = t(sourceLabel(material));
   return (
     <Pressable
       accessibilityLabel={`${material.title}. ${projectTitle}`}
@@ -308,7 +315,7 @@ function CandidateRow({
           {` / ${formatMaterialLength(material.source.kind, material.source.durationMs, material.transcript.length)}`}
           {' / '}
           {formatRelativeDate(material.updatedAt)}
-          {material.lensReport ? ' / 평가 있음' : ''}
+          {material.lensReport ? ` / ${t('평가 있음')}` : ''}
         </AppText>
       </View>
       <View

@@ -3,6 +3,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { AppText, Card } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
 interface Tip {
@@ -23,9 +24,10 @@ export interface LensTipsCardProps {
 
 /** Three short rules for a recording that scores fairly. Hidden after a few reports. */
 export function LensTipsCard({ style }: LensTipsCardProps) {
+  const t = useT();
   return (
     <Card
-      accessibilityLabel={`이렇게 써요. ${TIPS.map((tip) => tip.text).join(', ')}`}
+      accessibilityLabel={`${t('이렇게 써요')}. ${TIPS.map((tip) => t(tip.text)).join(', ')}`}
       accessible
       padding={false}
       style={style}
@@ -39,7 +41,7 @@ export function LensTipsCard({ style }: LensTipsCardProps) {
             <Icon color={colors.textSoft} size={iconSizes.inline} strokeWidth={2} />
           </View>
           <AppText style={styles.text} variant="body">
-            {text}
+            {t(text)}
           </AppText>
         </View>
       ))}

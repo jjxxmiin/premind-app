@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText, Skeleton, StatusBadge } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatRelativeDate } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
 
@@ -34,19 +35,21 @@ export function LensReportRow({
   onPress,
   projectTitle,
 }: LensReportRowProps) {
+  const t = useT();
   const overall = material.lensReport?.overall ?? 0;
-  const verdict = scoreWord(overall);
+  const verdict = scoreWord(overall, t.locale);
   const evaluatedAt = lensEvaluatedAt(material);
-  const meta = lensRowMeta(projectTitle, atomicDate(evaluatedAt), material.lensCount);
+  const meta = lensRowMeta(projectTitle, atomicDate(evaluatedAt), material.lensCount, t.locale);
   const spokenMeta = lensRowMeta(
     projectTitle,
     formatRelativeDate(evaluatedAt),
     material.lensCount,
+    t.locale,
   );
   return (
     <Pressable
-      accessibilityHint="발표 평가 결과를 열어요"
-      accessibilityLabel={`${material.title}${featured ? ', 최근' : ''}. ${overall.toFixed(1)}점, ${verdict}. ${spokenMeta}`}
+      accessibilityHint={t('발표 평가 결과를 열어요')}
+      accessibilityLabel={`${material.title}${featured ? `, ${t.ctx('lens', '최근')}` : ''}. ${t('{score}점', { score: overall.toFixed(1) })}, ${verdict}. ${spokenMeta}`}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [
@@ -61,7 +64,7 @@ export function LensReportRow({
           <AppText numberOfLines={2} style={styles.title} variant="itemTitle">
             {material.title}
           </AppText>
-          {featured ? <StatusBadge label="최근" tone="neutral" /> : null}
+          {featured ? <StatusBadge label={t.ctx('lens', '최근')} tone="neutral" /> : null}
         </View>
         <AppText tone="muted" variant="meta">
           {meta}
@@ -88,9 +91,10 @@ export interface LensEvaluatingRowProps {
 
 /** A report still being written: the same row with a skeleton where the score goes. */
 export function LensEvaluatingRow({ last = false, material, projectTitle }: LensEvaluatingRowProps) {
+  const t = useT();
   return (
     <View
-      accessibilityLabel={`${material.title}. 평가 중`}
+      accessibilityLabel={`${material.title}. ${t('평가 중')}`}
       accessibilityLiveRegion="polite"
       style={[styles.row, !last ? styles.rowDivider : null]}
     >
@@ -106,7 +110,7 @@ export function LensEvaluatingRow({ last = false, material, projectTitle }: Lens
           {projectTitle}
         </AppText>
       </View>
-      <StatusBadge label="평가 중" showDot tone="brand" />
+      <StatusBadge label={t('평가 중')} showDot tone="brand" />
     </View>
   );
 }

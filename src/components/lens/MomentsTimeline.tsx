@@ -12,6 +12,7 @@ import Svg, { Circle, Line, Rect, Text as SvgText } from 'react-native-svg';
 import { AppText } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatDuration } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, fontFamilies, radii, sizes, spacing } from '@/theme/tokens';
 import type { LensMoment } from '@/types';
 
@@ -76,6 +77,9 @@ export function MomentsTimeline({
   onSelect,
   style,
 }: MomentsTimelineProps) {
+  const t = useT();
+  const kindLabel = (kind: MomentKind) => t(KIND_LABEL[kind]);
+  const priorityNote = `, ${t('먼저 고칠 것')}`;
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const { marks, scale, spanMs } = momentMarks(
     strengths,
@@ -90,7 +94,7 @@ export function MomentsTimeline({
   const summary = marks
     .map((mark) => {
       const time = scale === 'even' ? '' : `${formatDuration(mark.sourceStartMs / 1_000)} `;
-      return `${time}${KIND_LABEL[mark.kind]}${mark.priority ? ', 먼저 고칠 것' : ''}`;
+      return `${time}${kindLabel(mark.kind)}${mark.priority ? priorityNote : ''}`;
     })
     .join(', ');
 
@@ -98,7 +102,7 @@ export function MomentsTimeline({
     <View style={[styles.wrap, style]}>
       <View style={styles.stage}>
       <View
-        accessibilityLabel={`근거 시점, ${marks.length}개. ${summary}`}
+        accessibilityLabel={t('근거 시점, {n}개. {summary}', { n: marks.length, summary })}
         accessible
         style={styles.track}
       >
@@ -192,8 +196,8 @@ export function MomentsTimeline({
           const time = scale === 'even' ? '' : `${formatDuration(mark.sourceStartMs / 1_000)}, `;
           return (
             <Pressable
-              accessibilityHint="목록에서 이 근거로 이동해요."
-              accessibilityLabel={`${time}${KIND_LABEL[mark.kind]}${mark.priority ? ', 먼저 고칠 것' : ''}. ${moment?.text ?? ''}`}
+              accessibilityHint={t('목록에서 이 근거로 이동해요.')}
+              accessibilityLabel={`${time}${kindLabel(mark.kind)}${mark.priority ? priorityNote : ''}. ${moment?.text ?? ''}`}
               accessibilityRole="button"
               accessibilityState={{ selected: key === activeKey }}
               hitSlop={spacing.xs}
@@ -210,16 +214,16 @@ export function MomentsTimeline({
       </View>
       </View>
       <View style={styles.legend}>
-        {strengths.length ? <LegendItem color={colors.text} label={KIND_LABEL.strength} /> : null}
+        {strengths.length ? <LegendItem color={colors.text} label={kindLabel('strength')} /> : null}
         {improvements.length ? (
-          <LegendItem color={colors.textFaint} label={KIND_LABEL.improvement} />
+          <LegendItem color={colors.textFaint} label={kindLabel('improvement')} />
         ) : null}
         {marks.some((mark) => mark.priority) ? (
-          <LegendItem color={colors.brand} label="먼저 고칠 것" />
+          <LegendItem color={colors.brand} label={t('먼저 고칠 것')} />
         ) : null}
       </View>
       <AppText tone="faint" variant="badge">
-        {CAPTION[scale]}
+        {t(CAPTION[scale])}
       </AppText>
     </View>
   );

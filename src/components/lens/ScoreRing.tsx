@@ -3,9 +3,10 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { AppText } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/theme/tokens';
 
-import { SCORE_MAX, clampScore, ringDash, verdictFor } from './lens-charts';
+import { SCORE_MAX, clampScore, ringDash, verdictWord } from './lens-charts';
 
 export interface ScoreRingProps {
   score: number;
@@ -41,7 +42,7 @@ const SIZES = {
 
 /** A ring gauge: grey track, ink arc from the top, the number in the middle. */
 export function ScoreRing({
-  label = '전체 평가',
+  label: labelKo = '전체 평가',
   max = SCORE_MAX,
   precision = 1,
   score,
@@ -50,11 +51,14 @@ export function ScoreRing({
   unit,
   verdict,
 }: ScoreRingProps) {
+  const t = useT();
+  // A caller's Korean label or verdict is translated here too; an English one passes through.
+  const label = t(labelKo);
   const { diameter, stroke } = SIZES[size];
   const radius = (diameter - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const safe = clampScore(score, max);
-  const word = verdict ?? verdictFor(safe);
+  const word = verdict !== undefined ? t(verdict) : verdictWord(safe, t.locale);
   const centre = diameter / 2;
   const number = safe.toFixed(precision);
   /** A percentage ring prints "56%" over its label; a Lens ring prints "4.1" over "/ 5.0". */
@@ -124,7 +128,11 @@ export function ScoreRing({
 
   return (
     <View
-      accessibilityLabel={`${label} ${number}${spokenUnit}, ${max}${spokenUnit} 만점, ${word}`}
+      accessibilityLabel={
+        t.locale === 'en'
+          ? `${label} ${number}${unit ?? ' points'}, out of ${max}${unit ?? ''}, ${word}`
+          : `${label} ${number}${spokenUnit}, ${max}${spokenUnit} 만점, ${word}`
+      }
       accessible
       style={[styles.wrap, style]}
     >
