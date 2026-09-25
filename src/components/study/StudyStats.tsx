@@ -3,6 +3,7 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { AppText, Card } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, radii, spacing } from '@/theme/tokens';
 import type { QuizAttempt, QuizQuestion, StudyConcept } from '@/types';
 
@@ -80,6 +81,7 @@ export function StudyStats({
   reviewMinutes,
   style,
 }: StudyStatsProps) {
+  const t = useT();
   const counts = difficultyCounts(concepts);
   const maxCount = Math.max(1, ...DIFFICULTIES.map((item) => counts[item.key]));
   const score = quizScoreFor(quiz, attempts, materialId);
@@ -88,12 +90,16 @@ export function StudyStats({
   return (
     <View style={[styles.row, style]}>
       <Card
-        accessibilityLabel={`개념 난이도, ${DIFFICULTIES.map((item) => `${item.label} ${counts[item.key]}개`).join(', ')}`}
+        accessibilityLabel={t('개념 난이도, {list}', {
+          list: DIFFICULTIES.map((item) =>
+            t('{label} {n}개', { label: t(item.label), n: counts[item.key] }),
+          ).join(', '),
+        })}
         padding={spacing.md}
         style={styles.tile}
         variant="soft"
       >
-        <AppText tone="muted" variant="badge">개념</AppText>
+        <AppText tone="muted" variant="badge">{t('개념')}</AppText>
         <View style={styles.tileBody}>
           <View {...decorative} style={styles.bars}>
             {DIFFICULTIES.map((item) => {
@@ -112,7 +118,7 @@ export function StudyStats({
                       { backgroundColor: count ? item.color : colors.borderStrong, height },
                     ]}
                   />
-                  <AppText tone="muted" variant="badge">{item.label}</AppText>
+                  <AppText tone="muted" variant="badge">{t(item.label)}</AppText>
                 </View>
               );
             })}
@@ -123,14 +129,14 @@ export function StudyStats({
       <Card
         accessibilityLabel={
           score.answered
-            ? `문제, ${score.total}개 중 ${score.correct}개 맞혔어요`
-            : '문제, 아직 안 풀었어요'
+            ? t('문제, {total}개 중 {n}개 맞혔어요', { total: score.total, n: score.correct })
+            : t('문제, 아직 안 풀었어요')
         }
         padding={spacing.md}
         style={styles.tile}
         variant="soft"
       >
-        <AppText tone="muted" variant="badge">문제</AppText>
+        <AppText tone="muted" variant="badge">{t('문제')}</AppText>
         <View style={styles.tileBody}>
           {score.answered ? (
             <View {...decorative} style={styles.ring}>
@@ -166,24 +172,24 @@ export function StudyStats({
             </View>
           ) : (
             <AppText align="center" tone="muted" variant="badge">
-              아직 안 풀었어요
+              {t('아직 안 풀었어요')}
             </AppText>
           )}
         </View>
       </Card>
 
       <Card
-        accessibilityLabel={reviewMinutes ? `복습 ${reviewMinutes}분` : '복습 시간 미정'}
+        accessibilityLabel={reviewMinutes ? t('복습 {n}분', { n: reviewMinutes }) : t('복습 시간 미정')}
         padding={spacing.md}
         style={styles.tile}
         variant="soft"
       >
-        <AppText tone="muted" variant="badge">복습</AppText>
+        <AppText tone="muted" variant="badge">{t('복습')}</AppText>
         <View style={styles.tileBody}>
           {reviewMinutes ? (
             <View {...decorative} style={styles.metric}>
               <AppText variant="metric">{reviewMinutes}</AppText>
-              <AppText tone="muted" variant="label">분</AppText>
+              <AppText tone="muted" variant="label">{t('분')}</AppText>
             </View>
           ) : (
             <AppText tone="faint" variant="metric">—</AppText>

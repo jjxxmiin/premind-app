@@ -11,6 +11,8 @@
  * comes back grounded in the material with its source position attached.
  */
 
+import { getLocale, translate, type AppLocale } from '@/lib/i18n';
+import { EN } from '@/lib/i18n/en';
 import type { ConfusionReason } from '@/types';
 
 /** How much of the passage goes into the question. */
@@ -47,17 +49,20 @@ export function quotePassage(text: string, limit = MAX_QUOTE): string {
 export function confusionQuestion(
   reason: ConfusionReason,
   passage: string,
+  locale: AppLocale = getLocale(),
 ): string {
   const quote = quotePassage(passage);
   const opening = quote ? `"${quote}"\n\n` : '';
+  // Sent as the reader's own question, so it is asked in the screen's language.
+  const ask = (ko: string) => `${opening}${translate(locale, [EN], ko)}`;
   switch (reason) {
     case 'terminology':
-      return `${opening}여기 나오는 용어들을 쉬운 말로 하나씩 풀어서 설명해줘.`;
+      return ask('여기 나오는 용어들을 쉬운 말로 하나씩 풀어서 설명해줘.');
     case 'needs-example':
-      return `${opening}이 부분을 구체적인 예를 들어서 설명해줘.`;
+      return ask('이 부분을 구체적인 예를 들어서 설명해줘.');
     case 'too-fast':
-      return `${opening}이 부분을 단계별로 나눠서 천천히 설명해줘.`;
+      return ask('이 부분을 단계별로 나눠서 천천히 설명해줘.');
     case 'unclear':
-      return `${opening}이 부분이 무슨 뜻인지 처음부터 다시 설명해줘.`;
+      return ask('이 부분이 무슨 뜻인지 처음부터 다시 설명해줘.');
   }
 }

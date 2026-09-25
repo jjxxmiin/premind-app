@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-nat
 
 import { AppText } from '@/components/ui';
 import { formatSourcePosition } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/theme/tokens';
 import type { OutlineSection, TranscriptSegment } from '@/types';
 
@@ -71,11 +72,12 @@ export function TranscriptSectionMarker({
   style,
   testID,
 }: TranscriptSectionMarkerProps) {
+  const t = useT();
   const position = formatSourcePosition(section.startMs, page);
   return (
     <Pressable
-      accessibilityHint="요약 자세히에서 이 구간을 열어요."
-      accessibilityLabel={`구간 ${section.heading}, ${position}`}
+      accessibilityHint={t('요약 자세히에서 이 구간을 열어요.')}
+      accessibilityLabel={t('구간 {heading}, {pos}', { heading: section.heading, pos: position })}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [

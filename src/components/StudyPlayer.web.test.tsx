@@ -52,6 +52,11 @@ jest.mock('react-native', () => ({
   TurboModuleRegistry: { get: () => null },
 }));
 
+// jsdom reports navigator.language 'en-US', and on the web build the app follows the
+// browser language, so without this the player would render its English copy here.
+// The assertions below read the Korean screen, which is the product default.
+Object.defineProperty(window.navigator, 'language', { configurable: true, value: 'ko-KR' });
+
 const { StudyPlayer } = (() => {
   const originalWarn = console.warn;
   const warningSpy = jest.spyOn(console, 'warn').mockImplementation((message, ...rest) => {

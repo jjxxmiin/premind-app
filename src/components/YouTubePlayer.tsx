@@ -12,6 +12,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import {
   leavesYouTubeEmbed,
   youtubeEmbedUrl,
@@ -238,6 +239,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
     { videoId, title, initialPositionMs = 0, onPositionChange },
     ref,
   ) {
+    const t = useT();
     const webViewRef = useRef<WebView>(null);
     const [ready, setReady] = useState(false);
     const [failure, setFailure] = useState<EmbedFailure | null>(null);
@@ -342,7 +344,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
     return (
       <View style={styles.container}>
         <View
-          accessibilityLabel={`${title} 유튜브 영상`}
+          accessibilityLabel={t('{title} 유튜브 영상', { title })}
           accessibilityRole="image"
           style={styles.frame}
         >
@@ -387,7 +389,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
                 strokeWidth={1.7}
               />
               <AppText style={styles.stageMuted} variant="meta">
-                유튜브 영상을 불러오고 있어요
+                {t('유튜브 영상을 불러오고 있어요')}
               </AppText>
             </View>
           ) : null}
@@ -400,12 +402,12 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
                 strokeWidth={1.7}
               />
               <AppText align="center" style={styles.stageMuted} variant="meta">
-                {copy.message}
+                {t(copy.message)}
               </AppText>
               <View style={styles.failureActions}>
                 {copy.offerRetry ? (
                   <Button onPress={retry} size="small" variant="secondary">
-                    다시 시도
+                    {t('다시 시도')}
                   </Button>
                 ) : null}
                 {copy.offerYouTube ? (
@@ -418,7 +420,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
                     size="small"
                     variant="secondary"
                   >
-                    유튜브에서 보기
+                    {t('유튜브에서 보기')}
                   </Button>
                 ) : null}
               </View>

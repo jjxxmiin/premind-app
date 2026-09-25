@@ -15,6 +15,7 @@ import Svg, { Circle, Line, Rect, Text as SvgText } from 'react-native-svg';
 import { AppText, Card } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatDuration } from '@/lib/format';
+import { tr, useT } from '@/lib/i18n';
 import { colors, fontFamilies, radii, spacing } from '@/theme/tokens';
 import type { ImportantMarker, StudyConcept } from '@/types';
 
@@ -53,7 +54,7 @@ export function timelineTicks(durationMs: number, width: number): { ticks: Tick[
   for (let ms = 0; ms < durationMs; ms += TICK_EVERY_MS) {
     const x = (ms / durationMs) * width;
     if (ms > 0 && width - x < TICK_CLEARANCE + 12) break;
-    ticks.push({ ms, label: ms === 0 ? '0' : `${ms / 60_000}분` });
+    ticks.push({ ms, label: ms === 0 ? '0' : tr('{n}분', { n: ms / 60_000 }) });
   }
   return { ticks, end };
 }
@@ -75,6 +76,7 @@ export function LectureTimeline({
   onSeek,
   style,
 }: LectureTimelineProps) {
+  const t = useT();
   const { width: windowWidth } = useWindowDimensions();
   const trackRef = useRef<View>(null);
   const [width, setWidth] = useState(
@@ -112,15 +114,15 @@ export function LectureTimeline({
   return (
     <Card style={[styles.card, style]}>
       <View style={styles.head}>
-        <AppText variant="itemTitle">강의 흐름</AppText>
+        <AppText variant="itemTitle">{t('강의 흐름')}</AppText>
         <AppText tabular tone="muted" variant="meta">
           {formatDuration(positionMs / 1000)} / {end.label}
         </AppText>
       </View>
       <Pressable
         accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-        accessibilityHint="누른 곳부터 재생해요."
-        accessibilityLabel="강의 진행 위치"
+        accessibilityHint={t('누른 곳부터 재생해요.')}
+        accessibilityLabel={t('강의 진행 위치')}
         accessibilityRole="adjustable"
         accessibilityValue={{ text: `${formatDuration(positionMs / 1000)} / ${end.label}` }}
         onAccessibilityAction={handleAccessibilityAction}
@@ -224,9 +226,9 @@ export function LectureTimeline({
       </Pressable>
       {markers.length || concepts.length ? (
         <View style={styles.legend}>
-          {mine.length ? <LegendItem color={colors.brand} label="내가 표시" /> : null}
-          {detected.length ? <LegendItem color={colors.textFaint} label="AI 감지" /> : null}
-          {concepts.length ? <LegendItem color={colors.text} label="개념" /> : null}
+          {mine.length ? <LegendItem color={colors.brand} label={t('내가 표시')} /> : null}
+          {detected.length ? <LegendItem color={colors.textFaint} label={t('AI 감지')} /> : null}
+          {concepts.length ? <LegendItem color={colors.text} label={t('개념')} /> : null}
         </View>
       ) : null}
     </Card>

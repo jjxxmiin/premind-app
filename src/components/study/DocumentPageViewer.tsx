@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, Chip } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { pageNumberOf } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 import type { TranscriptSegment } from '@/types';
 
@@ -55,6 +56,7 @@ export function DocumentPageViewer({
   onClose,
   onOpenInTranscript,
 }: DocumentPageViewerProps) {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
@@ -113,7 +115,7 @@ export function DocumentPageViewer({
       <View style={[styles.screen, { paddingTop: insets.top }]}>
         <View style={styles.bar}>
           <Pressable
-            accessibilityLabel="닫기"
+            accessibilityLabel={t('닫기')}
             accessibilityRole="button"
             hitSlop={8}
             onPress={onClose}
@@ -126,7 +128,7 @@ export function DocumentPageViewer({
             testID="page-viewer-position"
             variant="label"
           >
-            {current}쪽 · {indexOfPage(current) + 1} / {segments.length}
+            {t('{page}쪽 · {i} / {n}', { page: current, i: indexOfPage(current) + 1, n: segments.length })}
           </AppText>
           <View style={styles.iconButton} />
         </View>
@@ -148,7 +150,7 @@ export function DocumentPageViewer({
                 {image ? (
                   <Image
                     accessibilityIgnoresInvertColors
-                    accessibilityLabel={`${number}쪽`}
+                    accessibilityLabel={t('{n}쪽', { n: number })}
                     contentFit="contain"
                     source={image}
                     style={styles.image}
@@ -168,7 +170,7 @@ export function DocumentPageViewer({
                         strokeWidth={2}
                       />
                       <AppText tone="muted" variant="badge">
-                        {number}쪽
+                        {t('{n}쪽', { n: number })}
                       </AppText>
                     </View>
                     {segment.summary ? (
@@ -186,9 +188,9 @@ export function DocumentPageViewer({
 
         <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
           <Chip
-            accessibilityHint="이 쪽을 대본에서 열어요."
+            accessibilityHint={t('이 쪽을 대본에서 열어요.')}
             icon={ListTree}
-            label="대본에서 보기"
+            label={t('대본에서 보기')}
             onPress={() => onOpenInTranscript(current)}
           />
         </View>

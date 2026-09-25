@@ -12,6 +12,7 @@ import {
 
 import { AppText } from '@/components/ui';
 import { pageNumberOf } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 import type { TranscriptSegment } from '@/types';
 
@@ -63,6 +64,7 @@ export function DocumentPages({
   pageImage,
   onOpenPage,
 }: DocumentPagesProps) {
+  const t = useT();
   const [width, setWidth] = useState(0);
   const [current, setCurrent] = useState(0);
 
@@ -98,7 +100,7 @@ export function DocumentPages({
     <View onLayout={handleLayout} style={styles.block}>
       <View style={styles.head}>
         <AppText accessibilityRole="header" variant="heading">
-          문서 보기
+          {t('문서 보기')}
         </AppText>
         <AppText
           accessibilityLiveRegion="polite"
@@ -106,7 +108,7 @@ export function DocumentPages({
           tone="muted"
           variant="meta"
         >
-          {current + 1} / {segments.length}쪽
+          {t('{i} / {n}쪽', { i: current + 1, n: segments.length })}
         </AppText>
       </View>
 
@@ -127,8 +129,8 @@ export function DocumentPages({
             const image = pageImage?.(page);
             return (
               <Pressable
-                accessibilityHint="이 쪽을 크게 봐요."
-                accessibilityLabel={`${page}쪽`}
+                accessibilityHint={t('이 쪽을 크게 봐요.')}
+                accessibilityLabel={t('{n}쪽', { n: page })}
                 accessibilityRole="button"
                 key={segment.id}
                 onPress={() => onOpenPage(page)}
@@ -154,7 +156,7 @@ export function DocumentPages({
                     />
                     <View style={[styles.pageBadge, styles.pageBadgeFloating]}>
                       <AppText tone="muted" variant="badge">
-                        {page}쪽
+                        {t('{n}쪽', { n: page })}
                       </AppText>
                     </View>
                   </>
@@ -162,7 +164,7 @@ export function DocumentPages({
                   <>
                     <View style={styles.pageBadge}>
                       <AppText tone="muted" variant="badge">
-                        {page}쪽
+                        {t('{n}쪽', { n: page })}
                       </AppText>
                     </View>
                     <AppText

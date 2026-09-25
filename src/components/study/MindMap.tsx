@@ -21,6 +21,7 @@ import {
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatSourcePosition } from '@/lib/format';
+import { tr, useT } from '@/lib/i18n';
 import { colors, palette, radii, spacing } from '@/theme/tokens';
 import type { StudyConcept } from '@/types';
 
@@ -78,12 +79,12 @@ function nodeFill(node: MindMapNode): string {
  * it becomes the body under the glossary name instead of a heading-sized line.
  */
 function sheetTitle(node: MindMapNode): string {
-  return node.kind === 'concept' ? node.fullLabel : '꼭 기억할 내용';
+  return node.kind === 'concept' ? node.fullLabel : tr('꼭 기억할 내용');
 }
 
 function sheetBody(node: MindMapNode): string {
   if (node.kind !== 'concept') return node.fullLabel;
-  return node.description ?? '이 개념은 아직 설명이 없어요.';
+  return node.description ?? tr('이 개념은 아직 설명이 없어요.');
 }
 
 /**
@@ -109,6 +110,7 @@ export function MindMap({
   page = false,
   style,
 }: MindMapProps) {
+  const t = useT();
   const { width: windowWidth } = useWindowDimensions();
   const [width, setWidth] = useState(Math.max(240, windowWidth - spacing.gutter * 2));
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -124,10 +126,10 @@ export function MindMap({
     return (
       <EmptyState
         compact
-        description="마인드팩에 개념이 생기면 여기에 연결해서 보여 줘요."
+        description={t('마인드팩에 개념이 생기면 여기에 연결해서 보여 줘요.')}
         icon={Network}
         style={style}
-        title="아직 개념이 없어요"
+        title={t('아직 개념이 없어요')}
       />
     );
   }
@@ -217,10 +219,10 @@ export function MindMap({
 
         {layout.nodes.map((node) => (
           <Pressable
-            accessibilityHint="설명과 근거 시점을 보여 줘요."
+            accessibilityHint={t('설명과 근거 시점을 보여 줘요.')}
             accessibilityLabel={
               node.difficulty
-                ? `${node.fullLabel}, ${DIFFICULTY_META[node.difficulty].label}`
+                ? `${node.fullLabel}, ${t(DIFFICULTY_META[node.difficulty].label)}`
                 : node.fullLabel
             }
             accessibilityRole="button"
@@ -264,7 +266,7 @@ export function MindMap({
                 style={[styles.legendDot, { backgroundColor: DIFFICULTY_META[difficulty].fill }]}
               />
               <AppText tone="muted" variant="badge">
-                {DIFFICULTY_META[difficulty].label}
+                {t(DIFFICULTY_META[difficulty].label)}
               </AppText>
             </View>
           ))}
@@ -275,7 +277,9 @@ export function MindMap({
         footer={
           selected?.sourceStartMs !== undefined ? (
             <Button fullWidth onPress={listen} size="large" variant="primary">
-              {`근거 ${page ? '보기' : '듣기'} ${formatSourcePosition(selected.sourceStartMs, page)}`}
+              {page
+                ? t('근거 보기 {pos}', { pos: formatSourcePosition(selected.sourceStartMs, page) })
+                : t('근거 듣기 {pos}', { pos: formatSourcePosition(selected.sourceStartMs, page) })}
             </Button>
           ) : undefined
         }
@@ -287,7 +291,7 @@ export function MindMap({
           <View style={styles.sheetBody}>
             {selected.difficulty ? (
               <StatusBadge
-                label={DIFFICULTY_META[selected.difficulty].label}
+                label={t(DIFFICULTY_META[selected.difficulty].label)}
                 tone={DIFFICULTY_META[selected.difficulty].tone}
               />
             ) : null}

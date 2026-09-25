@@ -4,6 +4,7 @@ import { HighlightableText } from '@/components/study/HighlightableText';
 import { TimeChip } from '@/components/study/TimeChip';
 import { AppText, Card } from '@/components/ui';
 import { formatSourcePosition } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/theme/tokens';
 import type { OutlineSection } from '@/types';
 
@@ -36,6 +37,7 @@ export function SummaryOutline({
   page = false,
   onSectionLayout,
 }: SummaryOutlineProps) {
+  const t = useT();
   if (!sections.length) {
     return null;
   }
@@ -57,8 +59,8 @@ export function SummaryOutline({
             <TimeChip
               accessibilityLabel={
                 page
-                  ? `${formatSourcePosition(section.startMs, true)}으로 이동`
-                  : `${formatSourcePosition(section.startMs, false)}부터 재생`
+                  ? t('{pos}으로 이동', { pos: formatSourcePosition(section.startMs, true) })
+                  : t('{pos}부터 재생', { pos: formatSourcePosition(section.startMs, false) })
               }
               onPress={() => onSeek(section.startMs)}
               page={page}
