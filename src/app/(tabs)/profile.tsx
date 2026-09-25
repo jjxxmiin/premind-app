@@ -25,6 +25,7 @@ import { requestStudyNotificationPermission } from '@/services/notifications';
 import { useAppStore } from '@/state/app-store';
 import { inputReset } from '@/theme/input-reset';
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
+import { APP_LOCALE_LABELS, setLocale, useLocale } from '@/lib/i18n';
 
 type ProfileDialog = 'about' | 'logout' | 'delete' | null;
 
@@ -36,6 +37,7 @@ const SUPPORT_MAILTO = 'mailto:support@camorix.com';
  * than by cards, and the destructive rows sit last in red text.
  */
 export default function ProfileScreen() {
+  const locale = useLocale();
   const {
     deleteAccount,
     error,
@@ -174,6 +176,13 @@ export default function ProfileScreen() {
         <Band />
 
         <SettingsGroup title="앱 설정">
+          <SettingsRow
+            // 영어를 못 읽는 사람도, 한국어를 못 읽는 사람도 찾게 두 말로.
+            description={locale === 'en' ? '한국어로 바꿔요' : 'Language'}
+            onPress={() => setLocale(locale === 'en' ? 'ko' : 'en')}
+            title="언어"
+            value={APP_LOCALE_LABELS[locale]}
+          />
           <SettingsRow
             description="마인드팩이 준비되면 알려드려요"
             onToggle={(next) => void handleNotificationsToggle(next)}

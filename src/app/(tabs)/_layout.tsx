@@ -13,6 +13,7 @@ import { StyleSheet, View, type ColorValue } from 'react-native';
 import { AppTabBar } from '@/components/AppTabBar';
 import { consumePendingJoinCode } from '@/features/interview/pending-join';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes } from '@/theme/tokens';
 
@@ -39,6 +40,7 @@ function tabIcon(Icon: LucideIcon) {
  * full-screen recorder without moving the selected tab.
  */
 export default function TabsLayout() {
+  const t = useT();
   const { breakpoint } = useLayout();
   // An institution's invite link opened before sign-in: finish joining now.
   useEffect(() => {
@@ -60,19 +62,19 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '홈',
-          tabBarAccessibilityLabel: '홈, 내 자료',
+          title: t('홈'),
+          tabBarAccessibilityLabel: t('홈, 내 자료'),
           tabBarIcon: tabIcon(Home),
-          tabBarLabel: '홈',
+          tabBarLabel: t('홈'),
         }}
       />
       <Tabs.Screen
         name="mastery"
         options={{
-          title: '이해도',
-          tabBarAccessibilityLabel: '이해도, 자료별 학습 상태',
+          title: t('이해도'),
+          tabBarAccessibilityLabel: t('이해도, 자료별 학습 상태'),
           tabBarIcon: tabIcon(Gauge),
-          tabBarLabel: '이해도',
+          tabBarLabel: t('이해도'),
         }}
       />
       {/* Not a tab: one button for every way to start a 마인드팩. It opens
@@ -91,29 +93,29 @@ export default function TabsLayout() {
         }}
         name="create"
         options={{
-          title: '추가',
-          tabBarAccessibilityLabel: '자료 추가, 녹음하거나 파일을 올려요',
+          title: t('추가'),
+          tabBarAccessibilityLabel: t('자료 추가, 녹음하거나 파일을 올려요'),
           tabBarIcon: tabIcon(PlusCircle),
-          tabBarLabel: '추가',
+          tabBarLabel: t('추가'),
         }}
       />
       {/* 말하기: 발표 평가와 면접 연습(2026-09-26 합침). 안에서 발표, 면접을 고른다. */}
       <Tabs.Screen
         name="speak"
         options={{
-          title: '말하기',
-          tabBarAccessibilityLabel: '말하기, 발표 평가와 면접 연습',
+          title: t('말하기'),
+          tabBarAccessibilityLabel: t('말하기, 발표 평가와 면접 연습'),
           tabBarIcon: tabIcon(MicVocal),
-          tabBarLabel: '말하기',
+          tabBarLabel: t('말하기'),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'MY',
-          tabBarAccessibilityLabel: '내 정보와 설정',
+          title: t('MY'),
+          tabBarAccessibilityLabel: t('내 정보와 설정'),
           tabBarIcon: tabIcon(UserRound),
-          tabBarLabel: 'MY',
+          tabBarLabel: t('MY'),
         }}
       />
       {/* Kept as routes so old links resolve; sharing is not in the bar. */}

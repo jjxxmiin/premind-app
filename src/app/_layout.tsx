@@ -15,10 +15,13 @@ import {
   subscribeToStudyNotificationResponses,
 } from '@/services/notifications';
 import { colors, fontFamilies } from '@/theme/tokens';
+import { hydrateLocale } from '@/lib/i18n';
 import { captureInitialReturnTo, takeReturnTo } from '@/lib/return-to';
 
 // Before the router rewrites a signed-out visitor's address to /login.
 captureInitialReturnTo();
+// The saved screen language (MY → 앱 설정 → 언어); until it loads, the device language.
+void hydrateLocale();
 
 void SplashScreen.preventAutoHideAsync();
 

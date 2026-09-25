@@ -5,7 +5,7 @@
  * The contract is the one the interview web app already used through its Next
  * server (docs: scratchpad brief, apps/interview/app/api/**): JSON in, JSON out,
  * errors as `{error, message}` with a Korean message. Every call sends
- * `X-Locale: ko` so the AI writes Korean.
+ * `X-Locale` (the app's screen language) so the AI writes in it.
  *
  * Token lifetime belongs to `sessionManager.authorize`: it refreshes once on a
  * 401, which is why errors are raised as `ApiError` subclasses.
@@ -17,6 +17,7 @@ import { isDemoSession, sessionManager } from '@/services/api/session-manager';
 
 import type { GuidedExpandResponse, GuidedPrepareRequest, GuidedPrepareResponse } from './guided';
 import type { InterviewSession } from './types';
+import { getLocale } from '@/lib/i18n/locale-store';
 
 const DEFAULT_TIMEOUT_MS = 20_000;
 /** Longer than the server's own transcription budget (about 3 minutes). */
@@ -175,7 +176,8 @@ async function send<T>(path: string, options: InterviewRequestOptions, token: st
     timedOut = true;
     controller.abort();
   }, options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-  const headers: Record<string, string> = { Accept: 'application/json', 'X-Locale': 'ko' };
+  // AI 가 쓰는 언어 = 앱 화면 언어(2026-09-26 영어판).
+  const headers: Record<string, string> = { Accept: 'application/json', 'X-Locale': getLocale() };
   if (token) headers.Authorization = `Bearer ${token}`;
   if (options.operation) headers['x-premind-operation'] = options.operation;
   let body: BodyInit | undefined;
