@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { ScoreRing } from '@/components/lens';
 import { AppText, ListRow } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { masteryLine, masteryVerdict, type MasterySummary } from '@/lib/mastery';
 import { colors, radii, sizes } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
@@ -29,19 +30,25 @@ export function MaterialMasteryRow({
   onPress,
   summary,
 }: MaterialMasteryRowProps) {
-  const line = masteryLine(summary);
+  const t = useT();
+  const line = masteryLine(summary, t.locale);
   const scored = summary.score !== null;
   const hint = scored
-    ? '이해도와 취약 개념을 열어요'
+    ? t('이해도와 취약 개념을 열어요')
     : material.quiz.length > 0
-      ? '문제를 풀어요'
-      : '요약에서 핵심 내용을 확인해요';
+      ? t('문제를 풀어요')
+      : t('요약에서 핵심 내용을 확인해요');
   return (
     <ListRow
       accessibilityHint={hint}
       accessibilityLabel={
         scored
-          ? `${material.title}. 이해도 ${summary.score}%, ${masteryVerdict(summary.score ?? 0)}. ${line}`
+          ? t('{title}. 이해도 {score}%, {verdict}. {line}', {
+              title: material.title,
+              score: summary.score,
+              verdict: masteryVerdict(summary.score ?? 0, t.locale),
+              line,
+            })
           : `${material.title}. ${line}`
       }
       divider={divider}

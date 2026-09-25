@@ -23,6 +23,7 @@ import {
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatRelativeDate, formatSourcePosition } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import {
   CHECKLIST_WEIGHT,
   QUIZ_WEIGHT,
@@ -43,12 +44,17 @@ import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
  * device from the learner's own answers and ticks.
  */
 export default function MasteryScreen() {
+  const t = useT();
+  const locale = t.locale;
   const { id } = useLocalSearchParams<{ id: string }>();
   const { materials, projects, quizAttempts, studyNotes } = useAppStore();
   const material = materials.find((item) => item.id === id);
   const summary = useMemo(
-    () => (material ? summarizeMastery(material, quizAttempts, studyNotes[material.id]) : null),
-    [material, quizAttempts, studyNotes],
+    () =>
+      material
+        ? summarizeMastery(material, quizAttempts, studyNotes[material.id], locale)
+        : null,
+    [locale, material, quizAttempts, studyNotes],
   );
 
   const back = () => goBackOrReplace('/(tabs)/mastery');
@@ -56,18 +62,18 @@ export default function MasteryScreen() {
   if (!material || !summary) {
     return (
       <Screen padded={false}>
-        <AppHeader onBack={back} title="이해도" />
+        <AppHeader onBack={back} title={t('이해도')} />
         <ErrorState
-          description="이 자료를 찾을 수 없어요. 평가에서 다시 골라 주세요."
+          description={t('이 자료를 찾을 수 없어요. 평가에서 다시 골라 주세요.')}
           onRetry={back}
-          retryLabel="돌아가기"
+          retryLabel={t('돌아가기')}
         />
       </Screen>
     );
   }
 
   const projectTitle =
-    projects.find((project) => project.id === material.projectId)?.title ?? '폴더 없음';
+    projects.find((project) => project.id === material.projectId)?.title ?? t('폴더 없음');
   const keyPoints = material.note?.keyPoints ?? [];
   const checked = new Set(studyNotes[material.id]?.checkedPoints ?? []);
   const hasQuiz = material.quiz.length > 0;
@@ -90,27 +96,29 @@ export default function MasteryScreen() {
     });
 
   const primaryLabel = !hasQuiz
-    ? '요약 보기'
+    ? t('요약 보기')
     : summary.answeredCount > 0
-      ? '문제 다시 풀기'
-      : '문제 풀기';
+      ? t('문제 다시 풀기')
+      : t('문제 풀기');
   const onPrimary = hasQuiz ? openQuiz : openSummary;
 
   if (summary.score === null) {
     return (
       <Screen padded={false}>
-        <AppHeader onBack={back} title="이해도" />
+        <AppHeader onBack={back} title={t('이해도')} />
         <View style={styles.unavailableContent}>
           <EmptyState
             actionLabel={primaryLabel}
             description={
               hasQuiz
-                ? `문제 ${summary.questionCount}개를 풀면 이해도와 취약 개념이 생겨요.`
-                : '요약에서 핵심 내용을 확인하면 이해도가 생겨요.'
+                ? t('문제 {n}개를 풀면 이해도와 취약 개념이 생겨요.', {
+                    n: summary.questionCount,
+                  })
+                : t('요약에서 핵심 내용을 확인하면 이해도가 생겨요.')
             }
             icon={BookOpenCheck}
             onAction={onPrimary}
-            title="아직 평가할 게 없어요"
+            title={t('아직 평가할 게 없어요')}
           />
         </View>
       </Screen>
@@ -123,7 +131,7 @@ export default function MasteryScreen() {
 
   return (
     <Screen padded={false}>
-      <AppHeader onBack={back} title="이해도" />
+      <AppHeader onBack={back} title={t('이해도')} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -131,7 +139,7 @@ export default function MasteryScreen() {
       >
         <View style={styles.content}>
           <View style={styles.heading}>
-            <AppText variant="pageTitle">{masteryHeadline(summary)}</AppText>
+            <AppText variant="pageTitle">{masteryHeadline(summary, locale)}</AppText>
             <AppText numberOfLines={2} tone="muted" variant="body">
               {`${material.title} / ${projectTitle}`}
             </AppText>
@@ -139,28 +147,38 @@ export default function MasteryScreen() {
 
           <Card style={styles.scoreCard} variant="soft">
             <ScoreRing
-              label="이해도"
+              label={t('이해도')}
               max={100}
               precision={0}
               score={summary.score}
               unit="%"
-              verdict={masteryVerdict(summary.score)}
+              verdict={masteryVerdict(summary.score, locale)}
             />
             <View style={styles.scoreParts}>
               <ScorePart
-                label={`문제 정답률 ${Math.round(QUIZ_WEIGHT * 100)}%`}
+                label={t('문제 정답률 {weight}%', { weight: Math.round(QUIZ_WEIGHT * 100) })}
                 value={
                   summary.accuracy === null
-                    ? '아직 안 풀었어요'
-                    : `${summary.answeredCount}개 중 ${summary.correctCount}개 맞힘, ${toPercent(summary.accuracy)}%`
+                    ? t('아직 안 풀었어요')
+                    : t('{total}개 중 {correct}개 맞힘, {percent}%', {
+                        total: summary.answeredCount,
+                        correct: summary.correctCount,
+                        percent: toPercent(summary.accuracy),
+                      })
                 }
               />
               <ScorePart
-                label={`핵심 내용 확인 ${Math.round(CHECKLIST_WEIGHT * 100)}%`}
+                label={t('핵심 내용 확인 {weight}%', {
+                  weight: Math.round(CHECKLIST_WEIGHT * 100),
+                })}
                 value={
                   summary.checklistRatio === null
-                    ? '핵심 내용이 없어요'
-                    : `${summary.keyPointCount}개 중 ${summary.checkedCount}개 확인, ${toPercent(summary.checklistRatio)}%`
+                    ? t('핵심 내용이 없어요')
+                    : t('{total}개 중 {checked}개 확인, {percent}%', {
+                        total: summary.keyPointCount,
+                        checked: summary.checkedCount,
+                        percent: toPercent(summary.checklistRatio),
+                      })
                 }
               />
             </View>
@@ -168,8 +186,8 @@ export default function MasteryScreen() {
 
           <View style={styles.section}>
             <SectionHeader
-              description="마지막 답이 틀린 개념이에요. 시간을 누르면 그 부분부터 들어요."
-              title="헷갈린 개념"
+              description={t('마지막 답이 틀린 개념이에요. 시간을 누르면 그 부분부터 들어요.')}
+              title={t('헷갈린 개념')}
             />
             {summary.weakConcepts.length > 0 ? (
               <View style={styles.cardList}>
@@ -184,11 +202,11 @@ export default function MasteryScreen() {
               </View>
             ) : (
               <Card style={styles.quietCard} variant="soft">
-                <StatusBadge label="없어요" tone="positive" />
+                <StatusBadge label={t('없어요')} tone="positive" />
                 <AppText tone="muted" variant="body">
                   {summary.answeredCount > 0
-                    ? '푼 문제는 모두 맞혔어요.'
-                    : '문제를 풀면 헷갈린 개념이 보여요.'}
+                    ? t('푼 문제는 모두 맞혔어요.')
+                    : t('문제를 풀면 헷갈린 개념이 보여요.')}
                 </AppText>
               </Card>
             )}
@@ -197,17 +215,20 @@ export default function MasteryScreen() {
           {keyPoints.length > 0 ? (
             <View style={styles.section}>
               <SectionHeader
-                actionLabel="요약 보기"
-                description={`${keyPoints.length}개 중 ${summary.checkedCount}개를 확인했어요.`}
+                actionLabel={t('요약 보기')}
+                description={t('{total}개 중 {checked}개를 확인했어요.', {
+                  total: keyPoints.length,
+                  checked: summary.checkedCount,
+                })}
                 onAction={openSummary}
-                title="핵심 내용"
+                title={t('핵심 내용')}
               />
               <Card padding={false}>
                 {keyPoints.map((point, index) => {
                   const done = checked.has(point);
                   return (
                     <View
-                      accessibilityLabel={`${done ? '확인함' : '아직 확인 안 함'}. ${point}`}
+                      accessibilityLabel={`${done ? t('확인함') : t('아직 확인 안 함')}. ${point}`}
                       accessible
                       key={`${index}-${point}`}
                       style={[
@@ -239,15 +260,16 @@ export default function MasteryScreen() {
 
           <View style={styles.section}>
             <SectionHeader
-              description="날짜별로 맞힌 비율이에요."
-              title="정답률 추이"
+              description={t('날짜별로 맞힌 비율이에요.')}
+              title={t('정답률 추이')}
             />
             <Card style={styles.trendCard} variant="soft">
               {summary.trend.length >= 2 && first && latest ? (
                 <View
-                  accessibilityLabel={`정답률 추이, ${summary.trend.length}일. ${trendValues
-                    .map((value) => `${value}%`)
-                    .join(', ')}`}
+                  accessibilityLabel={t('정답률 추이, {n}일. {values}', {
+                    n: summary.trend.length,
+                    values: trendValues.map((value) => `${value}%`).join(', '),
+                  })}
                   accessible
                   style={styles.trendBody}
                 >
@@ -256,7 +278,10 @@ export default function MasteryScreen() {
                       {`${trendValues[trendValues.length - 1]}%`}
                     </AppText>
                     <AppText tone="muted" variant="badge">
-                      {`${formatRelativeDate(latest.lastAttemptAt)}, 문제 ${latest.attemptCount}개`}
+                      {t('{when}, 문제 {n}개', {
+                        when: formatRelativeDate(latest.lastAttemptAt),
+                        n: latest.attemptCount,
+                      })}
                     </AppText>
                   </View>
                   <TrendSparkline
@@ -269,8 +294,8 @@ export default function MasteryScreen() {
               ) : (
                 <AppText tone="muted" variant="body">
                   {summary.trend.length === 1
-                    ? '다른 날 한 번 더 풀면 추이가 보여요.'
-                    : '문제를 풀면 추이가 보여요.'}
+                    ? t('다른 날 한 번 더 풀면 추이가 보여요.')
+                    : t('문제를 풀면 추이가 보여요.')}
                 </AppText>
               )}
             </Card>
@@ -281,9 +306,9 @@ export default function MasteryScreen() {
               section that restates all three is one more thing to read. */}
           {summary.nextSteps.length === 0 ? (
             <Card style={styles.quietCard} variant="soft">
-              <StatusBadge label="다 했어요" tone="positive" />
+              <StatusBadge label={t('다 했어요')} tone="positive" />
               <AppText tone="muted" variant="body">
-                문제도 다 맞히고 핵심 내용도 다 확인했어요.
+                {t('문제도 다 맞히고 핵심 내용도 다 확인했어요.')}
               </AppText>
             </Card>
           ) : null}
@@ -332,34 +357,39 @@ function ConceptCard({
   /** True for an uploaded document: positions are pages, and nothing plays. */
   page: boolean;
 }) {
+  const t = useT();
   const time = formatSourcePosition(concept.sourceStartMs, page);
   return (
     <Card style={styles.conceptCard}>
       <View style={styles.conceptHead}>
         <AppText style={styles.flex} variant="itemTitle">
-          {concept.concept}
+          {/* '기타' is the name the app gives a question with no concept. */}
+          {concept.concept === '기타' ? t('기타') : concept.concept}
         </AppText>
         <StatusBadge
-          label={`${concept.questionCount}개 중 ${concept.correctCount}개`}
+          label={t('{total}개 중 {correct}개', {
+            total: concept.questionCount,
+            correct: concept.correctCount,
+          })}
           tone="warning"
         />
       </View>
       {concept.missedQuestion ? (
         <View style={styles.conceptQuestion}>
           <AppText tone="muted" variant="badge">
-            물어본 것
+            {t('물어본 것')}
           </AppText>
           <AppText variant="body">{concept.missedQuestion.prompt}</AppText>
         </View>
       ) : null}
       <Button
-        accessibilityHint="그 시점부터 대본과 함께 재생해요."
+        accessibilityHint={t('그 시점부터 대본과 함께 재생해요.')}
         leftIcon={<PlayCircle color={colors.textSoft} size={iconSizes.inline} />}
         onPress={onListen}
         style={styles.listenButton}
         variant="outline"
       >
-        {`${time}부터 다시 듣기`}
+        {t('{at}부터 다시 듣기', { at: time })}
       </Button>
     </Card>
   );

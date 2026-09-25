@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppText, Card, StatusBadge } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import type { SessionResult } from '@/lib/flashcards';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 
 export interface DeckResultProps {
@@ -16,6 +17,7 @@ export interface DeckResultProps {
  * never claim more than the 마인드팩 had to give.
  */
 export function DeckResult({ result }: DeckResultProps) {
+  const t = useT();
   const clean = result.againCount === 0;
 
   return (
@@ -26,7 +28,7 @@ export function DeckResult({ result }: DeckResultProps) {
       variant="soft"
     >
       <StatusBadge
-        label={clean ? '다 외웠어요' : '한 번 더'}
+        label={clean ? t('다 외웠어요') : t('한 번 더')}
         tone={clean ? 'positive' : 'warning'}
       />
       <View style={styles.scoreLine}>
@@ -42,8 +44,8 @@ export function DeckResult({ result }: DeckResultProps) {
       </AppText>
       <AppText align="center" tone="muted" variant="meta">
         {clean
-          ? '오늘은 여기까지 해도 좋아요. 내일 한 번 더 보면 오래 남아요.'
-          : `다시 볼 카드가 ${result.againCount}개 있어요. 이어서 복습해 보세요.`}
+          ? t('오늘은 여기까지 해도 좋아요. 내일 한 번 더 보면 오래 남아요.')
+          : t('다시 볼 카드가 {n}개 있어요. 이어서 복습해 보세요.', { n: result.againCount })}
       </AppText>
       {clean ? (
         <View style={styles.cleanIcon}>

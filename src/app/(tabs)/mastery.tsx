@@ -18,6 +18,7 @@ import {
 } from '@/components/ui';
 import { confusionSpots, type ConfusionSpot } from '@/lib/confusion-spots';
 import { formatSourcePosition } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import type { QuizOrigin } from '@/lib/navigation';
 import {
@@ -50,6 +51,8 @@ const VISIBLE_SPOTS = 4;
  * computed on the device from the learner's own answers and ticks.
  */
 export default function MasteryScreen() {
+  const t = useT();
+  const locale = t.locale;
   const {
     confusionFeedback,
     materials,
@@ -64,7 +67,7 @@ export default function MasteryScreen() {
   const mastery = useMemo(() => {
     const rows = materials.filter(isStudyable).map((material) => ({
       material,
-      summary: summarizeMastery(material, quizAttempts, studyNotes[material.id]),
+      summary: summarizeMastery(material, quizAttempts, studyNotes[material.id], locale),
     }));
     return rows.sort((left, right) => {
       const leftDone = left.summary.score !== null ? 1 : 0;
@@ -74,7 +77,7 @@ export default function MasteryScreen() {
       const rightAt = right.summary.lastAttemptAt ?? right.material.updatedAt;
       return rightAt.localeCompare(leftAt);
     });
-  }, [materials, quizAttempts, studyNotes]);
+  }, [locale, materials, quizAttempts, studyNotes]);
 
   /**
    * The passages the learner said they were stuck on. Marking one asks the AI
@@ -87,7 +90,10 @@ export default function MasteryScreen() {
   );
   const visibleSpots = spots.slice(0, VISIBLE_SPOTS);
 
-  const days = useMemo(() => weekdayActivity(quizAttempts), [quizAttempts]);
+  const days = useMemo(
+    () => weekdayActivity(quizAttempts, undefined, locale),
+    [locale, quizAttempts],
+  );
   const score = overallMastery(mastery.map((row) => row.summary));
   const studiedCount = mastery.filter((row) => row.summary.score !== null).length;
   const unansweredCount = mastery.reduce(
@@ -101,7 +107,7 @@ export default function MasteryScreen() {
     weakConcept:
       mastery.flatMap((row) => row.summary.weakConcepts)[0]?.concept ?? null,
     unansweredCount,
-  });
+  }, locale);
 
   /** `from` names this tab so 문제 comes back here, not to the material. */
   const openQuiz = (materialId: string) =>
@@ -147,7 +153,7 @@ export default function MasteryScreen() {
         right={
           <IconButton
             icon={Bell}
-            label="알림"
+            label={t('알림')}
             onPress={() => router.push('/notifications')}
           />
         }
@@ -156,9 +162,9 @@ export default function MasteryScreen() {
       <View style={[styles.content, { paddingHorizontal: gutter }]}>
         <AnimatedReveal>
           <View style={styles.heading}>
-            <AppText variant="pageTitle">이해도</AppText>
+            <AppText variant="pageTitle">{t('이해도')}</AppText>
             <AppText tone="muted" variant="body">
-              푼 문제와 확인한 내용으로 자료마다 계산해요
+              {t('푼 문제와 확인한 내용으로 자료마다 계산해요')}
             </AppText>
           </View>
         </AnimatedReveal>
@@ -167,14 +173,16 @@ export default function MasteryScreen() {
           <AnimatedReveal delay={40}>
             <Card padding={false}>
               <EmptyState
-                actionLabel="마인드팩 만들기"
+                actionLabel={t('마인드팩 만들기')}
                 // A ring at zero over an unticked 확인 목록: the two things
                 // that fill it, drawn before either has happened.
                 artwork={<EmptyMasteryArtwork />}
                 compact
-                description="문제를 풀고 꼭 기억할 내용을 확인하면 여기에 자료별 이해도가 채워져요"
+                description={t(
+                  '문제를 풀고 꼭 기억할 내용을 확인하면 여기에 자료별 이해도가 채워져요',
+                )}
                 onAction={() => router.push('/record')}
-                title="아직 이해도를 볼 자료가 없어요"
+                title={t('아직 이해도를 볼 자료가 없어요')}
               />
             </Card>
           </AnimatedReveal>
@@ -188,8 +196,8 @@ export default function MasteryScreen() {
               <AnimatedReveal delay={50}>
                 <View style={styles.section}>
                   <SectionHeader
-                    description="누르면 그 대목으로 가요. 알게 됐으면 지워 주세요."
-                    title="헷갈린다고 표시한 곳"
+                    description={t('누르면 그 대목으로 가요. 알게 됐으면 지워 주세요.')}
+                    title={t('헷갈린다고 표시한 곳')}
                   />
                   <Card padding={false}>
                     {visibleSpots.map((spot, index) => (
@@ -213,7 +221,10 @@ export default function MasteryScreen() {
                   </Card>
                   {spots.length > visibleSpots.length ? (
                     <AppText tone="muted" variant="meta">
-                      표시한 곳 {spots.length}개 중 최근 {visibleSpots.length}개예요
+                      {t('표시한 곳 {total}개 중 최근 {shown}개예요', {
+                        total: spots.length,
+                        shown: visibleSpots.length,
+                      })}
                     </AppText>
                   ) : null}
                 </View>
@@ -226,8 +237,8 @@ export default function MasteryScreen() {
             <AnimatedReveal delay={60}>
               <View style={styles.section}>
                 <SectionHeader
-                  description="자료를 누르면 취약 개념과 무엇부터 볼지 알려 줘요."
-                  title="자료별 이해도"
+                  description={t('자료를 누르면 취약 개념과 무엇부터 볼지 알려 줘요.')}
+                  title={t('자료별 이해도')}
                 />
                 <Card padding={false}>
                   {visibleRows.map(({ material, summary }, index) => (
@@ -241,13 +252,13 @@ export default function MasteryScreen() {
                   ))}
                   {hiddenCount > 0 ? (
                     <Button
-                      accessibilityLabel={`자료 ${hiddenCount}개 더 보기`}
+                      accessibilityLabel={t('자료 {n}개 더 보기', { n: hiddenCount })}
                       fullWidth
                       onPress={() => setExpanded(true)}
                       style={styles.more}
                       variant="ghost"
                     >
-                      {`더 보기 ${hiddenCount}개`}
+                      {t('더 보기 {n}개', { n: hiddenCount })}
                     </Button>
                   ) : null}
                 </Card>
@@ -278,11 +289,13 @@ function ConfusionSpotRow({
   onResolve: () => void;
   spot: ConfusionSpot;
 }) {
-  const where = `${spot.materialTitle} / ${formatSourcePosition(spot.positionMs, spot.isDocument)} / ${spot.reasonLabel}`;
+  const t = useT();
+  const reason = t(spot.reasonLabel);
+  const where = `${spot.materialTitle} / ${formatSourcePosition(spot.positionMs, spot.isDocument)} / ${reason}`;
   return (
     <View style={[styles.spotRow, divider ? styles.spotDivider : null]}>
       <Pressable
-        accessibilityHint="표시한 대목을 대본에서 열어요."
+        accessibilityHint={t('표시한 대목을 대본에서 열어요.')}
         accessibilityLabel={`${spot.passage}, ${where}`}
         accessibilityRole="button"
         onPress={onOpen}
@@ -297,7 +310,7 @@ function ConfusionSpotRow({
       </Pressable>
       <IconButton
         icon={Check}
-        label={`${spot.reasonLabel} 표시 지우기`}
+        label={t('{reason} 표시 지우기', { reason })}
         onPress={onResolve}
       />
     </View>

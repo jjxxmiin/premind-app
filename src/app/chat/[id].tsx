@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/AppHeader';
 import { StudyChat } from '@/components/StudyChat';
 import { EmptyState, ErrorState, Screen } from '@/components/ui';
+import { useT } from '@/lib/i18n';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useAppStore } from '@/state/app-store';
 
@@ -59,6 +60,7 @@ function useKeyboardVisible(): boolean {
  *   nothing between the composer and the window bottom may keep that inset.
  */
 export default function MaterialChatScreen() {
+  const t = useT();
   const params = useLocalSearchParams<{
     id: string;
     focus?: string | string[];
@@ -75,12 +77,12 @@ export default function MaterialChatScreen() {
   if (!material) {
     return (
       <Screen padded={false}>
-        <AppHeader onBack={() => goBackOrReplace('/(tabs)/library')} title="질문" />
+        <AppHeader onBack={() => goBackOrReplace('/(tabs)/library')} title={t.ctx('chat', '질문')} />
         <View style={styles.stateContent}>
           <ErrorState
-            description="이 자료를 찾을 수 없어요. 내 자료에서 다시 골라 주세요."
+            description={t('이 자료를 찾을 수 없어요. 내 자료에서 다시 골라 주세요.')}
             onRetry={() => router.replace('/(tabs)/library')}
-            retryLabel="내 자료 보기"
+            retryLabel={t('내 자료 보기')}
           />
         </View>
       </Screen>
@@ -94,15 +96,15 @@ export default function MaterialChatScreen() {
           onBack={() =>
             goBackOrReplace({ pathname: '/material/[id]', params: { id: material.id } })
           }
-          title="질문"
+          title={t.ctx('chat', '질문')}
         />
         <View style={styles.stateContent}>
           <EmptyState
-            actionLabel="진행 보기"
-            description="대본이 만들어지면 근거를 보며 질문할 수 있어요."
+            actionLabel={t('진행 보기')}
+            description={t('대본이 만들어지면 근거를 보며 질문할 수 있어요.')}
             icon={FileSearch2}
             onAction={() => router.replace({ pathname: '/processing/[id]', params: { id: material.id } })}
-            title="아직 대본을 만드는 중이에요"
+            title={t('아직 대본을 만드는 중이에요')}
           />
         </View>
       </Screen>

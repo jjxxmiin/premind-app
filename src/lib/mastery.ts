@@ -6,6 +6,18 @@ import type {
 } from '../types';
 
 import { formatSourcePosition } from './format';
+import { translate, type AppLocale, type Vars } from './i18n/core';
+import { EN } from './i18n/en';
+
+/**
+ * The sentences below are built here rather than on screen, so they take the
+ * screen language as an argument (default 'ko': the Korean output is exactly
+ * what it always was, and the tests read it). The Korean template is the
+ * dictionary key (`src/lib/i18n/en/study.ts`).
+ */
+function say(locale: AppLocale, ko: string, vars?: Vars): string {
+  return translate(locale, [EN], ko, vars);
+}
 
 /**
  * 이해도: how well the learner knows one material, computed on the device
@@ -183,11 +195,11 @@ export function masteryScore(
 }
 
 /** One plain word for a 0–100 이해도. */
-export function masteryVerdict(score: number): string {
-  if (score >= 90) return '아주 잘 알아요';
-  if (score >= 70) return '잘 알아요';
-  if (score >= 40) return '조금 더 봐요';
-  return '다시 봐요';
+export function masteryVerdict(score: number, locale: AppLocale = 'ko'): string {
+  if (score >= 90) return say(locale, '아주 잘 알아요');
+  if (score >= 70) return say(locale, '잘 알아요');
+  if (score >= 40) return say(locale, '조금 더 봐요');
+  return say(locale, '다시 봐요');
 }
 
 /**
@@ -209,10 +221,14 @@ export function josa(word: string, kind: '을' | '이' | '은' | '와'): string 
 }
 
 /** "회귀와 분류", "과적합" — up to `limit` items, the rest counted. */
-export function joinTerms(terms: readonly string[], limit = 2): string {
+export function joinTerms(terms: readonly string[], limit = 2, locale: AppLocale = 'ko'): string {
   if (terms.length === 0) return '';
   const shown = terms.slice(0, limit);
   const rest = terms.length - shown.length;
+  if (locale === 'en') {
+    const listed = shown.join(rest > 0 ? ', ' : ' and ');
+    return rest > 0 ? `${listed} and ${rest} more` : listed;
+  }
   const joined = shown
     .map((term, index) => (index < shown.length - 1 ? `${term}${josa(term, '와')}` : term))
     .join(' ');
@@ -232,21 +248,23 @@ export function nextSteps(summary: {
    * page 3 read as "00:02부터 다시 듣기" — a time for something with no sound.
    */
   isDocument?: boolean;
-}): NextStep[] {
+}, locale: AppLocale = 'ko'): NextStep[] {
   const steps: NextStep[] = [];
   const nothingDone = summary.answeredCount === 0 && summary.checkedCount === 0;
   if (nothingDone) {
     if (summary.questionCount > 0) {
       steps.push({
         kind: 'start',
-        title: '문제 풀기',
-        detail: `문제 ${summary.questionCount}개를 풀면 이해도가 생겨요`,
+        title: say(locale, '문제 풀기'),
+        detail: say(locale, '문제 {n}개를 풀면 이해도가 생겨요', { n: summary.questionCount }),
       });
     } else if (summary.keyPointCount > 0) {
       steps.push({
         kind: 'checklist',
-        title: '핵심 내용 확인',
-        detail: `핵심 내용 ${summary.keyPointCount}개를 확인하면 이해도가 생겨요`,
+        title: say(locale, '핵심 내용 확인'),
+        detail: say(locale, '핵심 내용 {n}개를 확인하면 이해도가 생겨요', {
+          n: summary.keyPointCount,
+        }),
       });
     }
     return steps;
@@ -255,9 +273,14 @@ export function nextSteps(summary: {
     steps.push({
       kind: 'relisten',
       title: summary.isDocument
-        ? `${formatSourcePosition(concept.sourceStartMs, true)} 다시 보기`
-        : `${formatSourcePosition(concept.sourceStartMs, false)}부터 다시 듣기`,
-      detail: `${concept.concept}${josa(concept.concept, '을')} 헷갈렸어요`,
+        ? say(locale, '{at} 다시 보기', { at: formatSourcePosition(concept.sourceStartMs, true) })
+        : say(locale, '{at}부터 다시 듣기', {
+            at: formatSourcePosition(concept.sourceStartMs, false),
+          }),
+      detail: say(locale, '{term}{josa} 헷갈렸어요', {
+        term: concept.concept,
+        josa: josa(concept.concept, '을'),
+      }),
       sourceStartMs: concept.sourceStartMs,
       concept: concept.concept,
     });
@@ -266,11 +289,11 @@ export function nextSteps(summary: {
   const unanswered = summary.questionCount - summary.answeredCount;
   if (wrong > 0 || unanswered > 0) {
     const parts: string[] = [];
-    if (wrong > 0) parts.push(`틀린 문제 ${wrong}개`);
-    if (unanswered > 0) parts.push(`안 푼 문제 ${unanswered}개`);
+    if (wrong > 0) parts.push(say(locale, '틀린 문제 {n}개', { n: wrong }));
+    if (unanswered > 0) parts.push(say(locale, '안 푼 문제 {n}개', { n: unanswered }));
     steps.push({
       kind: 'retry',
-      title: summary.answeredCount > 0 ? '문제 다시 풀기' : '문제 풀기',
+      title: say(locale, summary.answeredCount > 0 ? '문제 다시 풀기' : '문제 풀기'),
       detail: parts.join(', '),
     });
   }
@@ -278,8 +301,8 @@ export function nextSteps(summary: {
   if (unchecked > 0) {
     steps.push({
       kind: 'checklist',
-      title: '핵심 내용 확인',
-      detail: `아직 확인하지 않은 내용 ${unchecked}개`,
+      title: say(locale, '핵심 내용 확인'),
+      detail: say(locale, '아직 확인하지 않은 내용 {n}개', { n: unchecked }),
     });
   }
   return steps;
@@ -290,6 +313,7 @@ export function summarizeMastery(
   material: Pick<StudyMaterial, 'id' | 'quiz' | 'note'>,
   attempts: readonly QuizAttempt[],
   notebook?: Pick<StudyNotebook, 'checkedPoints'> | null,
+  locale: AppLocale = 'ko',
 ): MasterySummary {
   const own = attempts.filter((attempt) => attempt.materialId === material.id);
   const latest = latestAttemptsByQuestion(own);
@@ -332,42 +356,60 @@ export function summarizeMastery(
     checklistRatio,
     concepts,
     trend: accuracyTrend(own),
-    nextSteps: nextSteps(base),
+    nextSteps: nextSteps(base, locale),
     lastAttemptAt,
   };
 }
 
 /** "이 자료는 76% 이해했어요. 회귀와 분류를 헷갈렸어요." */
-export function masteryHeadline(summary: MasterySummary): string {
-  if (summary.score === null) return '아직 평가할 게 없어요.';
-  const first = `이 자료는 ${summary.score}% 이해했어요.`;
+export function masteryHeadline(summary: MasterySummary, locale: AppLocale = 'ko'): string {
+  if (summary.score === null) return say(locale, '아직 평가할 게 없어요.');
+  const first = say(locale, '이 자료는 {score}% 이해했어요.', { score: summary.score });
   if (summary.weakConcepts.length > 0) {
-    const terms = joinTerms(summary.weakConcepts.map((concept) => concept.concept));
-    return `${first} ${terms}${josa(terms, '을')} 헷갈렸어요.`;
+    const terms = joinTerms(
+      summary.weakConcepts.map((concept) => concept.concept),
+      2,
+      locale,
+    );
+    return say(locale, '{first} {terms}{josa} 헷갈렸어요.', {
+      first,
+      terms,
+      josa: josa(terms, '을'),
+    });
   }
-  if (summary.answeredCount > 0) return `${first} 헷갈린 개념이 없어요.`;
-  return `${first} 문제를 풀면 더 정확해져요.`;
+  if (summary.answeredCount > 0) return say(locale, '{first} 헷갈린 개념이 없어요.', { first });
+  return say(locale, '{first} 문제를 풀면 더 정확해져요.', { first });
 }
 
 /** "문제 5개 중 4개 맞힘, 취약 개념 1개" — the one line under a material's name. */
-export function masteryLine(summary: MasterySummary): string {
+export function masteryLine(summary: MasterySummary, locale: AppLocale = 'ko'): string {
   if (summary.score === null) {
     return summary.questionCount > 0
-      ? `문제 ${summary.questionCount}개가 기다려요`
+      ? say(locale, '문제 {n}개가 기다려요', { n: summary.questionCount })
       : summary.keyPointCount > 0
-        ? `핵심 내용 ${summary.keyPointCount}개를 확인해요`
-        : '아직 평가할 게 없어요';
+        ? say(locale, '핵심 내용 {n}개를 확인해요', { n: summary.keyPointCount })
+        : say(locale, '아직 평가할 게 없어요');
   }
   const parts: string[] = [];
   if (summary.answeredCount > 0) {
-    parts.push(`문제 ${summary.answeredCount}개 중 ${summary.correctCount}개 맞힘`);
+    parts.push(
+      say(locale, '문제 {total}개 중 {correct}개 맞힘', {
+        total: summary.answeredCount,
+        correct: summary.correctCount,
+      }),
+    );
     parts.push(
       summary.weakConcepts.length > 0
-        ? `취약 개념 ${summary.weakConcepts.length}개`
-        : '취약 개념 없음',
+        ? say(locale, '취약 개념 {n}개', { n: summary.weakConcepts.length })
+        : say(locale, '취약 개념 없음'),
     );
   } else {
-    parts.push(`핵심 내용 ${summary.keyPointCount}개 중 ${summary.checkedCount}개 확인`);
+    parts.push(
+      say(locale, '핵심 내용 {total}개 중 {checked}개 확인', {
+        total: summary.keyPointCount,
+        checked: summary.checkedCount,
+      }),
+    );
   }
   return parts.join(', ');
 }
@@ -443,6 +485,11 @@ function localDayKey(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
+/** '월' → 'Mon' in English; a context key, since a lone 월 is also "month". */
+function weekdayLabel(label: string, locale: AppLocale): string {
+  return label ? translate(locale, [EN], label, undefined, 'weekday') : label;
+}
+
 /**
  * The last seven local days, oldest first and today last, with how many
  * questions were answered on each. Labels are the weekday (월 to 일), so a
@@ -451,6 +498,7 @@ function localDayKey(date: Date): string {
 export function weekdayActivity(
   attempts: readonly QuizAttempt[],
   now: number = Date.now(),
+  locale: AppLocale = 'ko',
 ): WeekdayActivity[] {
   const counts = new Map<string, { attemptCount: number; correctCount: number }>();
   for (const attempt of attempts) {
@@ -469,7 +517,7 @@ export function weekdayActivity(
     const count = counts.get(key);
     days.push({
       day: key,
-      label: WEEKDAY_LABELS[(date.getDay() + 6) % 7] ?? '',
+      label: weekdayLabel(WEEKDAY_LABELS[(date.getDay() + 6) % 7] ?? '', locale),
       attemptCount: count?.attemptCount ?? 0,
       correctCount: count?.correctCount ?? 0,
       today: offset === 0,
@@ -479,11 +527,14 @@ export function weekdayActivity(
 }
 
 /** "이번 주 문제 12개, 정답률 80%" or "이번 주는 아직 안 풀었어요". */
-export function weekCaption(days: readonly WeekdayActivity[]): string {
+export function weekCaption(days: readonly WeekdayActivity[], locale: AppLocale = 'ko'): string {
   const attemptCount = days.reduce((sum, day) => sum + day.attemptCount, 0);
-  if (attemptCount === 0) return '이번 주는 아직 안 풀었어요';
+  if (attemptCount === 0) return say(locale, '이번 주는 아직 안 풀었어요');
   const correctCount = days.reduce((sum, day) => sum + day.correctCount, 0);
-  return `이번 주 문제 ${attemptCount}개, 정답률 ${toPercent(correctCount / attemptCount)}%`;
+  return say(locale, '이번 주 문제 {n}개, 정답률 {percent}%', {
+    n: attemptCount,
+    percent: toPercent(correctCount / attemptCount),
+  });
 }
 
 /** Mean 이해도 over the materials that have one; null when none is scored. */
@@ -505,26 +556,38 @@ export interface OverviewCopy {
 }
 
 /** The two lines beside the big ring. */
-export function overviewCopy(input: {
-  materialCount: number;
-  studiedCount: number;
-  weakConcept: string | null;
-  unansweredCount: number;
-}): OverviewCopy {
+export function overviewCopy(
+  input: {
+    materialCount: number;
+    studiedCount: number;
+    weakConcept: string | null;
+    unansweredCount: number;
+  },
+  locale: AppLocale = 'ko',
+): OverviewCopy {
   if (input.studiedCount === 0) {
-    return { title: '첫 문제를 풀면 이해도가 시작돼요', detail: '' };
+    return { title: say(locale, '첫 문제를 풀면 이해도가 시작돼요'), detail: '' };
   }
-  const title = `자료 ${input.materialCount}개 중 ${input.studiedCount}개를 공부했어요`;
+  const title = say(locale, '자료 {total}개 중 {studied}개를 공부했어요', {
+    total: input.materialCount,
+    studied: input.studiedCount,
+  });
   if (input.weakConcept) {
     return {
       title,
-      detail: `${input.weakConcept}${josa(input.weakConcept, '을')} 다시 볼 차례예요`,
+      detail: say(locale, '{term}{josa} 다시 볼 차례예요', {
+        term: input.weakConcept,
+        josa: josa(input.weakConcept, '을'),
+      }),
     };
   }
   if (input.unansweredCount > 0) {
-    return { title, detail: `남은 문제 ${input.unansweredCount}개를 풀어 봐요` };
+    return {
+      title,
+      detail: say(locale, '남은 문제 {n}개를 풀어 봐요', { n: input.unansweredCount }),
+    };
   }
-  return { title, detail: '푼 문제를 모두 맞혔어요' };
+  return { title, detail: say(locale, '푼 문제를 모두 맞혔어요') };
 }
 
 export type PlanKind = 'relisten' | 'retry' | 'start';
@@ -551,7 +614,11 @@ export interface PlanInput {
  * Empty until at least one material is scored, because before that the
  * hero's single button is the whole plan.
  */
-export function studyPlan(rows: readonly PlanInput[], limit = 3): PlanItem[] {
+export function studyPlan(
+  rows: readonly PlanInput[],
+  limit = 3,
+  locale: AppLocale = 'ko',
+): PlanItem[] {
   if (!rows.some((row) => row.summary.score !== null)) return [];
   const byRecent = [...rows].sort((left, right) =>
     (right.summary.lastAttemptAt ?? '').localeCompare(left.summary.lastAttemptAt ?? ''),
@@ -565,10 +632,10 @@ export function studyPlan(rows: readonly PlanInput[], limit = 3): PlanItem[] {
         kind: 'relisten',
         materialId: material.id,
         title: concept.concept,
-        detail: `${material.title} / ${formatSourcePosition(
-          concept.sourceStartMs,
-          material.source.kind === 'document',
-        )}부터`,
+        detail: say(locale, '{title} / {at}부터', {
+          title: material.title,
+          at: formatSourcePosition(concept.sourceStartMs, material.source.kind === 'document'),
+        }),
         sourceStartMs: concept.sourceStartMs,
         concept: concept.concept,
       });
@@ -580,8 +647,8 @@ export function studyPlan(rows: readonly PlanInput[], limit = 3): PlanItem[] {
         item: {
           kind: 'retry',
           materialId: material.id,
-          title: '문제 다시 풀기',
-          detail: `${material.title} / 틀린 문제 ${wrong}개`,
+          title: say(locale, '문제 다시 풀기'),
+          detail: say(locale, '{title} / 틀린 문제 {n}개', { title: material.title, n: wrong }),
         },
       });
     }
@@ -590,8 +657,8 @@ export function studyPlan(rows: readonly PlanInput[], limit = 3): PlanItem[] {
       start.push({
         kind: 'start',
         materialId: material.id,
-        title: '안 푼 문제 풀기',
-        detail: `${material.title} / 문제 ${unanswered}개`,
+        title: say(locale, '안 푼 문제 풀기'),
+        detail: say(locale, '{title} / 문제 {n}개', { title: material.title, n: unanswered }),
       });
     }
   }

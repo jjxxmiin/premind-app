@@ -5,6 +5,7 @@ import { AnimatedReveal, AppText, StatusBadge } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { HIGHLIGHT_PROMPT, type Flashcard } from '@/lib/flashcards';
 import { formatSourcePosition } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 
 export interface FlashcardFaceProps {
@@ -39,20 +40,24 @@ export function FlashcardFace({
   onSeek,
   page = false,
 }: FlashcardFaceProps) {
+  const t = useT();
+  const prompt = t(HIGHLIGHT_PROMPT);
   const seekAt = card.sourceStartMs;
   const seekLabel =
     seekAt === null
       ? null
-      : `${formatSourcePosition(seekAt, page)} 다시 ${page ? '보기' : '듣기'}`;
+      : page
+        ? t('{at} 다시 보기', { at: formatSourcePosition(seekAt, page) })
+        : t('{at} 다시 듣기', { at: formatSourcePosition(seekAt, page) });
 
   const showChip = flipped && seekAt !== null && seekLabel !== null && onSeek !== undefined;
   const cue =
-    card.origin === 'highlight' ? `${HIGHLIGHT_PROMPT} ${card.front}` : card.front;
+    card.origin === 'highlight' ? `${prompt} ${card.front}` : card.front;
 
   return (
     <View style={styles.stack}>
       <Pressable
-        accessibilityHint={flipped ? '눌러서 앞면을 봐요' : '눌러서 뜻을 봐요'}
+        accessibilityHint={flipped ? t('눌러서 앞면을 봐요') : t('눌러서 뜻을 봐요')}
         accessibilityLabel={flipped ? `${card.front}. ${card.back}` : cue}
         accessibilityRole="button"
         onPress={onFlip}
@@ -60,7 +65,7 @@ export function FlashcardFace({
         testID="flashcard-face"
       >
         <View style={styles.badgeRow}>
-          <StatusBadge label={ORIGIN_LABEL[card.origin]} tone="neutral" />
+          <StatusBadge label={t.ctx('card-origin', ORIGIN_LABEL[card.origin])} tone="neutral" />
         </View>
 
         <AnimatedReveal
@@ -83,7 +88,7 @@ export function FlashcardFace({
                   question and set at reading size rather than at hero size. */}
               {card.origin === 'highlight' ? (
                 <AppText align="center" tone="muted" variant="meta">
-                  {HIGHLIGHT_PROMPT}
+                  {prompt}
                 </AppText>
               ) : null}
               <AppText
@@ -98,7 +103,7 @@ export function FlashcardFace({
 
         <View style={styles.footer}>
           <AppText align="center" tone="faint" variant="badge">
-            {flipped ? '눌러서 앞면을 봐요' : '눌러서 뜻을 봐요'}
+            {flipped ? t('눌러서 앞면을 봐요') : t('눌러서 뜻을 봐요')}
           </AppText>
         </View>
       </Pressable>
@@ -110,7 +115,7 @@ export function FlashcardFace({
           reader's thumb. */}
       {showChip && seekAt !== null && seekLabel !== null ? (
         <Pressable
-          accessibilityHint="이 내용이 나온 시점부터 대본과 함께 재생해요"
+          accessibilityHint={t('이 내용이 나온 시점부터 대본과 함께 재생해요')}
           accessibilityLabel={seekLabel}
           accessibilityRole="button"
           onPress={() => onSeek?.(seekAt)}

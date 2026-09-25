@@ -1,4 +1,6 @@
 import type { SentenceSource } from '@/lib/highlights';
+import { translate, type AppLocale } from '@/lib/i18n/core';
+import { EN } from '@/lib/i18n/en';
 import type { StudyConcept, StudyNote } from '@/types';
 
 /**
@@ -323,6 +325,7 @@ export interface SessionResult {
 export function sessionResult(
   pass: readonly Flashcard[],
   progress: DeckProgress,
+  locale: AppLocale = 'ko',
 ): SessionResult {
   const inPass = new Set(pass.map((card) => card.id));
   const knownCount = progress.known.filter((id) => inPass.has(id)).length;
@@ -332,7 +335,11 @@ export function sessionResult(
     total,
     knownCount,
     againCount: reviewIds.length,
-    headline: `${total}개 중 ${knownCount}개를 알아요`,
+    // The Korean template is the dictionary key (src/lib/i18n/en/study.ts).
+    headline: translate(locale, [EN], '{total}개 중 {known}개를 알아요', {
+      total,
+      known: knownCount,
+    }),
     reviewIds,
   };
 }
