@@ -511,7 +511,7 @@ export default function SubscriptionScreen() {
                 }
                 const back =
                   typeof window !== 'undefined' ? window.location.href : SUBSCRIPTION_WEB_URL;
-                startWebCheckout(back)
+                startWebCheckout(back, cycle)
                   .then((url) => {
                     if (typeof window !== 'undefined') window.location.assign(url);
                     else openUrl(url);

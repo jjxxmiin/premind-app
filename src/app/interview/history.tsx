@@ -25,6 +25,7 @@ import { formatAnswerDuration, lastActivity, sessionDestination } from '@/featur
 import { decorative } from '@/lib/a11y';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
+import { INTERVIEW_HOME } from '@/features/interview/routes';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -169,7 +170,7 @@ export default function InterviewHistoryScreen() {
 
   return (
     <Screen padded={false}>
-      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace('/interview'))} title="연습 기록" />
+      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title="연습 기록" />
       <ScrollView style={styles.scroll}>
         <View style={[styles.content, { paddingHorizontal: gutter }]}>
           <AppText tone="muted" variant="body">
@@ -185,7 +186,7 @@ export default function InterviewHistoryScreen() {
               actionLabel="새 연습 시작하기"
               description="질문을 준비하고 첫 면접 연습을 시작해 보세요."
               icon={MessagesSquare}
-              onAction={() => router.replace('/interview')}
+              onAction={() => router.replace(INTERVIEW_HOME)}
               title="아직 저장된 연습 기록이 없어요."
             />
           ) : null}

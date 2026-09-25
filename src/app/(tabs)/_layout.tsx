@@ -1,9 +1,8 @@
 import { Tabs, router } from 'expo-router';
 import {
-  BarChart3,
   Gauge,
   Home,
-  MessagesSquare,
+  MicVocal,
   PlusCircle,
   UserRound,
   type LucideIcon,
@@ -32,10 +31,11 @@ function tabIcon(Icon: LucideIcon) {
 }
 
 /**
- * Six tabs (홈, 이해도, 추가, 평가, 면접, MY) on a bar we draw ourselves (`AppTabBar`) so the bottom safe
+ * Five tabs (홈, 이해도, 추가, 말하기, MY) on a bar we draw ourselves (`AppTabBar`) so the bottom safe
  * area is measured natively and labels never end up under the system bar.
  *
- * 홈 is the library; 녹음 is a launcher, not a tab — pressing it opens the
+ * 배우기(홈, 이해도) and 말하기 (발표 평가 + 면접 연습, since 2026-09-26) are
+ * the two halves; 홈 is the library; 녹음 is a launcher, not a tab — pressing it opens the
  * full-screen recorder without moving the selected tab.
  */
 export default function TabsLayout() {
@@ -97,23 +97,14 @@ export default function TabsLayout() {
           tabBarLabel: '추가',
         }}
       />
+      {/* 말하기: 발표 평가와 면접 연습(2026-09-26 합침). 안에서 발표, 면접을 고른다. */}
       <Tabs.Screen
-        name="lens"
+        name="speak"
         options={{
-          title: '평가',
-          tabBarAccessibilityLabel: '발표 평가',
-          tabBarIcon: tabIcon(BarChart3),
-          tabBarLabel: '평가',
-        }}
-      />
-      {/* 2026-09-26: interview.premind.co.kr 이 앱 안으로 들어왔다. 연습, 결과, 기록, 기관 참여. */}
-      <Tabs.Screen
-        name="interview"
-        options={{
-          title: '면접',
-          tabBarAccessibilityLabel: '면접 연습',
-          tabBarIcon: tabIcon(MessagesSquare),
-          tabBarLabel: '면접',
+          title: '말하기',
+          tabBarAccessibilityLabel: '말하기, 발표 평가와 면접 연습',
+          tabBarIcon: tabIcon(MicVocal),
+          tabBarLabel: '말하기',
         }}
       />
       <Tabs.Screen
@@ -128,6 +119,8 @@ export default function TabsLayout() {
       {/* Kept as routes so old links resolve; sharing is not in the bar. */}
       <Tabs.Screen name="library" options={{ href: null }} />
       <Tabs.Screen name="chat" options={{ href: null }} />
+      <Tabs.Screen name="lens" options={{ href: null }} />
+      <Tabs.Screen name="interview" options={{ href: null }} />
     </Tabs>
   );
 }

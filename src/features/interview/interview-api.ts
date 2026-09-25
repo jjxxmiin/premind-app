@@ -310,8 +310,8 @@ export async function deleteBackup(id: string): Promise<void> {
 // ── checkout ───────────────────────────────────────────────────
 
 /** Polar checkout for 스탠다드 on the web; the server stamps the account on it. */
-export async function startWebCheckout(successUrl: string): Promise<string> {
-  const { url } = await interviewRequest<{ url?: string | null }>('/checkout', { json: { successUrl } });
+export async function startWebCheckout(successUrl: string, cycle: 'monthly' | 'yearly' = 'monthly'): Promise<string> {
+  const { url } = await interviewRequest<{ url?: string | null }>('/checkout', { json: { successUrl, cycle } });
   if (!url) throw new InterviewApiError('결제 창을 열지 못했어요. 잠시 후 다시 시도해 주세요.', { status: 502, errorCode: 'checkout_failed' });
   return url;
 }

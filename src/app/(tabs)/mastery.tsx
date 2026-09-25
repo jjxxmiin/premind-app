@@ -174,7 +174,7 @@ export default function MasteryScreen() {
                 compact
                 description="문제를 풀고 꼭 기억할 내용을 확인하면 여기에 자료별 이해도가 채워져요"
                 onAction={() => router.push('/record')}
-                title="아직 평가할 자료가 없어요"
+                title="아직 이해도를 볼 자료가 없어요"
               />
             </Card>
           </AnimatedReveal>

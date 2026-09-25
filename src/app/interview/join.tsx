@@ -14,6 +14,7 @@ import { decorative } from '@/lib/a11y';
 import { useLayout } from '@/lib/layout';
 import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
+import { INTERVIEW_HOME } from '@/features/interview/routes';
 
 function seatCopy(invite: InviteInfo): string {
   if (!invite.licenseUntil || invite.licenseUntil <= Date.now()) return '기관의 참여 현황에 함께 기록돼요.';
@@ -82,7 +83,7 @@ export default function InterviewJoinScreen() {
     try {
       await joinOrg(code);
       await refreshInterviewAccount();
-      router.replace('/interview');
+      router.replace(INTERVIEW_HOME);
     } catch (reason) {
       setError(reason instanceof Error && reason.message ? reason.message : '참여하지 못했어요.');
     } finally {

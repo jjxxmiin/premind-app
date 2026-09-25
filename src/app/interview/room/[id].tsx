@@ -26,6 +26,7 @@ import type { RecordedAnswer } from '@/features/interview/answer-recorder.types'
 import { decorative } from '@/lib/a11y';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
+import { INTERVIEW_HOME } from '@/features/interview/routes';
 
 type Stage = 'loading' | 'missing' | 'blocked' | 'greeting' | 'connecting' | 'running' | 'device_error' | 'complete' | 'load_error';
 type Phase = 'question' | 'thinking' | 'answering' | 'saving' | 'next';
@@ -358,7 +359,7 @@ export default function InterviewRoomScreen() {
       return;
     }
     if (router.canGoBack()) router.back();
-    else router.replace('/interview');
+    else router.replace(INTERVIEW_HOME);
   }, [recorder, session]);
 
   const leave = () => {
@@ -386,7 +387,7 @@ export default function InterviewRoomScreen() {
     return (
       <Screen background="stage" centered>
         <Notice
-          actions={<Button onPress={() => router.replace('/interview')} variant="primary">면접 연습으로 돌아가기</Button>}
+          actions={<Button onPress={() => router.replace(INTERVIEW_HOME)} variant="primary">면접 연습으로 돌아가기</Button>}
           description="기록이 지워졌거나 다른 기기에서 만든 연습이에요."
           title="연습을 찾지 못했어요."
         />

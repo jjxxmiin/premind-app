@@ -34,6 +34,7 @@ import { useInterviewAccount } from '@/features/interview/use-interview-account'
 import { formatAnswerDuration } from '@/features/interview/view-model';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
+import { INTERVIEW_HOME } from '@/features/interview/routes';
 
 const PERIODS = ['7', '30', '90'] as const;
 
@@ -115,7 +116,7 @@ export default function InterviewOrgScreen() {
     }
   }, [demo, group, maxUses, toast, validDays]);
 
-  const header = <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace('/interview'))} title="기관 현황" />;
+  const header = <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title="기관 현황" />;
 
   if (account.status === 'ready' && !isManager && !demo) {
     return (

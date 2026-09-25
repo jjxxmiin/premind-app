@@ -55,6 +55,7 @@ import {
 import { decorative } from '@/lib/a11y';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
+import { INTERVIEW_HOME } from '@/features/interview/routes';
 
 function formatDate(value: string | undefined): string {
   if (!value) return '';
@@ -241,7 +242,7 @@ export default function InterviewReportScreen() {
 
   return (
     <Screen padded={false}>
-      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace('/interview'))} title="연습 결과" />
+      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title="연습 결과" />
       <ScrollView style={styles.scroll}>
         <View style={[styles.content, { paddingHorizontal: gutter }]}>
         {header}
