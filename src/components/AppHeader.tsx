@@ -3,6 +3,7 @@ import { ChevronLeft, X } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { useLayout } from '@/lib/layout';
 import { colors, sizes, spacing } from '@/theme/tokens';
 
 import { AppText } from './ui/AppText';
@@ -42,6 +43,9 @@ export function AppHeader({
   align,
   divider = false,
 }: AppHeaderProps) {
+  const { breakpoint } = useLayout();
+  // The sidebar already carries the wordmark on laptop and desktop windows.
+  const showWordmark = brand && breakpoint !== 'expanded';
   const alignment = align ?? (brand || subtitle ? 'left' : 'center');
   const leading = onBack ? (
     <IconButton
@@ -61,7 +65,7 @@ export function AppHeader({
     />
   ) : null;
 
-  const copy = brand ? (
+  const copy = showWordmark ? (
     <Image
       accessibilityLabel="PREMIND"
       contentFit="contain"

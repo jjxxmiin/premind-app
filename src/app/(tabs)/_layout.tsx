@@ -11,6 +11,7 @@ import { StyleSheet, View, type ColorValue } from 'react-native';
 
 import { AppTabBar } from '@/components/AppTabBar';
 import { decorative } from '@/lib/a11y';
+import { useLayout } from '@/lib/layout';
 import { colors, iconSizes } from '@/theme/tokens';
 
 function tabIcon(Icon: LucideIcon) {
@@ -35,10 +36,13 @@ function tabIcon(Icon: LucideIcon) {
  * full-screen recorder without moving the selected tab.
  */
 export default function TabsLayout() {
+  const { breakpoint } = useLayout();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        // Laptop and desktop windows: the bar becomes a sidebar on the left.
+        tabBarPosition: breakpoint === 'expanded' ? 'left' : 'bottom',
         sceneStyle: { backgroundColor: colors.background },
         tabBarHideOnKeyboard: true,
       }}
