@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import type { PlanItem, PlanKind } from '@/lib/mastery';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 
@@ -29,10 +30,11 @@ const WELL_SIZE = 36;
 
 /** One thing to do next: a 36pt icon well, the term or action, where it is. */
 export function PlanRow({ divider = true, item, onPress }: PlanRowProps) {
+  const t = useT();
   const Icon = ICONS[item.kind];
   return (
     <Pressable
-      accessibilityHint={HINTS[item.kind]}
+      accessibilityHint={t(HINTS[item.kind])}
       accessibilityLabel={`${item.title}. ${item.detail}`}
       accessibilityRole="button"
       onPress={() => onPress(item)}

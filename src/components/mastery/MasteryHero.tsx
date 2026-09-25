@@ -4,6 +4,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { ScoreRing } from '@/components/lens';
 import { AppText, Button, Card } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { masteryVerdict, type OverviewCopy, type WeekdayActivity } from '@/lib/mastery';
 import { colors, spacing } from '@/theme/tokens';
 
@@ -26,7 +27,14 @@ const RING = { diameter: 148, stroke: 10 } as const;
  * say where the learner stands, and the week's activity under them.
  */
 export function MasteryHero({ copy, days, onStart, score }: MasteryHeroProps) {
-  const spokenScore = score === null ? '이해도 시작 전' : `전체 이해도 ${score}%, ${masteryVerdict(score)}`;
+  const t = useT();
+  const spokenScore =
+    score === null
+      ? t('이해도 시작 전')
+      : t('전체 이해도 {score}%, {verdict}', {
+          score,
+          verdict: masteryVerdict(score, t.locale),
+        });
   return (
     <Card style={styles.card} variant="soft">
       <View
@@ -38,12 +46,12 @@ export function MasteryHero({ copy, days, onStart, score }: MasteryHeroProps) {
           <EmptyRing />
         ) : (
           <ScoreRing
-            label="이해도"
+            label={t('이해도')}
             max={100}
             precision={0}
             score={score}
             unit="%"
-            verdict={masteryVerdict(score)}
+            verdict={masteryVerdict(score, t.locale)}
           />
         )}
         <View style={styles.copy}>
@@ -55,13 +63,13 @@ export function MasteryHero({ copy, days, onStart, score }: MasteryHeroProps) {
           ) : null}
           {score === null && onStart ? (
             <Button
-              accessibilityHint="가장 최근 자료의 문제를 열어요"
+              accessibilityHint={t('가장 최근 자료의 문제를 열어요')}
               onPress={onStart}
               size="small"
               style={styles.start}
               variant="primary"
             >
-              문제 풀러 가기
+              {t('문제 풀러 가기')}
             </Button>
           ) : null}
         </View>
@@ -73,6 +81,7 @@ export function MasteryHero({ copy, days, onStart, score }: MasteryHeroProps) {
 
 /** The large ring before there is a number: grey track, "시작 전" inside. */
 function EmptyRing() {
+  const t = useT();
   const { diameter, stroke } = RING;
   const centre = diameter / 2;
   return (
@@ -89,7 +98,7 @@ function EmptyRing() {
       </Svg>
       <View style={styles.ringCentre}>
         <AppText tone="faint" variant="label">
-          시작 전
+          {t('시작 전')}
         </AppText>
       </View>
     </View>

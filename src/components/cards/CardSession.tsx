@@ -18,6 +18,7 @@ import {
   type DeckProgress,
 } from '@/lib/flashcards';
 import { highlightedSentences, paintableParts } from '@/lib/highlights';
+import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
 
@@ -67,6 +68,8 @@ export function CardSession({
   onDone,
   gutter = 0,
 }: CardSessionProps) {
+  const t = useT();
+  const locale = t.locale;
   const painted = useMemo(
     () => highlightedSentences(paintableParts(material), highlights),
     [highlights, material],
@@ -88,7 +91,10 @@ export function CardSession({
   );
   const card = pass[index];
   const finished = pass.length > 0 && index >= pass.length;
-  const result = useMemo(() => sessionResult(pass, progress), [pass, progress]);
+  const result = useMemo(
+    () => sessionResult(pass, progress, locale),
+    [locale, pass, progress],
+  );
 
   const answer = useCallback(
     (verdict: CardVerdict) => {
@@ -124,12 +130,14 @@ export function CardSession({
   if (deck.length === 0) {
     return (
       <EmptyState
-        actionLabel={onDone ? '자료 보기' : undefined}
+        actionLabel={onDone ? t('자료 보기') : undefined}
         compact={!isScreen}
-        description="마인드팩이 준비되면 개념과 꼭 기억할 내용으로 카드가 만들어져요. 요약에서 문장을 칠해도 카드가 늘어요."
+        description={t(
+          '마인드팩이 준비되면 개념과 꼭 기억할 내용으로 카드가 만들어져요. 요약에서 문장을 칠해도 카드가 늘어요.',
+        )}
         icon={Layers}
         onAction={onDone}
-        title="아직 만들 카드가 없어요"
+        title={t('아직 만들 카드가 없어요')}
       />
     );
   }
@@ -140,7 +148,7 @@ export function CardSession({
       <>
         {result.againCount > 0 ? (
           <Button fullWidth onPress={reviewAgain} size="large" variant="primary">
-            다시 볼 것만 복습
+            {t('다시 볼 것만 복습')}
           </Button>
         ) : null}
         <Button
@@ -149,7 +157,7 @@ export function CardSession({
           size={result.againCount > 0 ? 'medium' : 'large'}
           variant={result.againCount > 0 ? 'secondary' : 'primary'}
         >
-          {onDone ? '닫기' : '처음부터 다시'}
+          {onDone ? t('닫기') : t('처음부터 다시')}
         </Button>
       </>
     );
@@ -185,7 +193,7 @@ export function CardSession({
         value={progressPercent(index, pass.length)}
       />
       <AppText
-        accessibilityLabel={`카드 ${pass.length}개 중 ${index + 1}번째`}
+        accessibilityLabel={t('카드 {total}개 중 {n}번째', { total: pass.length, n: index + 1 })}
         tabular
         tone="muted"
         variant="meta"
@@ -213,26 +221,26 @@ export function CardSession({
     <>
       <View style={styles.verdictRow}>
         <Button
-          accessibilityHint="이 카드를 다시 볼 목록에 담아요"
+          accessibilityHint={t('이 카드를 다시 볼 목록에 담아요')}
           onPress={() => answer('again')}
           size="large"
           style={styles.verdictButton}
           variant="secondary"
         >
-          다시 볼래요
+          {t('다시 볼래요')}
         </Button>
         <Button
-          accessibilityHint="이 카드를 외운 것으로 표시해요"
+          accessibilityHint={t('이 카드를 외운 것으로 표시해요')}
           onPress={() => answer('known')}
           size="large"
           style={styles.verdictButton}
           variant="primary"
         >
-          알아요
+          {t('알아요')}
         </Button>
       </View>
       <AppText align="center" tone="faint" variant="badge">
-        카드를 옆으로 밀어도 넘어가요
+        {t('카드를 옆으로 밀어도 넘어가요')}
       </AppText>
     </>
   );

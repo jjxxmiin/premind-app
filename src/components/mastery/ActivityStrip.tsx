@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText, barHeights } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { weekCaption, type WeekdayActivity } from '@/lib/mastery';
 import { colors, radii, spacing } from '@/theme/tokens';
 
@@ -25,7 +26,8 @@ const BAR_MIN = 6;
  * broken. The chart is announced as a whole; the columns carry no text.
  */
 export function ActivityStrip({ days }: ActivityStripProps) {
-  const caption = weekCaption(days);
+  const t = useT();
+  const caption = weekCaption(days, t.locale);
   const heights = barHeights(
     days.map((day) => day.attemptCount),
     BAR_MAX,
@@ -33,13 +35,15 @@ export function ActivityStrip({ days }: ActivityStripProps) {
   );
   const spoken = days
     .map((day) =>
-      day.attemptCount > 0 ? `${day.label} 문제 ${day.attemptCount}개` : `${day.label} 없음`,
+      day.attemptCount > 0
+        ? t('{day} 문제 {n}개', { day: day.label, n: day.attemptCount })
+        : t('{day} 없음', { day: day.label }),
     )
     .join(', ');
 
   return (
     <View
-      accessibilityLabel={`최근 7일 활동. ${spoken}. ${caption}`}
+      accessibilityLabel={t('최근 7일 활동. {spoken}. {caption}', { spoken, caption })}
       accessible
       style={styles.wrap}
     >

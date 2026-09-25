@@ -30,6 +30,7 @@ import {
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatSourcePosition } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { goBackOrReplace, quizReturnHref } from '@/lib/navigation';
 import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
@@ -80,6 +81,7 @@ async function rememberReport(entry: QuestionReport): Promise<void> {
 }
 
 export default function QuizScreen() {
+  const t = useT();
   const { from, id } = useLocalSearchParams<{ from?: string; id: string }>();
   const { materials, submitQuizAnswer } = useAppStore();
   const material = materials.find((item) => item.id === id);
@@ -108,8 +110,12 @@ export default function QuizScreen() {
     const leaveEmpty = () => goBackOrReplace(quizReturnHref(from, material?.id));
     return (
       <Screen maxWidth={640} padded={false}>
-        <AppHeader onBack={leaveEmpty} title="문제" />
-        <ErrorState description="아직 풀 수 있는 문제가 없어요. 마인드팩이 준비되면 다시 열어 주세요." onRetry={leaveEmpty} retryLabel="돌아가기" />
+        <AppHeader onBack={leaveEmpty} title={t.ctx('quiz', '문제')} />
+        <ErrorState
+          description={t('아직 풀 수 있는 문제가 없어요. 마인드팩이 준비되면 다시 열어 주세요.')}
+          onRetry={leaveEmpty}
+          retryLabel={t('돌아가기')}
+        />
       </Screen>
     );
   }
@@ -204,18 +210,18 @@ export default function QuizScreen() {
     setSelectedIndex(null);
     if (index >= questions.length - 1) setFinished(true);
     closeReport();
-    toast.show('알려 줘서 고마워요. 이 문제는 다시 보지 않을게요.');
+    toast.show(t('알려 줘서 고마워요. 이 문제는 다시 보지 않을게요.'));
   };
 
   if (questions.length === 0) {
     return (
       <Screen maxWidth={640} padded={false}>
-        <AppHeader onBack={leaveQuiz} title="문제" />
+        <AppHeader onBack={leaveQuiz} title={t.ctx('quiz', '문제')} />
         <ErrorState
-          description="알려 준 문제를 빼니 남은 문제가 없어요. 새 문제가 만들어지면 다시 열어 주세요."
+          description={t('알려 준 문제를 빼니 남은 문제가 없어요. 새 문제가 만들어지면 다시 열어 주세요.')}
           onRetry={leaveQuiz}
-          retryLabel="돌아가기"
-          title="풀 문제가 없어요"
+          retryLabel={t('돌아가기')}
+          title={t('풀 문제가 없어요')}
         />
         <Toast bottom={spacing.xxxl} message={toast.message} />
       </Screen>
@@ -228,7 +234,7 @@ export default function QuizScreen() {
 
     return (
       <Screen maxWidth={640} padded={false}>
-        <AppHeader onBack={leaveQuiz} title="결과" />
+        <AppHeader onBack={leaveQuiz} title={t.ctx('quiz', '결과')} />
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
@@ -241,37 +247,43 @@ export default function QuizScreen() {
               // The ring shows a percentage rendered as a score out of 100, so
               // labelling it 정답률 while the number reads "60점" put two
               // different units on one number.
-              label="점수"
+              label={t('점수')}
               max={100}
               precision={0}
               score={percentage}
-              unit="점"
-              verdict={passed ? '잘했어요' : '한 번 더'}
+              unit={t.ctx('score-unit', '점')}
+              verdict={passed ? t('잘했어요') : t('한 번 더')}
             />
             <SegmentedProgress
-              accessibilityLabel={`${questions.length}문제 중 ${correctCount}개 정답`}
+              accessibilityLabel={t('{total}문제 중 {correct}개 정답', {
+                total: questions.length,
+                correct: correctCount,
+              })}
               segments={segments}
               style={styles.resultStrip}
             />
             <AppText align="center" tone="muted" variant="meta">
-              {questions.length}문제 중 {correctCount}개를 맞혔어요. 틀린 문제는 근거를 다시 들어 보세요.
+              {t('{total}문제 중 {correct}개를 맞혔어요. 틀린 문제는 근거를 다시 들어 보세요.', {
+                total: questions.length,
+                correct: correctCount,
+              })}
             </AppText>
             <View style={styles.resultMetrics}>
-              <ResultMetric label="정답" value={correctCount} />
+              <ResultMetric label={t.ctx('quiz', '정답')} value={correctCount} />
               <View {...decorative} style={styles.metricDivider} />
-              <ResultMetric label="다시 볼 문제" value={questions.length - correctCount} />
+              <ResultMetric label={t('다시 볼 문제')} value={questions.length - correctCount} />
             </View>
           </Card>
 
           {missed.length ? (
             <View style={styles.section}>
               <AppText accessibilityRole="header" variant="heading">
-                다시 볼 문제
+                {t('다시 볼 문제')}
               </AppText>
               <Card padding={false}>
                 {missed.map((item, itemIndex) => (
                   <ListRow
-                    accessibilityHint="설명이 나온 시점부터 재생해요."
+                    accessibilityHint={t('설명이 나온 시점부터 재생해요.')}
                     divider={itemIndex < missed.length - 1}
                     key={item.id}
                     metadata={formatSourcePosition(item.sourceStartMs, isDocument)}
@@ -300,9 +312,9 @@ export default function QuizScreen() {
               <View style={styles.flex}>
                 {/* The one emoji in the app: no line icon in the set carries
                     celebration, and this is the only moment that earns it. */}
-                <AppText variant="itemTitle">모든 문제를 맞혔어요 🎉</AppText>
+                <AppText variant="itemTitle">{t('모든 문제를 맞혔어요 🎉')}</AppText>
                 <AppText tone="muted" variant="meta">
-                  이번엔 마인드맵의 개념을 내 말로 설명해 보세요.
+                  {t('이번엔 마인드맵의 개념을 내 말로 설명해 보세요.')}
                 </AppText>
               </View>
             </Card>
@@ -315,7 +327,7 @@ export default function QuizScreen() {
             size="large"
             variant="primary"
           >
-            돌아가기
+            {t('돌아가기')}
           </Button>
           <Button
             fullWidth
@@ -323,7 +335,7 @@ export default function QuizScreen() {
             onPress={restart}
             variant="secondary"
           >
-            다시 풀기
+            {t('다시 풀기')}
           </Button>
         </View>
         <Toast bottom={TOAST_ABOVE_RESULT_BAR} message={toast.message} />
@@ -342,7 +354,10 @@ export default function QuizScreen() {
         onBack={leaveQuiz}
         right={
           <AppText
-            accessibilityLabel={`${questions.length}문제 중 ${index + 1}번째`}
+            accessibilityLabel={t('{total}문제 중 {n}번째', {
+              total: questions.length,
+              n: index + 1,
+            })}
             style={styles.headerMeta}
             tabular
             tone="muted"
@@ -351,11 +366,15 @@ export default function QuizScreen() {
             {index + 1}/{questions.length}
           </AppText>
         }
-        title="문제"
+        title={t.ctx('quiz', '문제')}
       />
       <View style={styles.progressStrip}>
         <SegmentedProgress
-          accessibilityLabel={`${questions.length}문제 중 ${index + 1}번째, 맞힌 문제 ${correctCount}개`}
+          accessibilityLabel={t('{total}문제 중 {n}번째, 맞힌 문제 {correct}개', {
+            total: questions.length,
+            n: index + 1,
+            correct: correctCount,
+          })}
           segments={segments}
         />
       </View>
@@ -451,7 +470,7 @@ export default function QuizScreen() {
                 )}
               </View>
               <AppText tone={isCorrect ? 'positive' : 'negative'} variant="itemTitle">
-                {isCorrect ? '정답이에요' : '아쉬워요'}
+                {isCorrect ? t('정답이에요') : t('아쉬워요')}
               </AppText>
             </View>
             <AppText variant="body">{question.explanation}</AppText>
@@ -461,16 +480,22 @@ export default function QuizScreen() {
               onPress={() => router.push({ pathname: '/material/[id]', params: { id: material.id, tab: 'transcript', at: String(question.sourceStartMs) } })}
               variant="outline"
             >
-              {`${formatSourcePosition(question.sourceStartMs, isDocument)} 근거 ${isDocument ? '보기' : '듣기'}`}
+              {isDocument
+                ? t('{at} 근거 보기', {
+                    at: formatSourcePosition(question.sourceStartMs, isDocument),
+                  })
+                : t('{at} 근거 듣기', {
+                    at: formatSourcePosition(question.sourceStartMs, isDocument),
+                  })}
             </Button>
             <Button
-              accessibilityHint="틀린 문제나 이해되지 않는 문제를 알려요"
+              accessibilityHint={t('틀린 문제나 이해되지 않는 문제를 알려요')}
               onPress={() => setReportOpen(true)}
               size="small"
               style={styles.reportButton}
               variant="ghost"
             >
-              이 문제가 이상해요
+              {t('이 문제가 이상해요')}
             </Button>
           </Card>
         ) : null}
@@ -490,12 +515,12 @@ export default function QuizScreen() {
           size="large"
           variant="primary"
         >
-          {isLast ? '결과 보기' : '다음 문제'}
+          {isLast ? t('결과 보기') : t('다음 문제')}
         </Button>
       </View>
 
       <BottomSheetModal
-        description="어떤 점이 이상했는지 알려 주면 문제를 다시 만들 때 반영해요."
+        description={t('어떤 점이 이상했는지 알려 주면 문제를 다시 만들 때 반영해요.')}
         footer={
           <Button
             disabled={reportReason === null}
@@ -504,11 +529,11 @@ export default function QuizScreen() {
             size="large"
             variant="primary"
           >
-            보내기
+            {t('보내기')}
           </Button>
         }
         onClose={closeReport}
-        title="이 문제가 이상해요"
+        title={t('이 문제가 이상해요')}
         visible={reportOpen}
       >
         <View style={styles.reportSheet}>
@@ -526,7 +551,7 @@ export default function QuizScreen() {
                   style={styles.flex}
                   variant={reportReason === reason.id ? 'bodyStrong' : 'body'}
                 >
-                  {reason.label}
+                  {t(reason.label)}
                 </AppText>
                 {reportReason === reason.id ? (
                   <Check
@@ -540,10 +565,10 @@ export default function QuizScreen() {
             ))}
           </View>
           <AuthField
-            label="한 줄 설명 (선택)"
+            label={t('한 줄 설명 (선택)')}
             maxLength={80}
             onChangeText={setReportNote}
-            placeholder="어떤 점이 이상했나요?"
+            placeholder={t('어떤 점이 이상했나요?')}
             returnKeyType="done"
             value={reportNote}
           />
