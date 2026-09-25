@@ -1,5 +1,5 @@
 import { Headphones } from 'lucide-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { AnimatedReveal, AppText, StatusBadge } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
@@ -61,7 +61,15 @@ export function FlashcardFace({
         accessibilityLabel={flipped ? `${card.front}. ${card.back}` : cue}
         accessibilityRole="button"
         onPress={onFlip}
-        style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}
+        style={(state) => {
+          // react-native-web adds `hovered`; the native types only know `pressed`.
+          const { hovered, pressed } = state as { hovered?: boolean; pressed: boolean };
+          return [
+            styles.card,
+            hovered ? styles.hovered : null,
+            pressed ? styles.pressed : null,
+          ];
+        }}
         testID="flashcard-face"
       >
         <View style={styles.badgeRow}>
@@ -119,7 +127,10 @@ export function FlashcardFace({
           accessibilityLabel={seekLabel}
           accessibilityRole="button"
           onPress={() => onSeek?.(seekAt)}
-          style={({ pressed }) => [styles.chip, pressed ? styles.chipPressed : null]}
+          style={(state) => {
+            const { hovered, pressed } = state as { hovered?: boolean; pressed: boolean };
+            return [styles.chip, hovered || pressed ? styles.chipPressed : null];
+          }}
         >
           <Headphones
             {...decorative}
@@ -137,6 +148,10 @@ export function FlashcardFace({
     </View>
   );
 }
+
+/** The hand cursor on the web build; nothing on a phone. */
+const pointer: ViewStyle =
+  Platform.OS === 'web' ? ({ cursor: 'pointer' } as ViewStyle) : {};
 
 const styles = StyleSheet.create({
   stack: {
@@ -156,6 +171,10 @@ const styles = StyleSheet.create({
     // deck area instead of stacking the meaning on top of the hint.
     minHeight: 240,
     padding: spacing.gutter,
+    ...pointer,
+  },
+  hovered: {
+    borderColor: colors.borderStrong,
   },
   pressed: {
     backgroundColor: colors.backgroundSoft,
@@ -185,6 +204,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: sizes.chip,
     paddingHorizontal: spacing.md,
+    ...pointer,
   },
   chipPressed: {
     backgroundColor: colors.backgroundMuted,

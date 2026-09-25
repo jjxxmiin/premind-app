@@ -4,7 +4,14 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
-import { MasteryHero, MaterialMasteryRow } from '@/components/mastery';
+import {
+  MasteryHero,
+  MaterialMasteryRow,
+  MaterialMasteryTile,
+  SurfaceButton,
+  TileGrid,
+  type InteractionState,
+} from '@/components/mastery';
 import {
   AnimatedReveal,
   AppText,
@@ -29,7 +36,7 @@ import {
   type MasterySummary,
 } from '@/lib/mastery';
 import { useAppStore } from '@/state/app-store';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, radii, spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
 
 /** A material the learner can be scored on: ready, with questions or key points. */
@@ -40,7 +47,7 @@ function isStudyable(material: StudyMaterial): boolean {
   );
 }
 
-/** Rows shown before "더 보기". */
+/** Rows shown before "더 보기": two full rows of the widest grid. */
 const VISIBLE_ROWS = 6;
 /** Marked passages shown at once: a reminder, not a backlog. */
 const VISIBLE_SPOTS = 4;
@@ -60,7 +67,7 @@ export default function MasteryScreen() {
     resolveConfusion,
     studyNotes,
   } = useAppStore();
-  const { gutter } = useLayout();
+  const { columns, gutter, isTablet } = useLayout();
   const [expanded, setExpanded] = useState(false);
 
   /** 이해도 per studyable material, scored ones first, newest activity on top. */
@@ -199,26 +206,49 @@ export default function MasteryScreen() {
                     description={t('누르면 그 대목으로 가요. 알게 됐으면 지워 주세요.')}
                     title={t('헷갈린다고 표시한 곳')}
                   />
-                  <Card padding={false}>
-                    {visibleSpots.map((spot, index) => (
-                      <ConfusionSpotRow
-                        divider={index < visibleSpots.length - 1}
-                        key={spot.id}
-                        onOpen={() =>
-                          router.push({
-                            pathname: '/material/[id]',
-                            params: {
-                              at: String(spot.positionMs),
-                              id: spot.materialId,
-                              tab: 'transcript',
-                            },
-                          })
-                        }
-                        onResolve={() => resolveConfusion(spot.id)}
-                        spot={spot}
-                      />
-                    ))}
-                  </Card>
+                  {isTablet ? (
+                    <TileGrid columns={2}>
+                      {visibleSpots.map((spot, index) => (
+                    <ConfusionSpotRow
+                      divider={!isTablet && index < visibleSpots.length - 1}
+                      key={spot.id}
+                      onOpen={() =>
+                        router.push({
+                          pathname: '/material/[id]',
+                          params: {
+                            at: String(spot.positionMs),
+                            id: spot.materialId,
+                            tab: 'transcript',
+                          },
+                        })
+                      }
+                      onResolve={() => resolveConfusion(spot.id)}
+                      spot={spot}
+                      tile={isTablet}
+                    />
+                  ))}
+                    </TileGrid>
+                  ) : (
+                    <Card padding={false}>{visibleSpots.map((spot, index) => (
+                    <ConfusionSpotRow
+                      divider={!isTablet && index < visibleSpots.length - 1}
+                      key={spot.id}
+                      onOpen={() =>
+                        router.push({
+                          pathname: '/material/[id]',
+                          params: {
+                            at: String(spot.positionMs),
+                            id: spot.materialId,
+                            tab: 'transcript',
+                          },
+                        })
+                      }
+                      onResolve={() => resolveConfusion(spot.id)}
+                      spot={spot}
+                      tile={isTablet}
+                    />
+                  ))}</Card>
+                  )}
                   {spots.length > visibleSpots.length ? (
                     <AppText tone="muted" variant="meta">
                       {t('표시한 곳 {total}개 중 최근 {shown}개예요', {
@@ -240,28 +270,53 @@ export default function MasteryScreen() {
                   description={t('자료를 누르면 취약 개념과 무엇부터 볼지 알려 줘요.')}
                   title={t('자료별 이해도')}
                 />
-                <Card padding={false}>
-                  {visibleRows.map(({ material, summary }, index) => (
-                    <MaterialMasteryRow
-                      divider={index < visibleRows.length - 1 || hiddenCount > 0}
-                      key={material.id}
-                      material={material}
-                      onPress={openMastery}
-                      summary={summary}
-                    />
-                  ))}
-                  {hiddenCount > 0 ? (
-                    <Button
-                      accessibilityLabel={t('자료 {n}개 더 보기', { n: hiddenCount })}
-                      fullWidth
-                      onPress={() => setExpanded(true)}
-                      style={styles.more}
-                      variant="ghost"
-                    >
-                      {t('더 보기 {n}개', { n: hiddenCount })}
-                    </Button>
-                  ) : null}
-                </Card>
+                {isTablet ? (
+                  <>
+                    <TileGrid columns={Math.max(2, columns)}>
+                      {visibleRows.map(({ material, summary }) => (
+                        <MaterialMasteryTile
+                          key={material.id}
+                          material={material}
+                          onPress={openMastery}
+                          summary={summary}
+                        />
+                      ))}
+                    </TileGrid>
+                    {hiddenCount > 0 ? (
+                      <Button
+                        accessibilityLabel={t('자료 {n}개 더 보기', { n: hiddenCount })}
+                        onPress={() => setExpanded(true)}
+                        style={styles.moreTablet}
+                        variant="outline"
+                      >
+                        {t('더 보기 {n}개', { n: hiddenCount })}
+                      </Button>
+                    ) : null}
+                  </>
+                ) : (
+                  <Card padding={false}>
+                    {visibleRows.map(({ material, summary }, index) => (
+                      <MaterialMasteryRow
+                        divider={index < visibleRows.length - 1 || hiddenCount > 0}
+                        key={material.id}
+                        material={material}
+                        onPress={openMastery}
+                        summary={summary}
+                      />
+                    ))}
+                    {hiddenCount > 0 ? (
+                      <Button
+                        accessibilityLabel={t('자료 {n}개 더 보기', { n: hiddenCount })}
+                        fullWidth
+                        onPress={() => setExpanded(true)}
+                        style={styles.more}
+                        variant="ghost"
+                      >
+                        {t('더 보기 {n}개', { n: hiddenCount })}
+                      </Button>
+                    ) : null}
+                  </Card>
+                )}
               </View>
             </AnimatedReveal>
           </>
@@ -283,15 +338,55 @@ function ConfusionSpotRow({
   onOpen,
   onResolve,
   spot,
+  tile = false,
 }: {
   divider: boolean;
   onOpen: () => void;
   onResolve: () => void;
   spot: ConfusionSpot;
+  /** The tablet form: a card of its own in a two-column grid. */
+  tile?: boolean;
 }) {
   const t = useT();
   const reason = t(spot.reasonLabel);
   const where = `${spot.materialTitle} / ${formatSourcePosition(spot.positionMs, spot.isDocument)} / ${reason}`;
+  const body = (
+    <>
+      <AppText numberOfLines={tile ? 3 : 2} variant="itemTitle">
+        {spot.passage}
+      </AppText>
+      <AppText numberOfLines={2} tone="muted" variant="meta">
+        {where}
+      </AppText>
+    </>
+  );
+  const resolve = (
+    <IconButton
+      icon={Check}
+      label={t('{reason} 표시 지우기', { reason })}
+      onPress={onResolve}
+    />
+  );
+
+  if (tile) {
+    return (
+      <View style={styles.spotTile}>
+        <SurfaceButton
+          accessibilityHint={t('표시한 대목을 대본에서 열어요.')}
+          accessibilityLabel={`${spot.passage}, ${where}`}
+          accessibilityRole="button"
+          onPress={onOpen}
+          style={styles.spotTileBody}
+        >
+          {body}
+        </SurfaceButton>
+        {/* A sibling laid over the card's corner, not a child: a button in a
+            button is invalid on the web. */}
+        <View style={styles.spotTileResolve}>{resolve}</View>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.spotRow, divider ? styles.spotDivider : null]}>
       <Pressable
@@ -299,20 +394,18 @@ function ConfusionSpotRow({
         accessibilityLabel={`${spot.passage}, ${where}`}
         accessibilityRole="button"
         onPress={onOpen}
-        style={({ pressed }) => [styles.spotBody, pressed ? styles.spotPressed : null]}
+        style={(state) => {
+          const { hovered, pressed } = state as InteractionState;
+          return [
+            styles.spotBody,
+            hovered ? styles.spotHovered : null,
+            pressed ? styles.spotPressed : null,
+          ];
+        }}
       >
-        <AppText numberOfLines={2} variant="itemTitle">
-          {spot.passage}
-        </AppText>
-        <AppText numberOfLines={2} tone="muted" variant="meta">
-          {where}
-        </AppText>
+        {body}
       </Pressable>
-      <IconButton
-        icon={Check}
-        label={t('{reason} 표시 지우기', { reason })}
-        onPress={onResolve}
-      />
+      {resolve}
     </View>
   );
 }
@@ -331,6 +424,21 @@ const styles = StyleSheet.create({
   },
   spotBody: { flex: 1, gap: spacing.xxs, minWidth: 0 },
   spotPressed: { opacity: 0.7 },
+  spotHovered: { opacity: 0.85 },
+  spotTile: { flex: 1 },
+  /** Right padding leaves the corner to the check button laid over it. */
+  spotTileBody: {
+    flex: 1,
+    gap: spacing.xs,
+    minHeight: 112,
+    padding: spacing.lg,
+    paddingRight: spacing.huge + spacing.sm,
+  },
+  spotTileResolve: {
+    position: 'absolute',
+    right: spacing.sm,
+    top: spacing.sm,
+  },
   /** Header → first block 8; between blocks 24; last block → end 32. */
   content: {
     gap: spacing.xl,
@@ -346,5 +454,9 @@ const styles = StyleSheet.create({
   more: {
     borderRadius: 0,
     minHeight: 54,
+  },
+  moreTablet: {
+    alignSelf: 'center',
+    borderRadius: radii.chip,
   },
 });

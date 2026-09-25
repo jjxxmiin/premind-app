@@ -112,7 +112,8 @@ export default function MaterialChatScreen() {
   }
 
   return (
-    <Screen padded={false} safeAreaEdges={['top', 'right', 'left']}>
+    // A conversation reads at a letter's width, not the full desktop column.
+    <Screen maxWidth={CHAT_MAX_WIDTH} padded={false} safeAreaEdges={['top', 'right', 'left']}>
       <AppHeader
         divider
         onBack={() =>
@@ -137,6 +138,8 @@ export default function MaterialChatScreen() {
     </Screen>
   );
 }
+
+const CHAT_MAX_WIDTH = 760;
 
 const styles = StyleSheet.create({
   fill: { flex: 1, minHeight: 0 },

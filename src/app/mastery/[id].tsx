@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
+import { stickyColumn } from '@/components/mastery';
 import { ScoreRing, TrendSparkline } from '@/components/lens';
 import {
   AppText,
@@ -24,6 +25,7 @@ import {
 import { decorative } from '@/lib/a11y';
 import { formatRelativeDate, formatSourcePosition } from '@/lib/format';
 import { useT } from '@/lib/i18n';
+import { useLayout } from '@/lib/layout';
 import {
   CHECKLIST_WEIGHT,
   QUIZ_WEIGHT,
@@ -48,6 +50,9 @@ export default function MasteryScreen() {
   const locale = t.locale;
   const { id } = useLocalSearchParams<{ id: string }>();
   const { materials, projects, quizAttempts, studyNotes } = useAppStore();
+  const { breakpoint, gutter } = useLayout();
+  /** Desktop: the score and the one button pinned left, the detail on the right. */
+  const wide = breakpoint === 'expanded';
   const material = materials.find((item) => item.id === id);
   const summary = useMemo(
     () =>
@@ -129,6 +134,231 @@ export default function MasteryScreen() {
   const first = summary.trend[0];
   const latest = summary.trend[summary.trend.length - 1];
 
+  const heading = (
+    <View style={styles.heading}>
+      <AppText variant="pageTitle">{masteryHeadline(summary, locale)}</AppText>
+      <AppText numberOfLines={2} tone="muted" variant="body">
+        {`${material.title} / ${projectTitle}`}
+      </AppText>
+    </View>
+  );
+  const scoreCard = (
+    <Card
+      style={[
+        styles.scoreCard,
+        breakpoint === 'medium' ? styles.scoreCardRow : null,
+      ]}
+    >
+      <ScoreRing
+        label={t('이해도')}
+        max={100}
+        precision={0}
+        score={summary.score}
+        unit="%"
+        verdict={masteryVerdict(summary.score, locale)}
+      />
+      <View style={styles.scoreParts}>
+        <ScorePart
+          label={t('문제 정답률 {weight}%', { weight: Math.round(QUIZ_WEIGHT * 100) })}
+          value={
+            summary.accuracy === null
+              ? t('아직 안 풀었어요')
+              : t('{total}개 중 {correct}개 맞힘, {percent}%', {
+                  total: summary.answeredCount,
+                  correct: summary.correctCount,
+                  percent: toPercent(summary.accuracy),
+                })
+          }
+        />
+        <ScorePart
+          label={t('핵심 내용 확인 {weight}%', {
+            weight: Math.round(CHECKLIST_WEIGHT * 100),
+          })}
+          value={
+            summary.checklistRatio === null
+              ? t('핵심 내용이 없어요')
+              : t('{total}개 중 {checked}개 확인, {percent}%', {
+                  total: summary.keyPointCount,
+                  checked: summary.checkedCount,
+                  percent: toPercent(summary.checklistRatio),
+                })
+          }
+        />
+      </View>
+    </Card>
+  );
+  const primaryButton = (
+    <Button
+      fullWidth
+      leftIcon={
+        hasQuiz ? (
+          <RotateCcw color={colors.textInverse} size={iconSizes.inline} />
+        ) : (
+          <ListChecks color={colors.textInverse} size={iconSizes.inline} />
+        )
+      }
+      onPress={onPrimary}
+      size="large"
+      variant="primary"
+    >
+      {primaryLabel}
+    </Button>
+  );
+
+  const details = (
+    <>
+      <View style={styles.section}>
+        <SectionHeader
+          description={t('마지막 답이 틀린 개념이에요. 시간을 누르면 그 부분부터 들어요.')}
+          title={t('헷갈린 개념')}
+        />
+        {summary.weakConcepts.length > 0 ? (
+          <View style={styles.cardList}>
+            {summary.weakConcepts.map((concept) => (
+              <ConceptCard
+                concept={concept}
+                key={concept.concept}
+                onListen={() => listenAt(concept.sourceStartMs)}
+                page={material.source.kind === 'document'}
+              />
+            ))}
+          </View>
+        ) : (
+          <Card style={styles.quietCard} variant="soft">
+            <StatusBadge label={t('없어요')} tone="positive" />
+            <AppText tone="muted" variant="body">
+              {summary.answeredCount > 0
+                ? t('푼 문제는 모두 맞혔어요.')
+                : t('문제를 풀면 헷갈린 개념이 보여요.')}
+            </AppText>
+          </Card>
+        )}
+      </View>
+      {keyPoints.length > 0 ? (
+        <View style={styles.section}>
+          <SectionHeader
+            actionLabel={t('요약 보기')}
+            description={t('{total}개 중 {checked}개를 확인했어요.', {
+              total: keyPoints.length,
+              checked: summary.checkedCount,
+            })}
+            onAction={openSummary}
+            title={t('핵심 내용')}
+          />
+          <Card padding={false}>
+            {keyPoints.map((point, index) => {
+              const done = checked.has(point);
+              return (
+                <View
+                  accessibilityLabel={`${done ? t('확인함') : t('아직 확인 안 함')}. ${point}`}
+                  accessible
+                  key={`${index}-${point}`}
+                  style={[
+                    styles.pointRow,
+                    index < keyPoints.length - 1 ? styles.rowDivider : null,
+                  ]}
+                >
+                  <View
+                    {...decorative}
+                    style={[styles.pointMark, done ? styles.pointMarkOn : null]}
+                  >
+                    {done ? (
+                      <Check color={colors.textInverse} size={iconSizes.dense} strokeWidth={3} />
+                    ) : null}
+                  </View>
+                  <AppText
+                    style={styles.flex}
+                    tone={done ? 'default' : 'muted'}
+                    variant="body"
+                  >
+                    {point}
+                  </AppText>
+                </View>
+              );
+            })}
+          </Card>
+        </View>
+      ) : null}
+      <View style={styles.section}>
+        <SectionHeader
+          description={t('날짜별로 맞힌 비율이에요.')}
+          title={t('정답률 추이')}
+        />
+        <Card style={styles.trendCard}>
+          {summary.trend.length >= 2 && first && latest ? (
+            <View
+              accessibilityLabel={t('정답률 추이, {n}일. {values}', {
+                n: summary.trend.length,
+                values: trendValues.map((value) => `${value}%`).join(', '),
+              })}
+              accessible
+              style={styles.trendBody}
+            >
+              <View style={styles.trendMetric}>
+                <AppText tabular variant="metric">
+                  {`${trendValues[trendValues.length - 1]}%`}
+                </AppText>
+                <AppText tone="muted" variant="badge">
+                  {t('{when}, 문제 {n}개', {
+                    when: formatRelativeDate(latest.lastAttemptAt),
+                    n: latest.attemptCount,
+                  })}
+                </AppText>
+              </View>
+              <TrendSparkline
+                endLabel={formatRelativeDate(latest.lastAttemptAt)}
+                startLabel={formatRelativeDate(first.lastAttemptAt)}
+                style={styles.flex}
+                values={trendValues}
+              />
+            </View>
+          ) : (
+            <AppText tone="muted" variant="body">
+              {summary.trend.length === 1
+                ? t('다른 날 한 번 더 풀면 추이가 보여요.')
+                : t('문제를 풀면 추이가 보여요.')}
+            </AppText>
+          )}
+        </Card>
+      </View>
+      {/* No "다음에 할 일" list: 헷갈린 개념 already offers the re-listen,
+          핵심 내용 the checklist, and the bottom bar the questions. A
+          section that restates all three is one more thing to read. */}
+      {summary.nextSteps.length === 0 ? (
+        <Card style={styles.quietCard} variant="soft">
+          <StatusBadge label={t('다 했어요')} tone="positive" />
+          <AppText tone="muted" variant="body">
+            {t('문제도 다 맞히고 핵심 내용도 다 확인했어요.')}
+          </AppText>
+        </Card>
+      ) : null}
+    </>
+  );
+
+  if (wide) {
+    return (
+      <Screen padded={false}>
+        <AppHeader onBack={back} title={t('이해도')} />
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          style={styles.fill}
+        >
+          <View style={[styles.content, styles.wideContent, { paddingHorizontal: gutter }]}>
+            <View style={[styles.aside, stickyColumn()]}>
+              {heading}
+              {scoreCard}
+              {primaryButton}
+            </View>
+            <View style={styles.main}>
+              {details}
+            </View>
+          </View>
+        </ScrollView>
+      </Screen>
+    );
+  }
+
   return (
     <Screen padded={false}>
       <AppHeader onBack={back} title={t('이해도')} />
@@ -137,200 +367,13 @@ export default function MasteryScreen() {
         keyboardShouldPersistTaps="handled"
         style={styles.fill}
       >
-        <View style={styles.content}>
-          <View style={styles.heading}>
-            <AppText variant="pageTitle">{masteryHeadline(summary, locale)}</AppText>
-            <AppText numberOfLines={2} tone="muted" variant="body">
-              {`${material.title} / ${projectTitle}`}
-            </AppText>
-          </View>
-
-          <Card style={styles.scoreCard} variant="soft">
-            <ScoreRing
-              label={t('이해도')}
-              max={100}
-              precision={0}
-              score={summary.score}
-              unit="%"
-              verdict={masteryVerdict(summary.score, locale)}
-            />
-            <View style={styles.scoreParts}>
-              <ScorePart
-                label={t('문제 정답률 {weight}%', { weight: Math.round(QUIZ_WEIGHT * 100) })}
-                value={
-                  summary.accuracy === null
-                    ? t('아직 안 풀었어요')
-                    : t('{total}개 중 {correct}개 맞힘, {percent}%', {
-                        total: summary.answeredCount,
-                        correct: summary.correctCount,
-                        percent: toPercent(summary.accuracy),
-                      })
-                }
-              />
-              <ScorePart
-                label={t('핵심 내용 확인 {weight}%', {
-                  weight: Math.round(CHECKLIST_WEIGHT * 100),
-                })}
-                value={
-                  summary.checklistRatio === null
-                    ? t('핵심 내용이 없어요')
-                    : t('{total}개 중 {checked}개 확인, {percent}%', {
-                        total: summary.keyPointCount,
-                        checked: summary.checkedCount,
-                        percent: toPercent(summary.checklistRatio),
-                      })
-                }
-              />
-            </View>
-          </Card>
-
-          <View style={styles.section}>
-            <SectionHeader
-              description={t('마지막 답이 틀린 개념이에요. 시간을 누르면 그 부분부터 들어요.')}
-              title={t('헷갈린 개념')}
-            />
-            {summary.weakConcepts.length > 0 ? (
-              <View style={styles.cardList}>
-                {summary.weakConcepts.map((concept) => (
-                  <ConceptCard
-                    concept={concept}
-                    key={concept.concept}
-                    onListen={() => listenAt(concept.sourceStartMs)}
-                    page={material.source.kind === 'document'}
-                  />
-                ))}
-              </View>
-            ) : (
-              <Card style={styles.quietCard} variant="soft">
-                <StatusBadge label={t('없어요')} tone="positive" />
-                <AppText tone="muted" variant="body">
-                  {summary.answeredCount > 0
-                    ? t('푼 문제는 모두 맞혔어요.')
-                    : t('문제를 풀면 헷갈린 개념이 보여요.')}
-                </AppText>
-              </Card>
-            )}
-          </View>
-
-          {keyPoints.length > 0 ? (
-            <View style={styles.section}>
-              <SectionHeader
-                actionLabel={t('요약 보기')}
-                description={t('{total}개 중 {checked}개를 확인했어요.', {
-                  total: keyPoints.length,
-                  checked: summary.checkedCount,
-                })}
-                onAction={openSummary}
-                title={t('핵심 내용')}
-              />
-              <Card padding={false}>
-                {keyPoints.map((point, index) => {
-                  const done = checked.has(point);
-                  return (
-                    <View
-                      accessibilityLabel={`${done ? t('확인함') : t('아직 확인 안 함')}. ${point}`}
-                      accessible
-                      key={`${index}-${point}`}
-                      style={[
-                        styles.pointRow,
-                        index < keyPoints.length - 1 ? styles.rowDivider : null,
-                      ]}
-                    >
-                      <View
-                        {...decorative}
-                        style={[styles.pointMark, done ? styles.pointMarkOn : null]}
-                      >
-                        {done ? (
-                          <Check color={colors.textInverse} size={iconSizes.dense} strokeWidth={3} />
-                        ) : null}
-                      </View>
-                      <AppText
-                        style={styles.flex}
-                        tone={done ? 'default' : 'muted'}
-                        variant="body"
-                      >
-                        {point}
-                      </AppText>
-                    </View>
-                  );
-                })}
-              </Card>
-            </View>
-          ) : null}
-
-          <View style={styles.section}>
-            <SectionHeader
-              description={t('날짜별로 맞힌 비율이에요.')}
-              title={t('정답률 추이')}
-            />
-            <Card style={styles.trendCard} variant="soft">
-              {summary.trend.length >= 2 && first && latest ? (
-                <View
-                  accessibilityLabel={t('정답률 추이, {n}일. {values}', {
-                    n: summary.trend.length,
-                    values: trendValues.map((value) => `${value}%`).join(', '),
-                  })}
-                  accessible
-                  style={styles.trendBody}
-                >
-                  <View style={styles.trendMetric}>
-                    <AppText tabular variant="metric">
-                      {`${trendValues[trendValues.length - 1]}%`}
-                    </AppText>
-                    <AppText tone="muted" variant="badge">
-                      {t('{when}, 문제 {n}개', {
-                        when: formatRelativeDate(latest.lastAttemptAt),
-                        n: latest.attemptCount,
-                      })}
-                    </AppText>
-                  </View>
-                  <TrendSparkline
-                    endLabel={formatRelativeDate(latest.lastAttemptAt)}
-                    startLabel={formatRelativeDate(first.lastAttemptAt)}
-                    style={styles.flex}
-                    values={trendValues}
-                  />
-                </View>
-              ) : (
-                <AppText tone="muted" variant="body">
-                  {summary.trend.length === 1
-                    ? t('다른 날 한 번 더 풀면 추이가 보여요.')
-                    : t('문제를 풀면 추이가 보여요.')}
-                </AppText>
-              )}
-            </Card>
-          </View>
-
-          {/* No "다음에 할 일" list: 헷갈린 개념 already offers the re-listen,
-              핵심 내용 the checklist, and the bottom bar the questions. A
-              section that restates all three is one more thing to read. */}
-          {summary.nextSteps.length === 0 ? (
-            <Card style={styles.quietCard} variant="soft">
-              <StatusBadge label={t('다 했어요')} tone="positive" />
-              <AppText tone="muted" variant="body">
-                {t('문제도 다 맞히고 핵심 내용도 다 확인했어요.')}
-              </AppText>
-            </Card>
-          ) : null}
+        <View style={[styles.content, { paddingHorizontal: gutter }]}>
+          {heading}
+          {scoreCard}
+          {details}
         </View>
       </ScrollView>
-      <View style={styles.bottomBar}>
-        <Button
-          fullWidth
-          leftIcon={
-            hasQuiz ? (
-              <RotateCcw color={colors.textInverse} size={iconSizes.inline} />
-            ) : (
-              <ListChecks color={colors.textInverse} size={iconSizes.inline} />
-            )
-          }
-          onPress={onPrimary}
-          size="large"
-          variant="primary"
-        >
-          {primaryLabel}
-        </Button>
-      </View>
+      <View style={[styles.bottomBar, { paddingHorizontal: gutter }]}>{primaryButton}</View>
     </Screen>
   );
 }
@@ -415,6 +458,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.gutter,
   },
   heading: { gap: spacing.sm },
+  wideContent: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: spacing.xxl,
+    paddingTop: spacing.lg,
+  },
+  /** The pinned column: wide enough for the large ring and a two-line title. */
+  aside: { gap: spacing.lg, width: 320 },
+  main: { flex: 1, gap: spacing.xl, minWidth: 0 },
   flex: { flex: 1, minWidth: 0 },
   section: { gap: spacing.md },
   cardList: { gap: spacing.md },
@@ -422,12 +474,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
+  /** Tablet: ring left, the two parts beside it. */
+  scoreCardRow: {
+    flexDirection: 'row',
+    gap: spacing.xl,
+  },
   scoreParts: {
     alignSelf: 'stretch',
+    flex: 1,
     gap: spacing.sm,
+    justifyContent: 'center',
   },
   scorePart: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.backgroundSoft,
     borderRadius: radii.input,
     gap: spacing.xxs,
     padding: spacing.md,

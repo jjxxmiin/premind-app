@@ -25,7 +25,6 @@ export function DeckResult({ result }: DeckResultProps) {
       accessibilityLabel={result.headline}
       style={styles.card}
       testID="deck-result"
-      variant="soft"
     >
       <StatusBadge
         label={clean ? t('다 외웠어요') : t('한 번 더')}
