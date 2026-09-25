@@ -11,6 +11,7 @@ import Svg, { Line, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 import { AppText, Card } from '@/components/ui';
 import type { AppTextTone } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { speechScale, type SpeechMetric, type SpeechMetrics } from '@/lib/speech-metrics';
 import { colors, fontFamilies, spacing } from '@/theme/tokens';
 
@@ -61,15 +62,26 @@ export function SpeechHabits({ metrics, style }: SpeechHabitsProps) {
 }
 
 function SpeechGauge({ metric, last }: { metric: SpeechMetric; last: boolean }) {
+  const t = useT();
+  // speech-metrics.ts keeps its Korean words (its tests read them); the words go
+  // through the dictionary here, where they are drawn.
+  const title = t.ctx('speech', metric.title);
+  const unit = t.ctx('speech', metric.unit);
+  const band = t.ctx('speech', metric.band);
+  const advice = t.ctx('speech', metric.advice);
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const scale = speechScale(metric.key);
   const gauge = gaugeLayout(metric.value, scale, width, INSET);
   const usable = Math.max(0, width - INSET * 2);
   const label = [
-    `${metric.title} ${metric.valueText} ${metric.unit}, ${metric.band}.`,
-    `눈금은 ${scale.rangeText}, 알맞은 구간은 ${scale.healthyMin}에서 ${scale.healthyMax}예요.`,
-    gauge.clamped ? '눈금 밖이라 끝에 표시했어요.' : '',
-    `${metric.advice}.`,
+    `${title} ${metric.valueText} ${unit}, ${band}.`,
+    t('눈금은 {range}, 알맞은 구간은 {min}에서 {max}예요.', {
+      range: t.ctx('speech', scale.rangeText),
+      min: scale.healthyMin,
+      max: scale.healthyMax,
+    }),
+    gauge.clamped ? t('눈금 밖이라 끝에 표시했어요.') : '',
+    `${advice}.`,
   ]
     .filter((part) => part.length > 0)
     .join(' ');
@@ -81,13 +93,13 @@ function SpeechGauge({ metric, last }: { metric: SpeechMetric; last: boolean }) 
       style={[styles.gauge, last ? null : styles.divider]}
     >
       <View style={styles.head}>
-        <AppText variant="itemTitle">{metric.title}</AppText>
+        <AppText variant="itemTitle">{title}</AppText>
         <View style={styles.valueLine}>
           <AppText tabular variant="metric">
             {metric.valueText}
           </AppText>
           <AppText tone="faint" variant="badge">
-            {gauge.clamped ? `${metric.unit}, 눈금 밖` : metric.unit}
+            {gauge.clamped ? t('{unit}, 눈금 밖', { unit }) : unit}
           </AppText>
         </View>
       </View>
@@ -148,10 +160,10 @@ function SpeechGauge({ metric, last }: { metric: SpeechMetric; last: boolean }) 
       </View>
       <View style={styles.foot}>
         <AppText style={styles.band} tone={bandTone(metric)} variant="label">
-          {metric.band}
+          {band}
         </AppText>
         <AppText style={styles.advice} tone="muted" variant="badge">
-          {metric.advice}
+          {advice}
         </AppText>
       </View>
     </View>

@@ -4,6 +4,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { AppText, Card, StatusBadge } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatDuration, formatRelativeDate } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 import type { LensReport } from '@/types';
 
@@ -35,33 +36,36 @@ export function LatestReportCard({
   title,
   updatedAt,
 }: LatestReportCardProps) {
-  const conclusion = reportConclusion(report);
-  const verdict = scoreWord(report.overall);
+  const t = useT();
+  const conclusion = reportConclusion(report, t.locale);
+  const verdict = scoreWord(report.overall, t.locale);
   const fixTime = conclusion.fix ? formatDuration(conclusion.fix.sourceStartMs / 1_000) : null;
   const meta = `${projectTitle} / ${formatRelativeDate(updatedAt)}`;
   const spoken = [
-    `최근 평가, ${title}. ${meta}.`,
+    t('최근 평가, {title}. {meta}.', { title, meta }),
     conclusion.sentence,
-    conclusion.fix ? `먼저 고칠 것, ${fixTime}. ${conclusion.fix.text}` : null,
+    conclusion.fix
+      ? t('먼저 고칠 것, {time}. {text}', { time: fixTime, text: conclusion.fix.text })
+      : null,
   ]
     .filter(Boolean)
     .join(' ');
 
   return (
     <Card
-      accessibilityHint="발표 평가 결과를 열어요"
+      accessibilityHint={t('발표 평가 결과를 열어요')}
       accessibilityLabel={spoken}
       onPress={onPress}
       style={[styles.card, style]}
     >
       <View style={styles.head}>
         <AppText tone="muted" variant="badge">
-          최근 평가
+          {t('최근 평가')}
         </AppText>
         <StatusBadge label={verdict} tone={verdictTone(report.overall)} />
       </View>
       <View style={styles.main}>
-        <ScoreRing label="전체 평가" score={report.overall} size="medium" />
+        <ScoreRing label={t('전체 평가')} score={report.overall} size="medium" />
         <View style={styles.copy}>
           <AppText variant="itemTitle">{title}</AppText>
           <AppText tone="faint" variant="badge">
@@ -77,7 +81,7 @@ export function LatestReportCard({
         <View style={styles.fix}>
           <View style={styles.fixHead}>
             <AppText tone="muted" variant="badge">
-              먼저 고칠 것
+              {t('먼저 고칠 것')}
             </AppText>
             <View style={styles.timeChip}>
               <AppText tabular tone="soft" variant="badge">
@@ -90,7 +94,7 @@ export function LatestReportCard({
       ) : null}
       <View {...decorative} style={styles.link}>
         <AppText tone="soft" variant="label">
-          자세히 보기
+          {t('자세히 보기')}
         </AppText>
         <ChevronRight color={colors.textFaint} size={iconSizes.inline} strokeWidth={2} />
       </View>

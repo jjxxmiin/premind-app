@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'rea
 import { AppText, Card, StatusBadge } from '@/components/ui';
 import type { AppTextTone } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, sizes, spacing } from '@/theme/tokens';
 import type { LensHistoryEntry } from '@/types';
 
@@ -25,13 +26,18 @@ export interface LensHistoryListProps {
  * place of the current one; the row being viewed is tinted and checked.
  */
 export function LensHistoryList({ entries, onSelect, selectedId, style }: LensHistoryListProps) {
+  const t = useT();
   const rows = historyRows(entries, selectedId);
   return (
     <Card padding={false} style={style}>
       {rows.map((row, index) => {
-        const when = formatEvaluatedAt(row.evaluatedAt);
+        const when = formatEvaluatedAt(row.evaluatedAt, t.locale);
         const deltaText =
-          row.delta === null ? '첫 평가' : row.delta === 0 ? '같음' : formatDelta(row.delta);
+          row.delta === null
+            ? t('첫 평가')
+            : row.delta === 0
+              ? t.ctx('lens', '같음')
+              : formatDelta(row.delta);
         const deltaTone: AppTextTone =
           row.delta === null || row.delta === 0
             ? 'faint'
@@ -40,14 +46,14 @@ export function LensHistoryList({ entries, onSelect, selectedId, style }: LensHi
               : 'negative';
         const spokenDelta =
           row.delta === null
-            ? '첫 평가'
+            ? t('첫 평가')
             : row.delta === 0
-              ? '지난 평가와 같아요'
-              : `지난 평가보다 ${formatDelta(row.delta)}점`;
+              ? t('지난 평가와 같아요')
+              : t('지난 평가보다 {delta}점', { delta: formatDelta(row.delta) });
         return (
           <Pressable
-            accessibilityHint="이 평가를 화면에 보여요"
-            accessibilityLabel={`${when}, ${row.overall.toFixed(1)}점, ${spokenDelta}${row.latest ? ', 최근' : ''}`}
+            accessibilityHint={t('이 평가를 화면에 보여요')}
+            accessibilityLabel={`${when}, ${t('{score}점', { score: row.overall.toFixed(1) })}, ${spokenDelta}${row.latest ? `, ${t.ctx('lens', '최근')}` : ''}`}
             accessibilityRole="button"
             accessibilityState={{ selected: row.selected }}
             key={row.id}
@@ -64,7 +70,7 @@ export function LensHistoryList({ entries, onSelect, selectedId, style }: LensHi
                 <AppText tabular variant="itemTitle">
                   {when}
                 </AppText>
-                {row.latest ? <StatusBadge label="최근" tone="neutral" /> : null}
+                {row.latest ? <StatusBadge label={t.ctx('lens', '최근')} tone="neutral" /> : null}
               </View>
               <AppText tone={deltaTone} variant="meta">
                 {deltaText}
@@ -75,7 +81,7 @@ export function LensHistoryList({ entries, onSelect, selectedId, style }: LensHi
                 {row.overall.toFixed(1)}
               </AppText>
               <AppText tone="faint" variant="badge">
-                점
+                {t.ctx('lens-unit', '점')}
               </AppText>
             </View>
             <View style={styles.trailing}>

@@ -1,3 +1,4 @@
+import type { AppLocale } from '@/lib/i18n/core';
 import { josa } from '@/lib/mastery';
 import type { LensMoment, LensReport, LensRubricScore } from '@/types';
 
@@ -9,6 +10,7 @@ import {
   verdictFor,
   type DensitySide,
   type MomentDensity,
+  verdictWord,
   type RubricComparisonRow,
 } from './lens-charts';
 
@@ -24,14 +26,43 @@ const RUBRIC_EXPLANATIONS: Record<string, string> = {
   delivery: '속도와 강조가 듣기 편했는지',
 };
 
+const RUBRIC_EXPLANATIONS_EN: Record<string, string> = {
+  structure: 'Whether the opening, body, and close came in order',
+  clarity: 'Whether sentences were short and easy to follow the first time',
+  evidence: 'Whether each claim came with an example or a number',
+  delivery: 'Whether the pace and emphasis were easy to listen to',
+};
+
+/**
+ * The rubric names in English, by key. The server sends the Korean label
+ * (구조, 명료성, 근거 활용, 전달력); an unknown key keeps what the server sent.
+ */
+const RUBRIC_LABELS_EN: Record<string, string> = {
+  structure: 'Structure',
+  clarity: 'Clarity',
+  evidence: 'Evidence',
+  delivery: 'Delivery',
+};
+
+/** A rubric item's name in the screen language. Korean is the server's label as is. */
+export function rubricLabel(
+  metric: { key: string; label: string },
+  locale: AppLocale = 'ko',
+): string {
+  return locale === 'en' ? (RUBRIC_LABELS_EN[metric.key] ?? metric.label) : metric.label;
+}
+
 /** One line on what a rubric measures. Unknown keys get a generic line. */
-export function rubricExplanation(key: string): string {
+export function rubricExplanation(key: string, locale: AppLocale = 'ko'): string {
+  if (locale === 'en') {
+    return RUBRIC_EXPLANATIONS_EN[key] ?? 'How well you did on this item';
+  }
   return RUBRIC_EXPLANATIONS[key] ?? '이 항목에서 얼마나 잘했는지';
 }
 
 /** "아주 좋아요", "좋아요", "보통이에요", "아쉬워요" for a 0–5 score. */
-export function scoreWord(score: number): string {
-  return verdictFor(score);
+export function scoreWord(score: number, locale: AppLocale = 'ko'): string {
+  return locale === 'en' ? verdictWord(score, 'en') : verdictFor(score);
 }
 
 export interface ReportConclusion {
@@ -64,9 +95,26 @@ export function weakestRubric(rubric: readonly LensRubricScore[]): LensRubricSco
  * One line under the 이번 vs 지난 chart: what moved up the most and what
  * slipped. Says plainly when nothing moved rather than dressing it up.
  */
-export function comparisonSentence(rows: readonly RubricComparisonRow[]): string {
+export function comparisonSentence(
+  rows: readonly RubricComparisonRow[],
+  locale: AppLocale = 'ko',
+): string {
   if (rows.length === 0) return '';
   const { improved, slipped } = rubricMovers(rows);
+  if (locale === 'en') {
+    const up = improved
+      ? `${rubricLabel(improved, 'en')} rose the most (${formatDelta(improved.delta)})`
+      : null;
+    const down = slipped
+      ? `${rubricLabel(slipped, 'en')} went down (${formatDelta(slipped.delta)})`
+      : null;
+    if (up && down) return `${up}, and ${down}.`;
+    if (up) return `${up}, and nothing went down.`;
+    if (down) return `Nothing went up, and ${down}.`;
+    return rows.length === 1
+      ? 'The 1 item is the same as last time.'
+      : `All ${rows.length} items are the same as last time.`;
+  }
   const rose = improved
     ? `${improved.label}${josa(improved.label, '이')} ${formatDelta(improved.delta)}로 가장 많이 올랐`
     : null;
@@ -89,10 +137,25 @@ const SIDE_PHRASE: Record<Exclude<DensitySide, 'none'>, string> = {
  * One line under the density strip: which half of the recording each kind of
  * evidence sits in.
  */
-export function densitySentence(density: MomentDensity): string {
+const SIDE_PHRASE_EN: Record<Exclude<DensitySide, 'none'>, string> = {
+  front: 'bunched in the first half',
+  back: 'bunched in the second half',
+  spread: 'spread across both halves',
+};
+
+export function densitySentence(density: MomentDensity, locale: AppLocale = 'ko'): string {
   const halves = densityHalves(density);
   const strength = densitySide(halves.first.strengths, halves.second.strengths);
   const improvement = densitySide(halves.first.improvements, halves.second.improvements);
+  if (locale === 'en') {
+    const goodEn = strength === 'none' ? null : `What went well is ${SIDE_PHRASE_EN[strength]}`;
+    const fixEn =
+      improvement === 'none' ? null : `what to improve is ${SIDE_PHRASE_EN[improvement]}`;
+    if (goodEn && fixEn) return `${goodEn}, and ${fixEn}.`;
+    if (goodEn) return `${goodEn}.`;
+    if (fixEn) return `${fixEn.charAt(0).toUpperCase()}${fixEn.slice(1)}.`;
+    return '';
+  }
   const good = strength === 'none' ? null : `잘한 점은 ${SIDE_PHRASE[strength]}`;
   const fix = improvement === 'none' ? null : `더 좋아질 점은 ${SIDE_PHRASE[improvement]}`;
   if (good && fix) return `${good}고, ${fix}어요.`;
@@ -101,9 +164,25 @@ export function densitySentence(density: MomentDensity): string {
   return '';
 }
 
-export function reportConclusion(report: LensReport): ReportConclusion {
+export function reportConclusion(report: LensReport, locale: AppLocale = 'ko'): ReportConclusion {
   const best = bestRubric(report.rubric);
   const weakest = weakestRubric(report.rubric);
+  if (locale === 'en') {
+    const leadEn = `${report.overall.toFixed(1)} points, ${scoreWord(report.overall, 'en')}.`;
+    let sentenceEn = leadEn;
+    if (best && weakest && best.key !== weakest.key) {
+      sentenceEn = `${leadEn} ${rubricLabel(best, 'en')} was your strongest, and ${rubricLabel(weakest, 'en')} needs work.`;
+    } else if (best) {
+      sentenceEn = `${leadEn} All items scored about the same.`;
+    }
+    return {
+      sentence: sentenceEn,
+      best,
+      weakest,
+      highlight: report.strengths[0] ?? null,
+      fix: report.priority ?? report.improvements[0] ?? null,
+    };
+  }
   const lead = `${report.overall.toFixed(1)}점, ${scoreWord(report.overall)}.`;
   let sentence = lead;
   if (best && weakest && best.key !== weakest.key) {

@@ -11,6 +11,7 @@ import Svg, { Line, Rect, Text as SvgText } from 'react-native-svg';
 import { AppText } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatDuration } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, fontFamilies, spacing } from '@/theme/tokens';
 import type { LensMoment } from '@/types';
 
@@ -53,23 +54,32 @@ export function MomentDensity({
   buckets = BUCKETS,
   style,
 }: MomentDensityProps) {
+  const t = useT();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const density = momentDensity(strengths, improvements, durationMs, buckets);
   if (!density) return null;
 
   const columns = densityColumns(density.buckets.length, width, COLUMN_GAP);
   const unit = density.peak > 0 ? MAX_COLUMN / density.peak : 0;
-  const sentence = densitySentence(density);
+  const sentence = densitySentence(density, t.locale);
   const filled = density.buckets.filter(
     (bucket) => bucket.strengths + bucket.improvements > 0,
   );
   const reading = filled
     .map(
       (bucket) =>
-        `${formatDuration(bucket.startMs / 1_000)}부터 잘한 점 ${bucket.strengths}개, 더 좋아질 점 ${bucket.improvements}개`,
+        t('{time}부터 잘한 점 {strengths}개, 더 좋아질 점 {improvements}개', {
+          time: formatDuration(bucket.startMs / 1_000),
+          strengths: bucket.strengths,
+          improvements: bucket.improvements,
+        }),
     )
     .join(', ');
-  const label = [`구간별 근거 분포, ${density.buckets.length}구간.`, `${reading}.`, sentence]
+  const label = [
+    t('구간별 근거 분포, {n}구간.', { n: density.buckets.length }),
+    `${reading}.`,
+    sentence,
+  ]
     .filter((part) => part.length > 1)
     .join(' ');
 
@@ -80,7 +90,7 @@ export function MomentDensity({
       style={[styles.wrap, style]}
     >
       <AppText tone="muted" variant="badge">
-        구간별 근거 분포
+        {t('구간별 근거 분포')}
       </AppText>
       <View
         {...decorative}

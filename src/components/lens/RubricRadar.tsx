@@ -10,6 +10,7 @@ import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
 
 import { AppText, ProgressBar } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, fontFamilies, spacing } from '@/theme/tokens';
 import type { LensRubricScore } from '@/types';
 
@@ -20,6 +21,7 @@ import {
   radarLabel,
   radarPolygon,
 } from './lens-charts';
+import { rubricLabel } from './lens-copy';
 
 export interface RubricRadarProps {
   rubric: readonly LensRubricScore[];
@@ -40,12 +42,15 @@ const VERTEX_RADIUS = 3;
 const MIN_DIMENSIONS = 3;
 const SCORE_COLUMN = 36;
 const LABEL_COLUMN = 64;
+/** English rubric names ("Structure") run wider than the Korean ones. */
+const LABEL_COLUMN_EN = 72;
 
 /**
  * The rubric as a spider chart on a light grid, with a compact bar per
  * dimension underneath so the exact numbers are never hidden in the shape.
  */
 export function RubricRadar({ rubric, style }: RubricRadarProps) {
+  const t = useT();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const values = rubric.map((metric) => metric.score);
   const radius = Math.min(MAX_RADIUS, Math.max(MIN_RADIUS, width / 2 - LABEL_ROOM));
@@ -58,12 +63,15 @@ export function RubricRadar({ rubric, style }: RubricRadarProps) {
   const outer = grid[grid.length - 1] ?? [];
   const polygon = showRadar ? radarPolygon(values, cx, cy, radius) : [];
   const summary = rubric
-    .map((metric) => `${metric.label} ${metric.score.toFixed(1)}점`)
+    .map(
+      (metric) =>
+        `${rubricLabel(metric, t.locale)} ${t('{score}점', { score: metric.score.toFixed(1) })}`,
+    )
     .join(', ');
 
   return (
     <View
-      accessibilityLabel={`항목별 점수, ${SCORE_MAX}점 만점. ${summary}`}
+      accessibilityLabel={t('항목별 점수, {max}점 만점. {summary}', { max: SCORE_MAX, summary })}
       accessible
       onLayout={(event: LayoutChangeEvent) => {
         const next = Math.round(event.nativeEvent.layout.width);
@@ -125,7 +133,7 @@ export function RubricRadar({ rubric, style }: RubricRadarProps) {
                   x={label.x}
                   y={label.y}
                 >
-                  {metric.label}
+                  {rubricLabel(metric, t.locale)}
                 </SvgText>
               );
             })}
@@ -135,8 +143,8 @@ export function RubricRadar({ rubric, style }: RubricRadarProps) {
       <View style={styles.bars}>
         {rubric.map((metric) => (
           <View key={metric.key} style={styles.barRow}>
-            <AppText numberOfLines={1} style={styles.barLabel} tone="muted" variant="meta">
-              {metric.label}
+            <AppText numberOfLines={1} style={t.locale === 'en' ? styles.barLabelEn : styles.barLabel} tone="muted" variant="meta">
+              {rubricLabel(metric, t.locale)}
             </AppText>
             <View style={styles.barTrack}>
               <ProgressBar height={4} tone="ink" value={(metric.score / SCORE_MAX) * 100} />
@@ -161,6 +169,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   barLabel: { width: LABEL_COLUMN },
+  barLabelEn: { width: LABEL_COLUMN_EN },
   barTrack: { flex: 1, minWidth: 0 },
   barScore: { width: SCORE_COLUMN },
 });

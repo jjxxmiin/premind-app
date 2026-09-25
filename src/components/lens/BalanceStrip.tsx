@@ -10,6 +10,7 @@ import Svg, { Rect } from 'react-native-svg';
 
 import { AppText } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, radii, spacing } from '@/theme/tokens';
 
 import { balanceSegments } from './lens-charts';
@@ -25,13 +26,18 @@ const DEFAULT_WIDTH = 280;
 
 /** One stacked bar: how much of the feedback was 강점 (ink) versus 보완 (grey). */
 export function BalanceStrip({ strengthCount, improvementCount, style }: BalanceStripProps) {
+  const t = useT();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const segments = balanceSegments(strengthCount, improvementCount, width);
   const total = strengthCount + improvementCount;
 
   return (
     <View
-      accessibilityLabel={`강점 ${strengthCount}개, 보완 ${improvementCount}개, 모두 ${total}개`}
+      accessibilityLabel={t('강점 {strengths}개, 보완 {improvements}개, 모두 {total}개', {
+        strengths: strengthCount,
+        improvements: improvementCount,
+        total,
+      })}
       accessible
       onLayout={(event: LayoutChangeEvent) => {
         const next = Math.round(event.nativeEvent.layout.width);
@@ -72,8 +78,8 @@ export function BalanceStrip({ strengthCount, improvementCount, style }: Balance
         </Svg>
       </View>
       <View style={styles.legend}>
-        <LegendItem color={colors.text} label={`강점 ${strengthCount}개`} />
-        <LegendItem color={colors.borderStrong} label={`보완 ${improvementCount}개`} />
+        <LegendItem color={colors.text} label={t('강점 {n}개', { n: strengthCount })} />
+        <LegendItem color={colors.borderStrong} label={t('보완 {n}개', { n: improvementCount })} />
       </View>
     </View>
   );

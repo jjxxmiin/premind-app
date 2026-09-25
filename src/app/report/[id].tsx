@@ -34,6 +34,7 @@ import {
   formatEvaluatedAt,
   reportConclusion,
   rubricExplanation,
+  rubricLabel,
   scoreWord,
   selectedEntry,
   type MomentMark,
@@ -53,6 +54,7 @@ import {
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatDuration } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { goBackOrReplace } from '@/lib/navigation';
 import { speechMetrics } from '@/lib/speech-metrics';
 import { isDemoSession } from '@/services/api/session-manager';
@@ -61,6 +63,7 @@ import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 import type { LensMoment } from '@/types';
 
 export default function LensReportScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { evaluatingMaterialIds, loadLensHistory, materials, requestLens, session } =
     useAppStore();
@@ -126,11 +129,11 @@ export default function LensReportScreen() {
   if (!material) {
     return (
       <Screen padded={false}>
-        <AppHeader onBack={() => goBackOrReplace('/(tabs)/library')} title="발표 평가" />
+        <AppHeader onBack={() => goBackOrReplace('/(tabs)/library')} title={t('발표 평가')} />
         <ErrorState
-          description="이 자료를 찾을 수 없어요. 내 자료에서 다시 골라 주세요."
+          description={t('이 자료를 찾을 수 없어요. 내 자료에서 다시 골라 주세요.')}
           onRetry={() => goBackOrReplace('/(tabs)/library')}
-          retryLabel="돌아가기"
+          retryLabel={t('돌아가기')}
         />
       </Screen>
     );
@@ -138,10 +141,10 @@ export default function LensReportScreen() {
 
   const errorDialog = (
     <Dialog
-      confirm={{ label: '확인', onPress: () => setEvaluateError(null) }}
-      description={evaluateError ?? undefined}
+      confirm={{ label: t('확인'), onPress: () => setEvaluateError(null) }}
+      description={evaluateError !== null ? t(evaluateError) : undefined}
       onRequestClose={() => setEvaluateError(null)}
-      title="평가를 시작하지 못했어요"
+      title={t('평가를 시작하지 못했어요')}
       visible={evaluateError !== null}
     />
   );
@@ -154,18 +157,17 @@ export default function LensReportScreen() {
   if (evaluating) {
     return (
       <Screen padded={false} scroll>
-        <AppHeader onBack={backToMaterial} title="발표 평가" />
+        <AppHeader onBack={backToMaterial} title={t('발표 평가')} />
         <View
-          accessibilityLabel={`${material.title} 평가 중`}
+          accessibilityLabel={`${material.title} ${t('평가 중')}`}
           accessibilityLiveRegion="polite"
           style={styles.content}
         >
           <View style={styles.heading}>
-            <StatusBadge label="평가 중" showDot tone="brand" />
-            <AppText variant="pageTitle">내 발표를 읽고 평가하고 있어요</AppText>
+            <StatusBadge label={t('평가 중')} showDot tone="brand" />
+            <AppText variant="pageTitle">{t('내 발표를 읽고 평가하고 있어요')}</AppText>
             <AppText tone="muted" variant="body">
-              길이에 따라 몇 초에서 몇 분 걸려요. 이 화면을 나가도 평가는
-              이어져요.
+              {t('길이에 따라 몇 초에서 몇 분 걸려요. 이 화면을 나가도 평가는 이어져요.')}
             </AppText>
           </View>
           <Card style={styles.scoreCard} variant="soft">
@@ -174,13 +176,13 @@ export default function LensReportScreen() {
             <Skeleton height={spacing.md} width="60%" />
           </Card>
           <View style={styles.section}>
-            <SectionHeader title="얼마나 잘했나요" />
+            <SectionHeader title={t('얼마나 잘했나요')} />
             <Card>
               <SkeletonLines lines={6} />
             </Card>
           </View>
           <Button fullWidth onPress={backToMaterial} variant="secondary">
-            돌아가기
+            {t('돌아가기')}
           </Button>
         </View>
         {errorDialog}
@@ -205,19 +207,19 @@ export default function LensReportScreen() {
               params: { id: material.id },
             })
           }
-          title="발표 평가"
+          title={t('발표 평가')}
         />
         <View style={styles.unavailableContent}>
           <EmptyState
-            actionLabel="돌아가기"
-            description="내 발표 녹음이라면 평가를 시작해 보세요. 점수와 근거가 여기에 생겨요."
+            actionLabel={t('돌아가기')}
+            description={t('내 발표 녹음이라면 평가를 시작해 보세요. 점수와 근거가 여기에 생겨요.')}
             onAction={() =>
               router.replace({
                 pathname: '/material/[id]',
                 params: { id: material.id },
               })
             }
-            title="아직 평가가 없어요"
+            title={t('아직 평가가 없어요')}
           />
           {material.status === 'ready' ? (
             <Button
@@ -226,7 +228,7 @@ export default function LensReportScreen() {
               onPress={evaluate}
               variant="outline"
             >
-              평가 시작
+              {t('평가 시작')}
             </Button>
           ) : null}
         </View>
@@ -241,7 +243,7 @@ export default function LensReportScreen() {
   const comparison = comparisonPair(history, viewing?.id ?? null);
   const priority = report.priority;
   const momentCount = report.strengths.length + report.improvements.length;
-  const conclusion = reportConclusion(report);
+  const conclusion = reportConclusion(report, t.locale);
   const jumpTo = (moment: LensMoment) => {
     router.push({
       pathname: '/material/[id]',
@@ -262,7 +264,7 @@ export default function LensReportScreen() {
             params: { id: material.id },
           })
         }
-        title="발표 평가"
+        title={t('발표 평가')}
       />
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -273,13 +275,14 @@ export default function LensReportScreen() {
         <View style={styles.content}>
           <View style={styles.heading}>
             <StatusBadge
-              label={demo ? '예시 평가' : '근거 기반'}
+              label={demo ? t('예시 평가') : t('근거 기반')}
               tone={demo ? 'neutral' : 'brand'}
             />
-            <AppText variant="pageTitle">내 발표를 평가했어요</AppText>
+            <AppText variant="pageTitle">{t('내 발표를 평가했어요')}</AppText>
             <AppText tone="muted" variant="body">
-              발표, 스피치, 면접 연습 녹음을 대본으로 채점했어요. 결론부터
-              읽고, 시간을 눌러 그 부분을 들어요.
+              {t(
+                '발표, 스피치, 면접 연습 녹음을 대본으로 채점했어요. 결론부터 읽고, 시간을 눌러 그 부분을 들어요.',
+              )}
             </AppText>
           </View>
 
@@ -292,7 +295,9 @@ export default function LensReportScreen() {
                 strokeWidth={1.9}
               />
               <AppText style={styles.flex} tone="muted" variant="meta">
-                {`지금 보는 평가: ${formatEvaluatedAt(viewing.evaluatedAt)}`}
+                {t('지금 보는 평가: {date}', {
+                  date: formatEvaluatedAt(viewing.evaluatedAt, t.locale),
+                })}
               </AppText>
             </Card>
           ) : null}
@@ -306,33 +311,33 @@ export default function LensReportScreen() {
                 strokeWidth={1.9}
               />
               <AppText style={styles.flex} tone="muted" variant="meta">
-                데모 마인드팩에 들어 있는 예시 평가예요.
+                {t('데모 마인드팩에 들어 있는 예시 평가예요.')}
               </AppText>
             </Card>
           ) : null}
 
           <Card style={styles.conclusionCard}>
             <AppText tone="muted" variant="badge">
-              총평
+              {t('총평')}
             </AppText>
             <AppText variant="heading">{conclusion.sentence}</AppText>
             {conclusion.highlight ? (
               <ConclusionLine
-                label="가장 잘한 것"
+                label={t('가장 잘한 것')}
                 moment={conclusion.highlight}
                 onPress={jumpTo}
               />
             ) : null}
             {conclusion.fix ? (
-              <ConclusionLine label="먼저 고칠 것" moment={conclusion.fix} onPress={jumpTo} />
+              <ConclusionLine label={t('먼저 고칠 것')} moment={conclusion.fix} onPress={jumpTo} />
             ) : null}
           </Card>
 
           {habits ? (
             <View style={styles.section}>
               <SectionHeader
-                description="대본에서 바로 잰 숫자예요. 눈금의 진한 구간이 알맞은 범위예요."
-                title="말하기 습관"
+                description={t('대본에서 바로 잰 숫자예요. 눈금의 진한 구간이 알맞은 범위예요.')}
+                title={t('말하기 습관')}
               />
               <SpeechHabits metrics={habits} />
             </View>
@@ -341,8 +346,10 @@ export default function LensReportScreen() {
           {comparison ? (
             <View style={styles.section}>
               <SectionHeader
-                description="같은 녹음을 다시 평가한 결과예요. 항목마다 이번과 지난번을 나란히 놓았어요."
-                title="지난번과 비교"
+                description={t(
+                  '같은 녹음을 다시 평가한 결과예요. 항목마다 이번과 지난번을 나란히 놓았어요.',
+                )}
+                title={t('지난번과 비교')}
               />
               <Card>
                 <RubricCompare
@@ -357,8 +364,8 @@ export default function LensReportScreen() {
 
           <View style={styles.section}>
             <SectionHeader
-              description="5점 만점이에요. 2.5부터 보통, 3.5부터 좋아요, 4.5부터 아주 좋아요예요."
-              title="얼마나 잘했나요"
+              description={t('5점 만점이에요. 2.5부터 보통, 3.5부터 좋아요, 4.5부터 아주 좋아요예요.')}
+              title={t('얼마나 잘했나요')}
             />
             <Card style={styles.scoreCard} variant="soft">
               <ScoreRing score={report.overall} />
@@ -368,7 +375,10 @@ export default function LensReportScreen() {
                 {material.title}
               </AppText>
               <AppText tone="faint" variant="badge">
-                {`${report.rubric.length}개 항목 / 근거 ${momentCount}개`}
+                {t('{items}개 항목 / 근거 {moments}개', {
+                  items: report.rubric.length,
+                  moments: momentCount,
+                })}
               </AppText>
               <BalanceStrip
                 improvementCount={report.improvements.length}
@@ -382,7 +392,16 @@ export default function LensReportScreen() {
             <Card padding={false}>
               {report.rubric.map((metric, index) => (
                 <View
-                  accessibilityLabel={`${metric.label}, ${rubricExplanation(metric.key)}. ${SCORE_MAX}점 만점에 ${metric.score.toFixed(1)}점, ${scoreWord(metric.score)} 구간이에요. 기준은 2.5 보통, 3.5 좋아요, 4.5 아주 좋아요예요. ${metric.evidence}`}
+                  accessibilityLabel={`${t(
+                    '{label}, {explanation}. {max}점 만점에 {score}점, {band} 구간이에요. 기준은 2.5 보통, 3.5 좋아요, 4.5 아주 좋아요예요.',
+                    {
+                      label: rubricLabel(metric, t.locale),
+                      explanation: rubricExplanation(metric.key, t.locale),
+                      max: SCORE_MAX,
+                      score: metric.score.toFixed(1),
+                      band: scoreWord(metric.score, t.locale),
+                    },
+                  )} ${metric.evidence}`}
                   accessible
                   key={metric.key}
                   style={[
@@ -392,9 +411,9 @@ export default function LensReportScreen() {
                 >
                   <View style={styles.rubricTopLine}>
                     <View style={styles.flex}>
-                      <AppText variant="itemTitle">{metric.label}</AppText>
+                      <AppText variant="itemTitle">{rubricLabel(metric, t.locale)}</AppText>
                       <AppText tone="faint" variant="badge">
-                        {rubricExplanation(metric.key)}
+                        {rubricExplanation(metric.key, t.locale)}
                       </AppText>
                     </View>
                     <View style={styles.rubricScore}>
@@ -422,8 +441,8 @@ export default function LensReportScreen() {
               style={styles.section}
             >
               <SectionHeader
-                description="시간을 누르면 그 부분부터 들어요."
-                title="무엇이 좋았나요"
+                description={t('시간을 누르면 그 부분부터 들어요.')}
+                title={t('무엇이 좋았나요')}
               />
               <Card
                 onLayout={(event) => rememberOffset('card-strength', event)}
@@ -452,17 +471,17 @@ export default function LensReportScreen() {
               style={styles.section}
             >
               <SectionHeader
-                description="하나만 골라 다음 연습에서 바꿔 봐요."
-                title="무엇부터 고칠까요"
+                description={t('하나만 골라 다음 연습에서 바꿔 봐요.')}
+                title={t('무엇부터 고칠까요')}
               />
               {priority ? (
               <Card style={styles.priorityCard}>
-                <StatusBadge label="우선순위" showDot tone="brand" />
+                <StatusBadge label={t('우선순위')} showDot tone="brand" />
                 <AppText variant="heading">{priority.text}</AppText>
                 {priority.action ? (
                   <View style={styles.actionCallout}>
                     <AppText tone="muted" variant="badge">
-                      이렇게 해요
+                      {t('이렇게 해요')}
                     </AppText>
                     <AppText variant="bodyStrong">{priority.action}</AppText>
                   </View>
@@ -473,7 +492,7 @@ export default function LensReportScreen() {
                   onPress={() => jumpTo(priority)}
                   variant="outline"
                 >
-                  {`${formatDuration(priority.sourceStartMs / 1_000)}부터 듣기`}
+                  {t('{time}부터 듣기', { time: formatDuration(priority.sourceStartMs / 1_000) })}
                 </Button>
               </Card>
               ) : null}
@@ -503,8 +522,10 @@ export default function LensReportScreen() {
           {momentCount > 0 ? (
             <View style={styles.section}>
               <SectionHeader
-                description="녹음 어디에서 잘했고 어디를 고칠지 한 줄에 표시했어요. 점을 누르면 그 줄로 가고, 아래 막대는 구간마다 몇 개인지 보여줘요."
-                title="어디를 다시 들을까요"
+                description={t(
+                  '녹음 어디에서 잘했고 어디를 고칠지 한 줄에 표시했어요. 점을 누르면 그 줄로 가고, 아래 막대는 구간마다 몇 개인지 보여줘요.',
+                )}
+                title={t('어디를 다시 들을까요')}
               />
               <Card>
                 <MomentsTimeline
@@ -528,8 +549,8 @@ export default function LensReportScreen() {
           {history.length > 1 ? (
             <View style={styles.section}>
               <SectionHeader
-                description="같은 녹음을 다시 평가한 기록이에요. 날짜를 누르면 그때 리포트를 봐요."
-                title="평가 이력"
+                description={t('같은 녹음을 다시 평가한 기록이에요. 날짜를 누르면 그때 리포트를 봐요.')}
+                title={t('평가 이력')}
               />
               <LensHistoryList
                 entries={history}
@@ -549,10 +570,10 @@ export default function LensReportScreen() {
                 size={iconSizes.section}
                 strokeWidth={1.9}
               />
-              <AppText variant="itemTitle">다음 연습에서 해 보기</AppText>
+              <AppText variant="itemTitle">{t('다음 연습에서 해 보기')}</AppText>
             </View>
             <AppText tone="muted" variant="body">
-              먼저 고칠 것 하나만 기억하고 다시 한번 연습을 녹음해 보세요.
+              {t('먼저 고칠 것 하나만 기억하고 다시 한번 연습을 녹음해 보세요.')}
             </AppText>
             <Button
               fullWidth
@@ -561,17 +582,17 @@ export default function LensReportScreen() {
               size="large"
               variant="primary"
             >
-              녹음 시작
+              {t('녹음 시작')}
             </Button>
             <Button
-              accessibilityHint="같은 대본으로 평가를 새로 만들어요."
+              accessibilityHint={t('같은 대본으로 평가를 새로 만들어요.')}
               fullWidth
               leftIcon={<RefreshCw color={colors.textSoft} size={iconSizes.inline} />}
               loading={requesting}
               onPress={evaluate}
               variant="outline"
             >
-              다시 평가
+              {t('다시 평가')}
             </Button>
           </Card>
         </View>
@@ -591,11 +612,12 @@ function ConclusionLine({
   moment: LensMoment;
   onPress: (moment: LensMoment) => void;
 }) {
+  const t = useT();
   const time = formatDuration(moment.sourceStartMs / 1_000);
   return (
     <Pressable
-      accessibilityHint="그 부분부터 재생해요."
-      accessibilityLabel={`${label}, ${time}. ${moment.text}${moment.action ? `. 이렇게 해요: ${moment.action}` : ''}`}
+      accessibilityHint={t('그 부분부터 재생해요.')}
+      accessibilityLabel={`${label}, ${time}. ${moment.text}${moment.action ? `. ${t('이렇게 해요')}: ${moment.action}` : ''}`}
       accessibilityRole="button"
       onPress={() => onPress(moment)}
       style={({ pressed }) => [styles.conclusionLine, pressed ? styles.conclusionLinePressed : null]}
@@ -614,7 +636,7 @@ function ConclusionLine({
       {moment.action ? (
         <View style={styles.actionCallout}>
           <AppText tone="muted" variant="badge">
-            이렇게 해요
+            {t('이렇게 해요')}
           </AppText>
           <AppText variant="bodyStrong">{moment.action}</AppText>
         </View>
@@ -640,6 +662,7 @@ function MomentRow({
   onLayout: (event: LayoutChangeEvent) => void;
   onPress: () => void;
 }) {
+  const t = useT();
   const time = formatDuration(moment.sourceStartMs / 1_000);
   return (
     <View
@@ -647,7 +670,7 @@ function MomentRow({
       style={[!last ? styles.rowDivider : null, active ? styles.rowActive : null]}
     >
       <Pressable
-        accessibilityHint="그 부분부터 재생해요."
+        accessibilityHint={t('그 부분부터 재생해요.')}
         accessibilityLabel={`${time}, ${moment.text}`}
         accessibilityRole="button"
         accessibilityState={{ selected: active }}
@@ -685,7 +708,7 @@ function MomentRow({
             style={styles.listenButton}
             variant="outline"
           >
-            {`${time}부터 듣기`}
+            {t('{time}부터 듣기', { time })}
           </Button>
         </View>
       ) : null}

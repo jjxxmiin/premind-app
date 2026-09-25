@@ -12,6 +12,7 @@ import { AppText, Card } from '@/components/ui';
 import type { AppTextTone } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatRelativeDate } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/theme/tokens';
 
 import { formatDelta, pointsAttr, scoreDelta, sparklinePoints } from './lens-charts';
@@ -39,6 +40,7 @@ const LATEST_RADIUS = 4.5;
  * change spelled out. Only shown once there are two reports to compare.
  */
 export function ScoreTrend({ entries, style }: ScoreTrendProps) {
+  const t = useT();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const values = entries.map((entry) => entry.overall);
   const points = sparklinePoints(values, width, SVG_HEIGHT, INSET);
@@ -49,8 +51,8 @@ export function ScoreTrend({ entries, style }: ScoreTrendProps) {
     delta === null
       ? ''
       : delta === 0
-        ? '지난 평가와 같아요'
-        : `지난 평가보다 ${formatDelta(delta)}점`;
+        ? t('지난 평가와 같아요')
+        : t('지난 평가보다 {delta}점', { delta: formatDelta(delta) });
   const deltaTone: AppTextTone =
     delta === null || delta === 0 ? 'muted' : delta > 0 ? 'positive' : 'negative';
   const lastIndex = points.length - 1;
@@ -59,19 +61,21 @@ export function ScoreTrend({ entries, style }: ScoreTrendProps) {
 
   return (
     <Card
-      accessibilityLabel={`평가 추이, ${entries.length}번. 점수 ${values
-        .map((value) => value.toFixed(1))
-        .join(', ')}. ${deltaText}`}
+      accessibilityLabel={t('평가 추이, {n}번. 점수 {scores}. {delta}', {
+        n: entries.length,
+        scores: values.map((value) => value.toFixed(1)).join(', '),
+        delta: deltaText,
+      })}
       accessible
       style={[styles.card, style]}
       variant="soft"
     >
       <View style={styles.head}>
         <AppText tone="muted" variant="badge">
-          추이
+          {t('추이')}
         </AppText>
         <AppText tabular tone="faint" variant="badge">
-          {`${entries.length}번 평가`}
+          {t('{n}번 평가', { n: entries.length })}
         </AppText>
       </View>
       <View style={styles.body}>

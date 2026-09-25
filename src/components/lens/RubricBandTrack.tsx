@@ -9,6 +9,7 @@ import {
 import Svg, { Circle, Line, Rect, Text as SvgText } from 'react-native-svg';
 
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, fontFamilies } from '@/theme/tokens';
 
 import { SCORE_BAND_EDGES, SCORE_MAX, bandTrack } from './lens-charts';
@@ -44,13 +45,19 @@ export const BAND_EDGE_TEXT = SCORE_BAND_EDGES.map((edge) => edge.toFixed(1)).jo
  * ink dot sits where the score landed with its band word underneath.
  */
 export function RubricBandTrack({ score, accessibilityLabel, style }: RubricBandTrackProps) {
+  const t = useT();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
-  const track = bandTrack(score, width, LABEL_Y, INSET);
+  const track = bandTrack(score, width, LABEL_Y, INSET, SCORE_MAX, t.locale);
   const usable = Math.max(0, width - INSET * 2);
   const described = accessibilityLabel === null;
   const label =
     accessibilityLabel ??
-    `${score.toFixed(1)}점, ${track.label.text} 구간. ${SCORE_MAX}점 만점에 ${BAND_EDGE_TEXT}이 구간을 나눠요.`;
+    t('{score}점, {band} 구간. {max}점 만점에 {edges}이 구간을 나눠요.', {
+      score: score.toFixed(1),
+      band: track.label.text,
+      max: SCORE_MAX,
+      edges: BAND_EDGE_TEXT,
+    });
 
   return (
     <View

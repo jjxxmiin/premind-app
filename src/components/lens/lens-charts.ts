@@ -1,3 +1,5 @@
+import { translate, type AppLocale } from '@/lib/i18n/core';
+import { EN_LENS } from '@/lib/i18n/en/lens';
 import type { LensMoment } from '@/types';
 
 /**
@@ -25,6 +27,12 @@ export function verdictFor(overall: number): string {
   if (overall >= 3.5) return '좋아요';
   if (overall >= 2.5) return '보통이에요';
   return '아쉬워요';
+}
+
+/** The verdict word in the screen language (English from the lens dictionary). */
+export function verdictWord(overall: number, locale: AppLocale = 'ko'): string {
+  const ko = verdictFor(overall);
+  return locale === 'en' ? translate('en', [EN_LENS], ko, undefined, 'lens') : ko;
 }
 
 /** `stroke-dasharray` for a ring that is `score / max` full. */
@@ -157,13 +165,15 @@ export function bandTrack(
   labelY: number,
   inset = 0,
   max = SCORE_MAX,
+  locale: AppLocale = 'ko',
 ): BandTrack {
   const usable = Math.max(0, width - inset * 2);
   const at = (value: number) => inset + (clampScore(value, max) / max) * usable;
   const markerX = at(score);
-  const text = verdictFor(clampScore(score, max));
+  const text = verdictWord(clampScore(score, max), locale);
   // The word is centred under the marker until that would run it off an edge.
-  const half = text.length * 6;
+  // Latin letters run about half as wide as Hangul syllables.
+  const half = text.length * (locale === 'en' ? 3.2 : 6);
   let textAnchor: TextAnchor = 'middle';
   let x = markerX;
   if (markerX - half < 0) {
