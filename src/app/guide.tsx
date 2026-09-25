@@ -34,7 +34,6 @@ const loop: { icon: LucideIcon; label: string }[] = [
 
 interface GuideStep {
   id: string;
-  number: string;
   title: string;
   summary: string;
   icon: LucideIcon;
@@ -44,7 +43,6 @@ interface GuideStep {
 const steps: GuideStep[] = [
   {
     id: 'start',
-    number: 'STEP 01',
     title: '시작하기',
     summary: '가입하면 바로 시작할 수 있어요',
     icon: Home,
@@ -56,7 +54,6 @@ const steps: GuideStep[] = [
   },
   {
     id: 'capture',
-    number: 'STEP 02',
     title: '녹음, 올리기',
     summary: '녹음 / 영상, 음성, 문서 / 유튜브 링크',
     icon: Upload,
@@ -70,7 +67,6 @@ const steps: GuideStep[] = [
   },
   {
     id: 'pack',
-    number: 'STEP 03',
     title: '마인드팩',
     summary: '대본 / 요약 / 마인드맵 / 문제 / 질문',
     icon: BookOpenCheck,
@@ -83,7 +79,6 @@ const steps: GuideStep[] = [
   },
   {
     id: 'lens',
-    number: 'STEP 04',
     title: '이해도와 말하기',
     summary: '이해도 탭 / 말하기 탭',
     icon: BarChart3,
@@ -97,7 +92,6 @@ const steps: GuideStep[] = [
   },
   {
     id: 'plan',
-    number: 'STEP 05',
     title: '무료와 스탠다드',
     summary: '무료로도 모든 기능을 써요',
     icon: Star,
@@ -119,6 +113,7 @@ export default function GuideScreen() {
 
   return (
     <Screen
+      maxWidth={720}
       padded={false}
       scroll
       scrollViewProps={{ showsVerticalScrollIndicator: false }}
@@ -137,9 +132,8 @@ export default function GuideScreen() {
             items: loop.map((item) => t(item.label)).join(', '),
           })}
           style={styles.loopCard}
-          variant="soft"
         >
-          <AppText tone="muted" variant="badge">
+          <AppText tone="muted" variant="label">
             {t('전체 흐름')}
           </AppText>
           <View style={styles.loopRow}>
@@ -161,9 +155,10 @@ export default function GuideScreen() {
         </Card>
 
         <Card padding={false}>
-          {steps.map((step) => (
+          {steps.map((step, index) => (
             <StepRow
               key={step.id}
+              number={index + 1}
               onToggle={() =>
                 setOpenId((current) => (current === step.id ? null : step.id))
               }
@@ -176,8 +171,9 @@ export default function GuideScreen() {
             accessibilityLabel={t('문의하기')}
             accessibilityRole="button"
             onPress={openSupport}
-            style={({ pressed }) => [
+            style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
               styles.supportRow,
+              hovered ? styles.rowHovered : null,
               pressed ? styles.rowPressed : null,
             ]}
           >
@@ -227,10 +223,12 @@ function LoopTile({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
 }
 
 function StepRow({
+  number,
   onToggle,
   open,
   step,
 }: {
+  number: number;
   onToggle: () => void;
   open: boolean;
   step: GuideStep;
@@ -256,29 +254,32 @@ function StepRow({
     <View style={styles.stepBlock}>
       <Pressable
         accessibilityHint={t.ctx('guide', open ? '접어요' : '펼쳐요')}
-        accessibilityLabel={`${step.number} ${t.ctx('guide', step.title)}. ${t(step.summary)}`}
+        accessibilityLabel={`${number}. ${t.ctx('guide', step.title)}. ${t(step.summary)}`}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         aria-expanded={open}
         onPress={onToggle}
-        style={({ pressed }) => [
+        style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
           styles.stepHeader,
+          hovered ? styles.rowHovered : null,
           pressed ? styles.rowPressed : null,
         ]}
       >
-        <View style={styles.stepIcon}>
+        <View style={[styles.stepIcon, open ? styles.stepIconOpen : null]}>
           <Icon
             {...decorative}
-            color={colors.textInverse}
+            color={open ? colors.textInverse : colors.brand}
             size={iconSizes.section}
             strokeWidth={2}
           />
         </View>
         <View style={styles.flex}>
-          <AppText tone="brand" variant="badge">
-            {step.number}
+          <AppText numberOfLines={1} variant="itemTitle">
+            <AppText tabular tone="faint" variant="itemTitle">
+              {`${number}  `}
+            </AppText>
+            {t.ctx('guide', step.title)}
           </AppText>
-          <AppText variant="itemTitle">{t.ctx('guide', step.title)}</AppText>
           <AppText numberOfLines={1} tone="muted" variant="meta">
             {t(step.summary)}
           </AppText>
@@ -376,16 +377,20 @@ const styles = StyleSheet.create({
   },
   stepIcon: {
     alignItems: 'center',
-    backgroundColor: colors.brand,
+    backgroundColor: colors.brandSoft,
     borderRadius: radii.input,
     height: sizes.iconButton,
     justifyContent: 'center',
     width: sizes.iconButton,
   },
+  stepIconOpen: {
+    backgroundColor: colors.brand,
+  },
   stepBody: {
     gap: spacing.md,
     paddingBottom: spacing.gutter,
-    paddingHorizontal: spacing.gutter,
+    paddingLeft: spacing.gutter + sizes.iconButton + spacing.md,
+    paddingRight: spacing.gutter,
   },
   stepLine: {
     alignItems: 'flex-start',
@@ -415,6 +420,9 @@ const styles = StyleSheet.create({
     height: sizes.iconButton,
     justifyContent: 'center',
     width: sizes.iconButton,
+  },
+  rowHovered: {
+    backgroundColor: colors.surfaceElevated,
   },
   rowPressed: {
     backgroundColor: colors.backgroundSoft,

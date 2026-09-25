@@ -67,8 +67,10 @@ import {
   TERMS_URL,
   type BillingCycle,
 } from '@/data/subscription-plans';
-import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
+import { colors, iconSizes, spacing } from '@/theme/tokens';
 import { useLocale, useT } from '@/lib/i18n';
+import { fmtWon } from '@/lib/i18n/core';
+import { useLayout } from '@/lib/layout';
 
 const cycleOptions = [
   { value: 'monthly', label: '월간' },
@@ -103,6 +105,104 @@ function ManageFact({ label, value }: { label: string; value: string }) {
 }
 
 /**
+ * One plan as a card: name, price (while it can be bought here), then every
+ * line of the offer with this plan's value. 스탠다드 wears the brand border
+ * while it is the one on offer.
+ */
+function PlanCard({
+  current,
+  plan,
+  price,
+  priceNote,
+  recommended,
+  wide,
+}: {
+  current: boolean;
+  plan: 'free' | 'standard';
+  price: string | null;
+  priceNote: string | null;
+  recommended: boolean;
+  wide: boolean;
+}) {
+  const t = useT();
+  const standard = plan === 'standard';
+  return (
+    <Card
+      style={[
+        styles.planCard,
+        wide ? styles.planCardWide : null,
+        recommended ? styles.planCardOffer : null,
+      ]}
+    >
+      <View style={styles.planHead}>
+        <AppText variant="heading">{t(standard ? '스탠다드' : '무료')}</AppText>
+        {current ? (
+          <StatusBadge label={t('이용 중')} tone={standard ? 'positive' : 'neutral'} />
+        ) : recommended ? (
+          <StatusBadge label={t('추천')} tone="brand" />
+        ) : null}
+      </View>
+      {price ? (
+        <View style={styles.planPrice}>
+          <AppText tabular variant="display">
+            {price}
+          </AppText>
+          {/* Holds the line on the free card too, so both lists start level. */}
+          <AppText tone="muted" variant="meta">
+            {priceNote ?? (standard ? ' ' : t('카드 없이 바로 써요'))}
+          </AppText>
+        </View>
+      ) : null}
+      <View style={styles.planDivider} />
+      <View style={styles.benefits}>
+        {PLAN_BENEFITS.map((benefit) => {
+          const value = standard ? benefit.standard : benefit.free;
+          return (
+            <View key={benefit.key} style={styles.benefitRow}>
+              {value === false ? (
+                <Minus
+                  {...decorative}
+                  color={colors.textFaint}
+                  size={iconSizes.inline}
+                  strokeWidth={2}
+                />
+              ) : (
+                <Check
+                  {...decorative}
+                  color={standard ? colors.brand : colors.textMuted}
+                  size={iconSizes.inline}
+                  strokeWidth={2.4}
+                />
+              )}
+              <AppText
+                numberOfLines={2}
+                style={styles.benefitLabel}
+                tone={value === false ? 'faint' : 'soft'}
+                variant="body"
+              >
+                {t(benefit.label)}
+              </AppText>
+              <AppText
+                align="right"
+                tabular
+                tone={value === false ? 'faint' : standard ? 'default' : 'muted'}
+                variant={standard ? 'label' : 'meta'}
+              >
+                {value === false
+                  ? t.ctx('plan', '없음')
+                  : value === true
+                    ? t.ctx('plan', '포함')
+                    : t.ctx('plan', value)}
+              </AppText>
+            </View>
+          );
+        })}
+      </View>
+    </Card>
+  );
+}
+
+/**
  * The subscription screen.
  *
  * Decided 2026-09-07: on Android 스탠다드 is bought here, through Google Play
@@ -130,6 +230,8 @@ export default function SubscriptionScreen() {
   const [state, dispatch] = useReducer(purchaseReducer, initialPurchaseState);
   const toast = useToast();
   const planStatus = usePlanStatus();
+  const { breakpoint } = useLayout();
+  const wide = breakpoint !== 'compact';
 
   const price = PLAN_PRICES.standard;
   const storeBilling = isStoreBillingAvailable();
@@ -247,10 +349,6 @@ export default function SubscriptionScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.intro}>
-          <StatusBadge
-            label={t(subscribed ? '스탠다드 이용 중' : '무료 이용 중')}
-            tone={subscribed ? 'positive' : 'neutral'}
-          />
           <AppText variant="pageTitle">{t('더 많이 담고, 오래 남겨요')}</AppText>
           <AppText tone="muted" variant="body">
             {t('무료로도 모든 기능을 쓸 수 있어요. 스탠다드는 처리 분량과 보관을 늘려 줘요.')}
@@ -264,7 +362,7 @@ export default function SubscriptionScreen() {
         </View>
 
         {usage ? (
-          <Card style={styles.usageCard} variant="soft">
+          <Card style={styles.usageCard}>
             <View style={styles.usageHead}>
               <AppText variant="itemTitle">{t('이번 달 처리 분량')}</AppText>
               <AppText tabular tone="muted" variant="meta">
@@ -289,102 +387,47 @@ export default function SubscriptionScreen() {
         ) : null}
 
         {canBuyHere && !subscribed ? (
-          <>
+          <View style={wide ? styles.cycleWide : null}>
             <SegmentedControl<BillingCycle>
               onChange={setCycle}
               options={cycleOptions.map((option) => ({ ...option, label: t(option.label) }))}
               value={cycle}
             />
-
-            <Card style={styles.planCard} variant="soft">
-              <View style={styles.planHead}>
-                <AppText variant="heading">{t('스탠다드')}</AppText>
-                <StatusBadge label={t('추천')} tone="brand" />
-              </View>
-              <AppText variant="display">{copy.headline}</AppText>
-              {copy.subline ? (
-                <AppText tone="muted" variant="meta">
-                  {copy.subline}
-                </AppText>
-              ) : null}
-            </Card>
-          </>
+          </View>
         ) : null}
 
-        <View style={styles.section}>
-          <AppText accessibilityRole="header" variant="heading">
-            {t('스탠다드에 들어 있어요')}
-          </AppText>
-          <Card padding={false}>
-            <View style={styles.tableHead}>
-              <AppText style={styles.labelCell} tone="muted" variant="meta">
-                {t('혜택')}
-              </AppText>
-              <AppText
-                align="center"
-                style={styles.valueCell}
-                tone="muted"
-                variant="meta"
-              >
-                {t('무료')}
-              </AppText>
-              <AppText align="center" style={styles.valueCell} variant="label">
-                {t('스탠다드')}
-              </AppText>
-            </View>
-            {PLAN_BENEFITS.map((benefit, index) => (
-              <View
-                key={benefit.key}
-                style={[
-                  styles.tableRow,
-                  index < PLAN_BENEFITS.length - 1
-                    ? styles.tableRowDivider
-                    : null,
-                ]}
-              >
-                <AppText style={styles.labelCell} variant="body">
-                  {t(benefit.label)}
-                </AppText>
-                <View style={styles.valueCell}>
-                  {benefit.free === false ? (
-                    <Minus
-                      {...decorative}
-                      accessibilityLabel={t.ctx('plan', '없음')}
-                      color={colors.textFaint}
-                      size={iconSizes.inline}
-                      strokeWidth={2}
-                    />
-                  ) : (
-                    <AppText align="center" tone="muted" variant="meta">
-                      {t.ctx('plan', benefit.free)}
-                    </AppText>
-                  )}
-                </View>
-                <View style={styles.valueCell}>
-                  {benefit.standard === true ? (
-                    <Check
-                      {...decorative}
-                      accessibilityLabel={t.ctx('plan', '포함')}
-                      color={colors.text}
-                      size={iconSizes.section}
-                      strokeWidth={2.4}
-                    />
-                  ) : (
-                    <AppText align="center" variant="label">
-                      {t.ctx('plan', benefit.standard)}
-                    </AppText>
-                  )}
-                </View>
-              </View>
-            ))}
-          </Card>
+        {/* Two plans side by side from a tablet up; on a phone the one on
+            offer comes first. Each card carries its own column of the old
+            comparison table, so nothing the table said is lost. */}
+        <View style={[styles.plans, wide ? styles.plansWide : null]}>
+          {(wide ? (['free', 'standard'] as const) : (['standard', 'free'] as const)).map(
+            (plan) => (
+              <PlanCard
+                current={plan === 'standard' ? subscribed : !subscribed}
+                key={plan}
+                plan={plan}
+                price={
+                  canBuyHere && !subscribed
+                    ? plan === 'standard'
+                      ? copy.headline
+                      : fmtWon(0, locale)
+                    : null
+                }
+                priceNote={
+                  canBuyHere && !subscribed && plan === 'standard' ? copy.subline : null
+                }
+                recommended={plan === 'standard' && !subscribed}
+                wide={wide}
+              />
+            ),
+          )}
         </View>
 
         {/* Google Play requires all four of these sentences to be visible
             before the purchase button, so they are one block that cannot be
             split up by a later redesign. */}
         {canBuyHere && !subscribed ? (
-          <Card style={styles.termsCard} variant="soft">
+          <Card style={styles.termsCard}>
             <AppText accessibilityRole="header" variant="itemTitle">
               {t('결제 안내')}
             </AppText>
@@ -491,115 +534,117 @@ export default function SubscriptionScreen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        {subscribed ? (
-          <Button
-            fullWidth
-            onPress={() => router.back()}
-            size="large"
-            variant="secondary"
-          >
-            {t('돌아가기')}
-          </Button>
-        ) : isWeb ? (
-          <>
-            {webCheckout.error ? (
-              <AppText accessibilityRole="alert" tone="muted" variant="meta">
-                {t(webCheckout.error)}
-              </AppText>
-            ) : null}
-            <Button
-              disabled={webCheckout.busy}
-              fullWidth
-              onPress={() => {
-                setWebCheckout({ busy: true, error: null });
-                // The student server opens a Polar checkout for this account
-                // (premind-recorder-api /api/interview/checkout); the webhook
-                // turns 스탠다드 on. No server configured (demo build) → the
-                // pricing page instead.
-                if (!interviewServerAvailable()) {
-                  openUrl(SUBSCRIPTION_WEB_URL);
-                  setWebCheckout({ busy: false, error: null });
-                  return;
-                }
-                const back =
-                  typeof window !== 'undefined' ? window.location.href : SUBSCRIPTION_WEB_URL;
-                startWebCheckout(back, cycle)
-                  .then((url) => {
-                    if (typeof window !== 'undefined') window.location.assign(url);
-                    else openUrl(url);
-                  })
-                  .catch((error: unknown) => {
-                    setWebCheckout({
-                      busy: false,
-                      error:
-                        error instanceof Error && error.message
-                          ? error.message
-                          : '결제 창을 열지 못했어요. 잠시 후 다시 시도해 주세요.',
-                    });
-                  });
-              }}
-              rightIcon={
-                <ExternalLink
-                  color={colors.textInverse}
-                  size={iconSizes.inline}
-                />
-              }
-              size="large"
-              variant="primary"
-            >
-              {t('웹에서 구독하기')}
-            </Button>
+        <View style={[styles.barInner, wide ? styles.barInnerWide : null]}>
+          {subscribed ? (
             <Button
               fullWidth
               onPress={() => router.back()}
-              size="medium"
-              variant="ghost"
-            >
-              {t('나중에 할게요')}
-            </Button>
-          </>
-        ) : storeBilling ? (
-          <>
-            {/* A disabled button with no reason beside it is the thing people
-                tap twice and then give up on. The store answers with no
-                products while the app's subscriptions are still being set up
-                or reviewed, so say that rather than showing a dead control. */}
-            {!storePackage ? (
-              <AppText accessibilityRole="alert" tone="muted" variant="meta">
-                {t('지금은 구독 상품을 불러올 수 없어요. 스토어에 상품이 준비되면 바로 구독할 수 있어요.')}
-              </AppText>
-            ) : null}
-            <Button
-              disabled={!storePackage || busy !== null}
-              fullWidth
-              loading={busy === 'purchase' || busy === 'sync'}
-              onPress={() => void purchase()}
               size="large"
-              variant="primary"
+              variant="secondary"
             >
-              {t('구독 시작하기')}
+              {t('돌아가기')}
             </Button>
+          ) : isWeb ? (
+            <>
+              {webCheckout.error ? (
+                <AppText accessibilityRole="alert" tone="muted" variant="meta">
+                  {t(webCheckout.error)}
+                </AppText>
+              ) : null}
+              <Button
+                disabled={webCheckout.busy}
+                fullWidth
+                onPress={() => {
+                  setWebCheckout({ busy: true, error: null });
+                  // The student server opens a Polar checkout for this account
+                  // (premind-recorder-api /api/interview/checkout); the webhook
+                  // turns 스탠다드 on. No server configured (demo build) → the
+                  // pricing page instead.
+                  if (!interviewServerAvailable()) {
+                    openUrl(SUBSCRIPTION_WEB_URL);
+                    setWebCheckout({ busy: false, error: null });
+                    return;
+                  }
+                  const back =
+                    typeof window !== 'undefined' ? window.location.href : SUBSCRIPTION_WEB_URL;
+                  startWebCheckout(back, cycle)
+                    .then((url) => {
+                      if (typeof window !== 'undefined') window.location.assign(url);
+                      else openUrl(url);
+                    })
+                    .catch((error: unknown) => {
+                      setWebCheckout({
+                        busy: false,
+                        error:
+                          error instanceof Error && error.message
+                            ? error.message
+                            : '결제 창을 열지 못했어요. 잠시 후 다시 시도해 주세요.',
+                      });
+                    });
+                }}
+                rightIcon={
+                  <ExternalLink
+                    color={colors.textInverse}
+                    size={iconSizes.inline}
+                  />
+                }
+                size="large"
+                variant="primary"
+              >
+                {t('웹에서 구독하기')}
+              </Button>
+              <Button
+                fullWidth
+                onPress={() => router.back()}
+                size="medium"
+                variant="ghost"
+              >
+                {t('나중에 할게요')}
+              </Button>
+            </>
+          ) : storeBilling ? (
+            <>
+              {/* A disabled button with no reason beside it is the thing people
+                  tap twice and then give up on. The store answers with no
+                  products while the app's subscriptions are still being set up
+                  or reviewed, so say that rather than showing a dead control. */}
+              {!storePackage ? (
+                <AppText accessibilityRole="alert" tone="muted" variant="meta">
+                  {t('지금은 구독 상품을 불러올 수 없어요. 스토어에 상품이 준비되면 바로 구독할 수 있어요.')}
+                </AppText>
+              ) : null}
+              <Button
+                disabled={!storePackage || busy !== null}
+                fullWidth
+                loading={busy === 'purchase' || busy === 'sync'}
+                onPress={() => void purchase()}
+                size="large"
+                variant="primary"
+              >
+                {t('구독 시작하기')}
+              </Button>
+              <Button
+                disabled={busy !== null}
+                fullWidth
+                loading={busy === 'restore'}
+                onPress={() => void restore()}
+                size="medium"
+                variant="ghost"
+              >
+                {t('구매 복원')}
+              </Button>
+            </>
+          ) : (
             <Button
-              disabled={busy !== null}
               fullWidth
-              loading={busy === 'restore'}
-              onPress={() => void restore()}
-              size="medium"
-              variant="ghost"
+              onPress={() => router.back()}
+              size="large"
+              variant="secondary"
             >
-              {t('구매 복원')}
+              {t('돌아가기')}
             </Button>
-          </>
-        ) : (
-          <Button
-            fullWidth
-            onPress={() => router.back()}
-            size="large"
-            variant="secondary"
-          >
-            {t('돌아가기')}
-          </Button>
-        )}
+          )}
+        </View>
       </View>
 
       <Toast bottom={TOAST_ABOVE_BAR} message={toast.message} />
@@ -618,11 +663,45 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: spacing.sm,
   },
-  section: {
+  cycleWide: {
+    maxWidth: 420,
+  },
+  plans: {
     gap: spacing.md,
   },
+  plansWide: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+  },
   planCard: {
+    gap: spacing.md,
+  },
+  planCardWide: {
+    flex: 1,
+    minWidth: 0,
+  },
+  planCardOffer: {
+    borderColor: colors.brand,
+    borderWidth: 1.5,
+  },
+  planPrice: {
+    gap: spacing.xxs,
+  },
+  planDivider: {
+    backgroundColor: colors.border,
+    height: StyleSheet.hairlineWidth,
+  },
+  benefits: {
+    gap: spacing.md,
+  },
+  benefitRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: spacing.sm,
+  },
+  benefitLabel: {
+    flex: 1,
+    minWidth: 0,
   },
   termsCard: {
     gap: spacing.sm,
@@ -639,35 +718,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  tableHead: {
-    alignItems: 'center',
-    borderBottomColor: colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    paddingHorizontal: spacing.gutter,
-    paddingVertical: spacing.md,
-  },
-  tableRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    minHeight: 54,
-    paddingHorizontal: spacing.gutter,
-    paddingVertical: spacing.sm,
-  },
-  tableRowDivider: {
-    borderBottomColor: colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  labelCell: {
-    flex: 1.4,
-    minWidth: 0,
-  },
-  valueCell: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    minWidth: 0,
   },
   manageCopy: {
     gap: spacing.sm,
@@ -688,30 +738,22 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     justifyContent: 'space-between',
   },
-  studentCard: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  studentIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radii.input,
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
-  },
-  flex: {
-    flex: 1,
-    gap: 2,
-    minWidth: 0,
-  },
   bottomBar: {
     borderTopColor: colors.border,
     borderTopWidth: StyleSheet.hairlineWidth,
-    gap: spacing.md,
     paddingHorizontal: spacing.gutter,
     paddingTop: spacing.md,
     paddingBottom: spacing.gutter,
+  },
+  barInner: {
+    gap: spacing.md,
+  },
+  // On a wide window the buttons sit under the 스탠다드 card, not across
+  // the whole column.
+  barInnerWide: {
+    alignSelf: 'flex-end',
+    gap: spacing.sm,
+    maxWidth: 420,
+    width: '100%',
   },
 });

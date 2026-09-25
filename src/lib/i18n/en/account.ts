@@ -59,6 +59,18 @@ export const EN_ACCOUNT: EnDict = {
   '녹음 한 번으로 대본, 요약, 마인드맵, 문제까지':
     'One recording gets you a transcript, summary, mind map, and quiz',
   'PREMIND 로그인': 'PREMIND sign in',
+  'PREMIND에 로그인해요': 'Sign in to PREMIND',
+  '다시 만나서 반가워요': 'Good to see you again',
+  // Desktop brand panel beside the sign-in and sign-up forms (AuthSplit).
+  '강의 하나로\n복습까지 끝내요': 'From one lecture\nto a finished review',
+  '녹음하거나 올리면 마인드팩이 만들어져요': 'Record or upload, and your Mind Pack is made',
+  '대본, 요약, 마인드맵, 문제로 복습해요': 'Review with a transcript, summary, mind map, and quiz',
+  '문제를 풀수록 이해도가 쌓여요': 'Every quiz you solve builds your understanding',
+  '면접도 연습하면\n익숙해져요': 'Interviews get easier\nwith practice',
+  '질문마다 타이머에 맞춰 답해요': 'Answer each question against a timer',
+  '내가 한 말을 전사문으로 돌아봐요': 'Look back at what you said in a transcript',
+  '다음에 먼저 고칠 것 하나를 알려줘요': 'Get the one thing to fix first next time',
+  '(주)캐모릭스': 'Camorix Inc.',
   이메일: 'Email',
   '이메일을 입력해 주세요': 'Enter your email',
   비밀번호: 'Password',
@@ -146,8 +158,6 @@ export const EN_ACCOUNT: EnDict = {
   '{used}분 / {limit}분': '{used} / {limit} min',
   '스탠다드가 시작됐어요': 'Standard has started',
   '구독을 복원했어요': 'Subscription restored',
-  '스탠다드 이용 중': 'On Standard',
-  '무료 이용 중': 'On Free',
   '더 많이 담고, 오래 남겨요': 'Capture more, keep it longer',
   '무료로도 모든 기능을 쓸 수 있어요. 스탠다드는 처리 분량과 보관을 늘려 줘요.':
     'Every feature works on Free. Standard gives you more processing time and storage.',
@@ -155,8 +165,8 @@ export const EN_ACCOUNT: EnDict = {
   '이번 달 분량을 다 썼어요. 다음 달 1일에 다시 채워져요.':
     "You've used this month's time. It refills on the 1st of next month.",
   추천: 'Recommended',
-  '스탠다드에 들어 있어요': "What's in Standard",
-  혜택: 'Benefit',
+  '이용 중': 'Current plan',
+  '카드 없이 바로 써요': 'No card needed',
   'plan|없음': 'Not included',
   'plan|포함': 'Included',
   '결제 안내': 'Billing details',

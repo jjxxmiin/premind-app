@@ -22,6 +22,7 @@ import {
   Wordmark,
 } from '@/components/ui';
 import { SocialSignInButtons } from '@/components/SocialSignInButtons';
+import { AuthSplit, useAuthSplit } from '@/components/account/AuthSplit';
 import { shouldOfferDemo } from '@/lib/demo-entry';
 import { hasConfiguredApi } from '@/services/api/client';
 import { useAppStore } from '@/state/app-store';
@@ -44,6 +45,7 @@ const demoOffered = shouldOfferDemo({
  */
 export default function LoginScreen() {
   const t = useT();
+  const split = useAuthSplit();
   const { clearError, error, login, loginForDevelopment, session } = useAppStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -112,182 +114,190 @@ export default function LoginScreen() {
 
   return (
     <Screen
-      contentStyle={styles.screenContent}
+      contentStyle={split ? null : styles.screenContent}
+      fullBleed={split}
+      padded={!split}
       safeAreaEdges={['top', 'right', 'bottom', 'left']}
       scroll
       scrollViewProps={{ contentInsetAdjustmentBehavior: 'automatic' }}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'web' ? undefined : 'padding'}
-        style={styles.keyboardArea}
-      >
-        <View style={styles.container}>
-          <AnimatedReveal delay={20} style={styles.brand}>
-            <Wordmark width={112} />
-            <View style={styles.headline}>
-              {toInterview ? (
-                <>
-                  <AppText align="center" variant="heroTitle">
-                    {t('면접 연습을\n이어서 시작해요')}
-                  </AppText>
-                  <AppText align="center" tone="muted" variant="body">
-                    {t('PREMIND 계정으로 로그인하면 면접 연습으로 바로 가요')}
-                  </AppText>
-                </>
-              ) : (
-                <>
-                  <AppText align="center" variant="heroTitle">
-                    {t('강의를 담기만 하면\n복습이 준비돼요')}
-                  </AppText>
-                  <AppText align="center" tone="muted" variant="body">
-                    {t('녹음 한 번으로 대본, 요약, 마인드맵, 문제까지')}
-                  </AppText>
-                </>
-              )}
-            </View>
-          </AnimatedReveal>
-
-          <AnimatedReveal delay={80} style={styles.block}>
-            <View
-              accessibilityElementsHidden={isBusy}
-              importantForAccessibility={isBusy ? 'no-hide-descendants' : 'auto'}
-              pointerEvents={isBusy ? 'none' : 'auto'}
-              style={isBusy ? styles.dimmed : null}
-            >
-              <SocialSignInButtons
-                onBusyChange={(busy) => setBusyAction(busy ? 'social' : null)}
-                onError={setFormError}
-              />
-            </View>
-
-            <AuthForm accessibilityLabel={t('PREMIND 로그인')} onSubmit={() => void handleLogin()}>
-              <View style={styles.form}>
-                {displayedError ? (
-                  <View
-                    accessibilityLiveRegion="polite"
-                    accessibilityRole="alert"
-                    style={styles.errorBox}
-                  >
-                    <AppText tone="negative" variant="meta">
-                      {t(displayedError)}
+      <AuthSplit topic={toInterview ? 'interview' : 'study'}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'web' ? undefined : 'padding'}
+          style={styles.keyboardArea}
+        >
+          <View style={styles.container}>
+            <AnimatedReveal delay={20} style={[styles.brand, split ? styles.brandSplit : null]}>
+              {split ? null : <Wordmark width={112} />}
+              <View style={[styles.headline, split ? styles.headlineSplit : null]}>
+                {toInterview ? (
+                  <>
+                    <AppText align={split ? 'left' : 'center'} variant="heroTitle">
+                      {t('면접 연습을\n이어서 시작해요')}
                     </AppText>
-                  </View>
-                ) : null}
+                    <AppText align={split ? 'left' : 'center'} tone="muted" variant="body">
+                      {t('PREMIND 계정으로 로그인하면 면접 연습으로 바로 가요')}
+                    </AppText>
+                  </>
+                ) : (
+                  <>
+                    <AppText align={split ? 'left' : 'center'} variant="heroTitle">
+                      {t(split ? 'PREMIND에 로그인해요' : '강의를 담기만 하면\n복습이 준비돼요')}
+                    </AppText>
+                    <AppText align={split ? 'left' : 'center'} tone="muted" variant="body">
+                      {t(
+                        split
+                          ? '다시 만나서 반가워요'
+                          : '녹음 한 번으로 대본, 요약, 마인드맵, 문제까지',
+                      )}
+                    </AppText>
+                  </>
+                )}
+              </View>
+            </AnimatedReveal>
 
-                <AuthField
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  editable={!isBusy}
-                  keyboardType="email-address"
-                  label={t('이메일')}
-                  onChangeText={(value) => {
-                    setEmail(value);
-                    setFormError(null);
-                    clearError();
-                  }}
-                  onSubmitEditing={() => passwordInputRef.current?.focus()}
-                  placeholder={t('이메일을 입력해 주세요')}
-                  returnKeyType="next"
-                  textContentType="emailAddress"
-                  value={email}
+            <AnimatedReveal delay={80} style={styles.block}>
+              <View
+                accessibilityElementsHidden={isBusy}
+                importantForAccessibility={isBusy ? 'no-hide-descendants' : 'auto'}
+                pointerEvents={isBusy ? 'none' : 'auto'}
+                style={isBusy ? styles.dimmed : null}
+              >
+                <SocialSignInButtons
+                  onBusyChange={(busy) => setBusyAction(busy ? 'social' : null)}
+                  onError={setFormError}
                 />
+              </View>
 
-                <AuthField
-                  autoCapitalize="none"
-                  autoComplete="current-password"
-                  editable={!isBusy}
-                  inputRef={passwordInputRef}
-                  label={t('비밀번호')}
-                  onChangeText={(value) => {
-                    setPassword(value);
-                    setFormError(null);
+              <AuthForm accessibilityLabel={t('PREMIND 로그인')} onSubmit={() => void handleLogin()}>
+                <View style={styles.form}>
+                  {displayedError ? (
+                    <View
+                      accessibilityLiveRegion="polite"
+                      accessibilityRole="alert"
+                      style={styles.errorBox}
+                    >
+                      <AppText tone="negative" variant="meta">
+                        {t(displayedError)}
+                      </AppText>
+                    </View>
+                  ) : null}
+
+                  <AuthField
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    editable={!isBusy}
+                    keyboardType="email-address"
+                    label={t('이메일')}
+                    onChangeText={(value) => {
+                      setEmail(value);
+                      setFormError(null);
+                      clearError();
+                    }}
+                    onSubmitEditing={() => passwordInputRef.current?.focus()}
+                    placeholder={t('이메일을 입력해 주세요')}
+                    returnKeyType="next"
+                    textContentType="emailAddress"
+                    value={email}
+                  />
+
+                  <AuthField
+                    autoCapitalize="none"
+                    autoComplete="current-password"
+                    editable={!isBusy}
+                    inputRef={passwordInputRef}
+                    label={t('비밀번호')}
+                    onChangeText={(value) => {
+                      setPassword(value);
+                      setFormError(null);
+                      clearError();
+                    }}
+                    onSubmitEditing={
+                      Platform.OS === 'web' ? undefined : () => void handleLogin()
+                    }
+                    placeholder={t('비밀번호를 입력해 주세요')}
+                    returnKeyType="done"
+                    secureTextEntry={!passwordVisible}
+                    textContentType="password"
+                    trailing={
+                      <IconButton
+                        disabled={isBusy}
+                        icon={passwordVisible ? EyeOff : Eye}
+                        label={t(passwordVisible ? '비밀번호 숨기기' : '비밀번호 표시')}
+                        onPress={() => setPasswordVisible((visible) => !visible)}
+                      />
+                    }
+                    value={password}
+                  />
+
+                  <Button
+                    disabled={isBusy || (!canSubmit && serverConfigured)}
+                    fullWidth
+                    loading={busyAction === 'login'}
+                    onPress={() => void handleLogin()}
+                    size="large"
+                    style={styles.submit}
+                    variant="primary"
+                  >
+                    {t('로그인')}
+                  </Button>
+                </View>
+              </AuthForm>
+
+              <View style={styles.links}>
+                <TextLink
+                  disabled={isBusy}
+                  label={t('회원가입')}
+                  onPress={() => {
                     clearError();
+                    router.push('/signup');
                   }}
-                  onSubmitEditing={
-                    Platform.OS === 'web' ? undefined : () => void handleLogin()
-                  }
-                  placeholder={t('비밀번호를 입력해 주세요')}
-                  returnKeyType="done"
-                  secureTextEntry={!passwordVisible}
-                  textContentType="password"
-                  trailing={
-                    <IconButton
-                      disabled={isBusy}
-                      icon={passwordVisible ? EyeOff : Eye}
-                      label={t(passwordVisible ? '비밀번호 숨기기' : '비밀번호 표시')}
-                      onPress={() => setPasswordVisible((visible) => !visible)}
-                    />
-                  }
-                  value={password}
                 />
+                <View style={styles.linkDivider} />
+                <TextLink
+                  disabled
+                  label={t('비밀번호 찾기')}
+                  onPress={() => undefined}
+                />
+              </View>
+            </AnimatedReveal>
+
+            {demoOffered ? (
+              <AnimatedReveal delay={140} style={styles.block}>
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <AppText tone="faint" variant="badge">
+                    {t('또는')}
+                  </AppText>
+                  <View style={styles.dividerLine} />
+                </View>
 
                 <Button
-                  disabled={isBusy || (!canSubmit && serverConfigured)}
+                  disabled={isBusy && busyAction !== 'demo'}
                   fullWidth
-                  loading={busyAction === 'login'}
-                  onPress={() => void handleLogin()}
+                  loading={busyAction === 'demo'}
+                  onPress={() => void handleDemoLogin()}
                   size="large"
-                  style={styles.submit}
-                  variant="primary"
+                  variant="secondary"
                 >
-                  {t('로그인')}
+                  {t('데모로 둘러보기')}
                 </Button>
-              </View>
-            </AuthForm>
-
-            <View style={styles.links}>
-              <TextLink
-                disabled={isBusy}
-                label={t('회원가입')}
-                onPress={() => {
-                  clearError();
-                  router.push('/signup');
-                }}
-              />
-              <View style={styles.linkDivider} />
-              <TextLink
-                disabled
-                label={t('비밀번호 찾기')}
-                onPress={() => undefined}
-              />
-            </View>
-          </AnimatedReveal>
-
-          {demoOffered ? (
-            <AnimatedReveal delay={140} style={styles.block}>
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <AppText tone="faint" variant="badge">
-                  {t('또는')}
+                <AppText align="center" tone="faint" variant="badge">
+                  {t(
+                    serverConfigured
+                      ? '예시 자료로 먼저 둘러볼 수 있어요'
+                      : '이 빌드에서는 데모로만 둘러볼 수 있어요',
+                  )}
                 </AppText>
-                <View style={styles.dividerLine} />
-              </View>
+              </AnimatedReveal>
+            ) : null}
 
-              <Button
-                disabled={isBusy && busyAction !== 'demo'}
-                fullWidth
-                loading={busyAction === 'demo'}
-                onPress={() => void handleDemoLogin()}
-                size="large"
-                variant="secondary"
-              >
-                {t('데모로 둘러보기')}
-              </Button>
-              <AppText align="center" tone="faint" variant="badge">
-                {t(
-                  serverConfigured
-                    ? '예시 자료로 먼저 둘러볼 수 있어요'
-                    : '이 빌드에서는 데모로만 둘러볼 수 있어요',
-                )}
-              </AppText>
-            </AnimatedReveal>
-          ) : null}
-
-          <AppText align="center" style={styles.legal} tone="faint" variant="badge">
-            {t('로그인하면 PREMIND 이용약관과 개인정보 처리방침에 동의한 것으로 봐요')}
-          </AppText>
-        </View>
-      </KeyboardAvoidingView>
+            <AppText align="center" style={styles.legal} tone="faint" variant="badge">
+              {t('로그인하면 PREMIND 이용약관과 개인정보 처리방침에 동의한 것으로 봐요')}
+            </AppText>
+          </View>
+        </KeyboardAvoidingView>
+      </AuthSplit>
     </Screen>
   );
 }
@@ -308,9 +318,13 @@ function TextLink({
       disabled={disabled}
       hitSlop={8}
       onPress={onPress}
-      style={({ pressed }) => [styles.link, pressed ? styles.linkPressed : null]}
+      style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
+        styles.link,
+        hovered && !disabled ? styles.linkHovered : null,
+        pressed ? styles.linkPressed : null,
+      ]}
     >
-      <AppText tone={disabled ? 'faint' : 'soft'} variant="meta">
+      <AppText tone={disabled ? 'faint' : 'soft'} variant="label">
         {label}
       </AppText>
     </Pressable>
@@ -336,9 +350,16 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
     paddingTop: spacing.lg,
   },
+  brandSplit: {
+    alignItems: 'stretch',
+    paddingTop: 0,
+  },
   headline: {
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  headlineSplit: {
+    alignItems: 'flex-start',
   },
   block: {
     alignSelf: 'stretch',
@@ -366,8 +387,13 @@ const styles = StyleSheet.create({
     minHeight: sizes.minimumTouchTarget,
   },
   link: {
-    minHeight: 32,
+    borderRadius: radii.badge,
     justifyContent: 'center',
+    minHeight: 32,
+    paddingHorizontal: spacing.sm,
+  },
+  linkHovered: {
+    backgroundColor: colors.backgroundSoft,
   },
   linkPressed: {
     opacity: 0.6,

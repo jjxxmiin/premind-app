@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { Bell } from 'lucide-react-native';
-import { useState } from 'react';
+import { Children, Fragment, isValidElement, useState, type PropsWithChildren } from 'react';
 import { Linking, Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
@@ -9,10 +9,10 @@ import {
   AppText,
   BottomSheetModal,
   Button,
+  Card,
   Dialog,
   IconButton,
   Screen,
-  SettingsGroup,
   SettingsRow,
   StatusBadge,
   Wordmark,
@@ -32,9 +32,9 @@ type ProfileDialog = 'about' | 'logout' | 'delete' | null;
 const SUPPORT_MAILTO = 'mailto:support@camorix.com';
 
 /**
- * The settings screen is one calm list: a profile row, then groups of plain
- * rows. Groups are separated by a full-bleed band of the soft canvas rather
- * than by cards, and the destructive rows sit last in red text.
+ * The settings screen: a profile card, then groups of plain rows, each group
+ * one white card with a caption above it. The destructive rows sit last in
+ * red text. On a wide window the column stays at a reading width.
  */
 export default function ProfileScreen() {
   const t = useT();
@@ -123,6 +123,7 @@ export default function ProfileScreen() {
   return (
     <Screen
       contentStyle={styles.screenContent}
+      maxWidth={720}
       padded={false}
       safeAreaEdges={['top', 'left', 'right']}
       scroll
@@ -140,43 +141,48 @@ export default function ProfileScreen() {
       />
 
       <View style={styles.content}>
-        <View accessibilityLabel={`${displayName}, ${session?.user.email ?? ''}`} style={styles.profileRow}>
-          <View {...decorative} style={styles.avatar}>
-            <AppText variant="itemTitle">{initial}</AppText>
-          </View>
-          <View style={styles.profileCopy}>
-            <View style={styles.nameRow}>
-              <AppText numberOfLines={1} style={styles.name} variant="itemTitle">
-                {displayName}
-              </AppText>
-              {demoAccount ? <StatusBadge label={t('데모')} tone="brand" /> : null}
-            </View>
-            {session?.user.email ? (
-              <AppText numberOfLines={1} tone="muted" variant="meta">
-                {session.user.email}
-              </AppText>
-            ) : null}
-          </View>
-        </View>
-
-        {demoAccount ? (
-          // The login route only exists while signed out (`Stack.Protected`),
-          // so pushing to it from inside the demo did nothing at all. Leaving
-          // the demo is what puts the login screen back on the stack.
-          <Button
-            disabled={loggingOut}
-            fullWidth
-            loading={loggingOut}
-            onPress={() => void handleLogout()}
-            variant="primary"
+        <Card style={styles.profileCard}>
+          <View
+            accessibilityLabel={`${displayName}, ${session?.user.email ?? ''}`}
+            style={styles.profileRow}
           >
-            {t('로그인하기')}
-          </Button>
-        ) : null}
+            <View {...decorative} style={styles.avatar}>
+              <AppText tone="brand" variant="heading">
+                {initial}
+              </AppText>
+            </View>
+            <View style={styles.profileCopy}>
+              <View style={styles.nameRow}>
+                <AppText numberOfLines={1} style={styles.name} variant="heading">
+                  {displayName}
+                </AppText>
+                {demoAccount ? <StatusBadge label={t('데모')} tone="brand" /> : null}
+              </View>
+              {session?.user.email ? (
+                <AppText numberOfLines={1} tone="muted" variant="meta">
+                  {session.user.email}
+                </AppText>
+              ) : null}
+            </View>
+          </View>
 
-        <Band />
+          {demoAccount ? (
+            // The login route only exists while signed out (`Stack.Protected`),
+            // so pushing to it from inside the demo did nothing at all. Leaving
+            // the demo is what puts the login screen back on the stack.
+            <Button
+              disabled={loggingOut}
+              fullWidth
+              loading={loggingOut}
+              onPress={() => void handleLogout()}
+              variant="primary"
+            >
+              {t('로그인하기')}
+            </Button>
+          ) : null}
+        </Card>
 
-        <SettingsGroup title={t('앱 설정')}>
+        <GroupCard title={t('앱 설정')}>
           <SettingsRow
             // 영어를 못 읽는 사람도, 한국어를 못 읽는 사람도 찾게 두 말로.
             description={locale === 'en' ? '한국어로 바꿔요' : 'Language'}
@@ -190,29 +196,28 @@ export default function ProfileScreen() {
             title={t('알림')}
             toggled={settings.notificationsEnabled}
           />
-          {notificationError ? (
-            <View style={styles.rowNote}>
-              <AppText accessibilityRole="alert" tone="negative" variant="badge">
-                {t(notificationError)}
-              </AppText>
-            </View>
-          ) : null}
-        </SettingsGroup>
+        </GroupCard>
+        {notificationError ? (
+          <AppText
+            accessibilityRole="alert"
+            style={styles.rowNote}
+            tone="negative"
+            variant="badge"
+          >
+            {t(notificationError)}
+          </AppText>
+        ) : null}
 
-        <Band />
-
-        <SettingsGroup title={t('구독과 결제')}>
+        <GroupCard title={t('구독과 결제')}>
           <SettingsRow
             description={usageLine(planStatus.usage, locale) ?? t('처리 분량과 보관을 늘려요')}
             onPress={() => router.push('/subscription')}
             title={t('구독')}
             value={planStatus.loading ? '' : planLabel(planStatus.plan, locale)}
           />
-        </SettingsGroup>
+        </GroupCard>
 
-        <Band />
-
-        <SettingsGroup title={t.ctx('settings', '정보')}>
+        <GroupCard title={t.ctx('settings', '정보')}>
           <SettingsRow onPress={() => router.push('/guide')} title={t('사용 가이드')} />
           <SettingsRow
             description="support@camorix.com"
@@ -226,11 +231,9 @@ export default function ProfileScreen() {
             title={t('버전 정보')}
             value={appVersion}
           />
-        </SettingsGroup>
+        </GroupCard>
 
-        <Band />
-
-        <SettingsGroup title={t('계정')}>
+        <GroupCard title={t('계정')}>
           <SettingsRow
             onPress={() => setDialog('logout')}
             title={t(demoAccount ? '데모 종료' : '로그아웃')}
@@ -245,7 +248,7 @@ export default function ProfileScreen() {
             title={t(demoAccount ? '데모 초기화' : '회원 탈퇴')}
             tone="negative"
           />
-        </SettingsGroup>
+        </GroupCard>
 
         {error ? (
           <View accessibilityRole="alert" style={styles.errorBox}>
@@ -332,9 +335,31 @@ export default function ProfileScreen() {
   );
 }
 
-/** The 8pt strip of soft canvas that separates settings groups. */
-function Band() {
-  return <View {...decorative} style={styles.band} />;
+/**
+ * A captioned group of settings rows on one white card, with a hairline
+ * between rows. (The shared SettingsGroup draws groups without a surface.)
+ */
+function GroupCard({ title, children }: PropsWithChildren<{ title: string }>) {
+  const rows = Children.toArray(children).filter(isValidElement);
+  return (
+    <View style={styles.group}>
+      <AppText accessibilityRole="header" style={styles.groupTitle} tone="muted" variant="label">
+        {title}
+      </AppText>
+      <Card padding={false}>
+        {/* Card's own padding shorthand wins over a horizontal override on
+            web, so the inset lives on an inner view. */}
+        <View style={styles.groupRows}>
+          {rows.map((row, index) => (
+            <Fragment key={row.key ?? index}>
+              {index > 0 ? <View {...decorative} style={styles.rowDivider} /> : null}
+              {row}
+            </Fragment>
+          ))}
+        </View>
+      </Card>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -342,24 +367,38 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
   content: {
-    gap: spacing.lg,
+    gap: spacing.xl,
     paddingHorizontal: spacing.gutter,
     paddingTop: spacing.sm,
+  },
+  profileCard: {
+    gap: spacing.gutter,
   },
   profileRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.md,
-    minHeight: 56,
-    paddingVertical: spacing.sm,
   },
   avatar: {
     alignItems: 'center',
-    backgroundColor: colors.backgroundMuted,
+    backgroundColor: colors.brandSoft,
     borderRadius: radii.full,
-    height: sizes.iconButton,
+    height: 48,
     justifyContent: 'center',
-    width: sizes.iconButton,
+    width: 48,
+  },
+  group: {
+    gap: spacing.sm,
+  },
+  groupTitle: {
+    paddingHorizontal: spacing.xs,
+  },
+  groupRows: {
+    paddingHorizontal: spacing.gutter,
+  },
+  rowDivider: {
+    backgroundColor: colors.border,
+    height: StyleSheet.hairlineWidth,
   },
   profileCopy: {
     flex: 1,
@@ -374,13 +413,9 @@ const styles = StyleSheet.create({
   name: {
     flexShrink: 1,
   },
-  band: {
-    backgroundColor: colors.backgroundSoft,
-    height: spacing.sm,
-    marginHorizontal: -spacing.gutter,
-  },
   rowNote: {
-    paddingBottom: spacing.sm,
+    marginTop: -spacing.md,
+    paddingHorizontal: spacing.xs,
   },
   errorBox: {
     backgroundColor: colors.negativeSoft,

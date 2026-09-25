@@ -24,10 +24,11 @@ import {
   StatusBadge,
 } from '@/components/ui';
 import { SocialSignInButtons } from '@/components/SocialSignInButtons';
+import { AuthSplit, useAuthSplit } from '@/components/account/AuthSplit';
 import { ApiError, hasConfiguredApi } from '@/services/api/client';
 import { useAppStore } from '@/state/app-store';
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
-import { peekReturnTo } from '@/lib/return-to';
+import { peekReturnTo, returnsToInterview } from '@/lib/return-to';
 import { useT } from '@/lib/i18n';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -57,6 +58,8 @@ type FieldName = 'name' | 'email' | 'password' | 'confirm';
  */
 export default function SignupScreen() {
   const t = useT();
+  const split = useAuthSplit();
+  const [toInterview] = useState(returnsToInterview);
   const { clearError, error: storeError, register, session } = useAppStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -193,234 +196,237 @@ export default function SignupScreen() {
 
   return (
     <Screen
-      contentStyle={styles.screenContent}
+      contentStyle={split ? null : styles.screenContent}
+      fullBleed={split}
       maxWidth={480}
       padded={false}
       safeAreaEdges={['top', 'right', 'bottom', 'left']}
       scroll
       scrollViewProps={{ contentInsetAdjustmentBehavior: 'automatic' }}
     >
-      <AppHeader onBack={returnToLogin} title={t('회원가입')} />
+      <AuthSplit topic={toInterview ? 'interview' : 'study'}>
+        <AppHeader onBack={returnToLogin} title={t('회원가입')} />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'web' ? undefined : 'padding'}
-        style={styles.keyboardArea}
-      >
-        <View style={styles.container}>
-          <AppText accessibilityRole="header" variant="heroTitle">
-            {t('가입 정보를\n입력해 주세요')}
-          </AppText>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'web' ? undefined : 'padding'}
+          style={styles.keyboardArea}
+        >
+          <View style={[styles.container, split ? styles.containerSplit : null]}>
+            <AppText accessibilityRole="header" variant="heroTitle">
+              {t('가입 정보를\n입력해 주세요')}
+            </AppText>
 
-          <AuthForm
-            accessibilityLabel={t('PREMIND 회원가입')}
-            onSubmit={() => void handleRegister()}
-            style={styles.formFlow}
-          >
-            <View style={styles.fields}>
-              <AuthField
-                autoComplete="name"
-                editable={!busy}
-                error={shownError('name')}
-                inputRef={nameInputRef}
-                label={t('이름')}
-                onBlur={() => setTouched((state) => ({ ...state, name: true }))}
-                onChangeText={(value) => {
-                  setName(value);
-                  setServerError(null);
-                  clearError();
-                }}
-                onSubmitEditing={() => emailInputRef.current?.focus()}
-                placeholder={t('이름을 입력해 주세요')}
-                returnKeyType="next"
-                textContentType="name"
-                value={name}
-              />
+            <AuthForm
+              accessibilityLabel={t('PREMIND 회원가입')}
+              onSubmit={() => void handleRegister()}
+              style={styles.formFlow}
+            >
+              <View style={styles.fields}>
+                <AuthField
+                  autoComplete="name"
+                  editable={!busy}
+                  error={shownError('name')}
+                  inputRef={nameInputRef}
+                  label={t('이름')}
+                  onBlur={() => setTouched((state) => ({ ...state, name: true }))}
+                  onChangeText={(value) => {
+                    setName(value);
+                    setServerError(null);
+                    clearError();
+                  }}
+                  onSubmitEditing={() => emailInputRef.current?.focus()}
+                  placeholder={t('이름을 입력해 주세요')}
+                  returnKeyType="next"
+                  textContentType="name"
+                  value={name}
+                />
 
-              <AuthField
-                autoCapitalize="none"
-                autoComplete="email"
-                autoCorrect={false}
-                editable={!busy}
-                error={shownError('email')}
-                inputRef={emailInputRef}
-                keyboardType="email-address"
-                label={t('이메일')}
-                onBlur={() => setTouched((state) => ({ ...state, email: true }))}
-                onChangeText={(value) => {
-                  setEmail(value);
-                  setServerError(null);
-                  clearError();
-                }}
-                onSubmitEditing={() => passwordInputRef.current?.focus()}
-                placeholder="name@example.com"
-                returnKeyType="next"
-                textContentType="emailAddress"
-                value={email}
-              />
+                <AuthField
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  autoCorrect={false}
+                  editable={!busy}
+                  error={shownError('email')}
+                  inputRef={emailInputRef}
+                  keyboardType="email-address"
+                  label={t('이메일')}
+                  onBlur={() => setTouched((state) => ({ ...state, email: true }))}
+                  onChangeText={(value) => {
+                    setEmail(value);
+                    setServerError(null);
+                    clearError();
+                  }}
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
+                  placeholder="name@example.com"
+                  returnKeyType="next"
+                  textContentType="emailAddress"
+                  value={email}
+                />
 
-              <View style={styles.passwordGroup}>
+                <View style={styles.passwordGroup}>
+                  <AuthField
+                    autoCapitalize="none"
+                    autoComplete="new-password"
+                    editable={!busy}
+                    error={shownError('password')}
+                    inputRef={passwordInputRef}
+                    label={t('비밀번호')}
+                    onBlur={() => setTouched((state) => ({ ...state, password: true }))}
+                    onChangeText={(value) => {
+                      setPassword(value);
+                      setServerError(null);
+                      clearError();
+                    }}
+                    onSubmitEditing={() => confirmInputRef.current?.focus()}
+                    placeholder={t('비밀번호를 입력해 주세요')}
+                    returnKeyType="next"
+                    secureTextEntry={!passwordVisible}
+                    textContentType="newPassword"
+                    trailing={
+                      <IconButton
+                        disabled={busy}
+                        icon={passwordVisible ? EyeOff : Eye}
+                        label={t(passwordVisible ? '비밀번호 숨기기' : '비밀번호 표시')}
+                        onPress={() => setPasswordVisible((visible) => !visible)}
+                      />
+                    }
+                    value={password}
+                  />
+
+                  <View style={styles.rules}>
+                    {passwordRules.map((rule) => (
+                      <StatusBadge
+                        key={rule.id}
+                        label={t.ctx('password', rule.label)}
+                        tone={rule.test(password) ? 'positive' : 'neutral'}
+                      />
+                    ))}
+                  </View>
+                </View>
+
                 <AuthField
                   autoCapitalize="none"
                   autoComplete="new-password"
                   editable={!busy}
-                  error={shownError('password')}
-                  inputRef={passwordInputRef}
-                  label={t('비밀번호')}
-                  onBlur={() => setTouched((state) => ({ ...state, password: true }))}
+                  error={shownError('confirm')}
+                  inputRef={confirmInputRef}
+                  label={t('비밀번호 확인')}
+                  onBlur={() => setTouched((state) => ({ ...state, confirm: true }))}
                   onChangeText={(value) => {
-                    setPassword(value);
+                    setConfirm(value);
                     setServerError(null);
                     clearError();
                   }}
-                  onSubmitEditing={() => confirmInputRef.current?.focus()}
-                  placeholder={t('비밀번호를 입력해 주세요')}
-                  returnKeyType="next"
+                  onSubmitEditing={
+                    Platform.OS === 'web' ? undefined : () => void handleRegister()
+                  }
+                  placeholder={t('한 번 더 입력해 주세요')}
+                  returnKeyType="done"
                   secureTextEntry={!passwordVisible}
                   textContentType="newPassword"
+                  value={confirm}
+                />
+              </View>
+
+              <View
+                accessibilityElementsHidden={busy}
+                importantForAccessibility={busy ? 'no-hide-descendants' : 'auto'}
+                pointerEvents={busy ? 'none' : 'auto'}
+                style={busy ? styles.dimmed : null}
+              >
+                <SocialSignInButtons
+                  disabled={!agreed || busy}
+                  onBusyChange={setBusy}
+                  onError={(message) => setServerError({ message })}
+                />
+              </View>
+
+              <View style={styles.terms}>
+                <Checkbox
+                  checked={agreed}
+                  disabled={busy}
+                  label={t('모두 동의해요')}
+                  onChange={setAllAgreed}
+                />
+                <View style={styles.hairline} />
+                <Checkbox
+                  checked={agreedTerms}
+                  compact
+                  disabled={busy}
+                  label={t('[필수] 이용약관')}
+                  onChange={(value) => {
+                    setAgreedTerms(value);
+                    setServerError(null);
+                    clearError();
+                  }}
                   trailing={
-                    <IconButton
+                    <TermsLink
                       disabled={busy}
-                      icon={passwordVisible ? EyeOff : Eye}
-                      label={t(passwordVisible ? '비밀번호 숨기기' : '비밀번호 표시')}
-                      onPress={() => setPasswordVisible((visible) => !visible)}
+                      label={t('이용약관 보기')}
+                      onPress={() => void Linking.openURL(TERMS_URL).catch(() => undefined)}
                     />
                   }
-                  value={password}
                 />
-
-                <View style={styles.rules}>
-                  {passwordRules.map((rule) => (
-                    <StatusBadge
-                      key={rule.id}
-                      label={t.ctx('password', rule.label)}
-                      tone={rule.test(password) ? 'positive' : 'neutral'}
+                <Checkbox
+                  checked={agreedPrivacy}
+                  compact
+                  disabled={busy}
+                  label={t('[필수] 개인정보 처리방침')}
+                  onChange={(value) => {
+                    setAgreedPrivacy(value);
+                    setServerError(null);
+                    clearError();
+                  }}
+                  trailing={
+                    <TermsLink
+                      disabled={busy}
+                      label={t('개인정보 처리방침 보기')}
+                      onPress={() => void Linking.openURL(PRIVACY_URL).catch(() => undefined)}
                     />
-                  ))}
+                  }
+                />
+              </View>
+
+              {formError ? (
+                <View
+                  accessibilityLiveRegion="assertive"
+                  accessibilityRole="alert"
+                  style={styles.errorBox}
+                >
+                  <AppText tone="negative" variant="meta">
+                    {t(formError)}
+                  </AppText>
                 </View>
-              </View>
+              ) : null}
 
-              <AuthField
-                autoCapitalize="none"
-                autoComplete="new-password"
-                editable={!busy}
-                error={shownError('confirm')}
-                inputRef={confirmInputRef}
-                label={t('비밀번호 확인')}
-                onBlur={() => setTouched((state) => ({ ...state, confirm: true }))}
-                onChangeText={(value) => {
-                  setConfirm(value);
-                  setServerError(null);
-                  clearError();
-                }}
-                onSubmitEditing={
-                  Platform.OS === 'web' ? undefined : () => void handleRegister()
-                }
-                placeholder={t('한 번 더 입력해 주세요')}
-                returnKeyType="done"
-                secureTextEntry={!passwordVisible}
-                textContentType="newPassword"
-                value={confirm}
-              />
-            </View>
-
-            <View
-              accessibilityElementsHidden={busy}
-              importantForAccessibility={busy ? 'no-hide-descendants' : 'auto'}
-              pointerEvents={busy ? 'none' : 'auto'}
-              style={busy ? styles.dimmed : null}
-            >
-              <SocialSignInButtons
-                disabled={!agreed || busy}
-                onBusyChange={setBusy}
-                onError={(message) => setServerError({ message })}
-              />
-            </View>
-
-            <View style={styles.terms}>
-              <Checkbox
-                checked={agreed}
-                disabled={busy}
-                label={t('모두 동의해요')}
-                onChange={setAllAgreed}
-              />
-              <View style={styles.hairline} />
-              <Checkbox
-                checked={agreedTerms}
-                compact
-                disabled={busy}
-                label={t('[필수] 이용약관')}
-                onChange={(value) => {
-                  setAgreedTerms(value);
-                  setServerError(null);
-                  clearError();
-                }}
-                trailing={
-                  <TermsLink
-                    disabled={busy}
-                    label={t('이용약관 보기')}
-                    onPress={() => void Linking.openURL(TERMS_URL).catch(() => undefined)}
-                  />
-                }
-              />
-              <Checkbox
-                checked={agreedPrivacy}
-                compact
-                disabled={busy}
-                label={t('[필수] 개인정보 처리방침')}
-                onChange={(value) => {
-                  setAgreedPrivacy(value);
-                  setServerError(null);
-                  clearError();
-                }}
-                trailing={
-                  <TermsLink
-                    disabled={busy}
-                    label={t('개인정보 처리방침 보기')}
-                    onPress={() => void Linking.openURL(PRIVACY_URL).catch(() => undefined)}
-                  />
-                }
-              />
-            </View>
-
-            {formError ? (
-              <View
-                accessibilityLiveRegion="assertive"
-                accessibilityRole="alert"
-                style={styles.errorBox}
-              >
-                <AppText tone="negative" variant="meta">
-                  {t(formError)}
-                </AppText>
-              </View>
-            ) : null}
-
-            <Button
-              disabled={busy || !formValid}
-              fullWidth
-              loading={busy}
-              onPress={() => void handleRegister()}
-              size="large"
-              variant="primary"
-            >
-              {t('가입 완료')}
-            </Button>
-
-            <View style={styles.loginRow}>
-              <AppText tone="muted" variant="meta">
-                {t('이미 계정이 있나요?')}
-              </AppText>
               <Button
-                disabled={busy}
-                onPress={returnToLogin}
-                size="small"
-                variant="ghost"
+                disabled={busy || !formValid}
+                fullWidth
+                loading={busy}
+                onPress={() => void handleRegister()}
+                size="large"
+                variant="primary"
               >
-                {t('로그인')}
+                {t('가입 완료')}
               </Button>
-            </View>
-          </AuthForm>
-        </View>
-      </KeyboardAvoidingView>
+
+              <View style={styles.loginRow}>
+                <AppText tone="muted" variant="meta">
+                  {t('이미 계정이 있나요?')}
+                </AppText>
+                <Button
+                  disabled={busy}
+                  onPress={returnToLogin}
+                  size="small"
+                  variant="ghost"
+                >
+                  {t('로그인')}
+                </Button>
+              </View>
+            </AuthForm>
+          </View>
+        </KeyboardAvoidingView>
+      </AuthSplit>
     </Screen>
   );
 }
@@ -444,7 +450,11 @@ function TermsLink({
       disabled={disabled}
       hitSlop={8}
       onPress={onPress}
-      style={({ pressed }) => [styles.link, pressed ? styles.linkPressed : null]}
+      style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
+        styles.link,
+        hovered && !disabled ? styles.linkHovered : null,
+        pressed ? styles.linkPressed : null,
+      ]}
     >
       <AppText style={styles.linkText} tone="muted" variant="meta">
         {t.ctx('terms', '보기')}
@@ -464,6 +474,9 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
     paddingHorizontal: spacing.gutter,
     paddingTop: spacing.sm,
+  },
+  containerSplit: {
+    paddingHorizontal: 0,
   },
   formFlow: {
     gap: spacing.xl,
@@ -491,9 +504,13 @@ const styles = StyleSheet.create({
     marginVertical: spacing.xs,
   },
   link: {
+    borderRadius: radii.badge,
     justifyContent: 'center',
     minHeight: 32,
     paddingHorizontal: spacing.xs,
+  },
+  linkHovered: {
+    backgroundColor: colors.backgroundSoft,
   },
   linkPressed: {
     opacity: 0.6,
