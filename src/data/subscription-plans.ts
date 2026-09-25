@@ -41,6 +41,9 @@ export const PLAN_BENEFITS: readonly PlanBenefit[] = [
   { key: 'pack', label: '마인드팩 자동 생성', free: '포함', standard: '우선 처리' },
   { key: 'chat', label: '자료에 질문', free: '하루 10회', standard: '무제한' },
   { key: 'lens', label: '발표 평가', free: '체험 1회', standard: '월 5회' },
+  // interview.premind.co.kr runs on the same account and plan since 2026-09-26
+  // (premind-recorder-api INTERVIEW_AI_STANDARD_MONTHLY).
+  { key: 'interview', label: '면접 AI 피드백', free: '체험 1회', standard: '월 10회' },
   { key: 'youtube', label: '유튜브 링크', free: '월 3개', standard: '무제한' },
   { key: 'retention', label: '보관 기간', free: '30일', standard: '무제한' },
   { key: 'export', label: '대본, 요약 내보내기', free: false, standard: true },
@@ -59,6 +62,9 @@ export const SUBSCRIPTION_WEB_URL = 'https://premind.co.kr/credits';
  */
 export const TERMS_URL = 'https://premind.co.kr/terms';
 export const PRIVACY_URL = 'https://premind.co.kr/privacy';
+
+/** 면접 연습 웹. Same student account and plan (2026-09-26); opened in the browser. */
+export const INTERVIEW_URL = 'https://interview.premind.co.kr/interview';
 
 export function formatKrw(amount: number): string {
   return `${amount.toLocaleString('ko-KR')}원`;

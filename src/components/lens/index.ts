@@ -57,3 +57,4 @@ export {
   type MomentMark,
   type RubricComparisonRow,
 } from './lens-charts';
+export { InterviewPracticeCard } from './InterviewPracticeCard';

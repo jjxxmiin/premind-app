@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
 import {
+  InterviewPracticeCard,
   LatestReportCard,
   LensEvaluatingRow,
   LensIntroCard,
@@ -172,6 +173,13 @@ export default function LensScreen() {
             </View>
           </AnimatedReveal>
         ) : null}
+
+        <AnimatedReveal delay={230}>
+          <View style={styles.section}>
+            <SectionHeader description="같은 계정, 같은 요금제로 써요." title="면접도 연습해요" />
+            <InterviewPracticeCard />
+          </View>
+        </AnimatedReveal>
 
         {showTips ? (
           <AnimatedReveal delay={260}>
