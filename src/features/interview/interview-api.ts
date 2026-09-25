@@ -307,6 +307,15 @@ export async function deleteBackup(id: string): Promise<void> {
   await interviewRequest(`/backups?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+// ── checkout ───────────────────────────────────────────────────
+
+/** Polar checkout for 스탠다드 on the web; the server stamps the account on it. */
+export async function startWebCheckout(successUrl: string): Promise<string> {
+  const { url } = await interviewRequest<{ url?: string | null }>('/checkout', { json: { successUrl } });
+  if (!url) throw new InterviewApiError('결제 창을 열지 못했어요. 잠시 후 다시 시도해 주세요.', { status: 502, errorCode: 'checkout_failed' });
+  return url;
+}
+
 // ── institutions ───────────────────────────────────────────────
 
 export async function lookupInvite(code: string): Promise<InviteInfo> {

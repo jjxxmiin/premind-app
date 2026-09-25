@@ -50,8 +50,13 @@ export const PLAN_BENEFITS: readonly PlanBenefit[] = [
   { key: 'backup', label: '원본 클라우드 백업', free: false, standard: true },
 ];
 
-/** Where the web build checks out. Android and iOS use the store instead. */
-export const SUBSCRIPTION_WEB_URL = 'https://premind.co.kr/credits';
+/**
+ * The pricing page, for a web build with no student server (demo). A signed-in
+ * web build checks out through the student server's Polar checkout instead;
+ * Android and iOS use the store. (premind.co.kr/credits is the teacher's
+ * credit shop and never sold 스탠다드.)
+ */
+export const SUBSCRIPTION_WEB_URL = 'https://premind.co.kr/student';
 
 /**
  * The pages that govern the offer.
