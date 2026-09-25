@@ -232,7 +232,7 @@ export default function InterviewOrgScreen() {
               </View>
 
               <View style={styles.section}>
-                <SectionHeader description="학생은 앱의 면접 탭에서 코드를 입력해 바로 참여해요. 이미 참여한 학생은 코드를 마감해도 그대로 이용할 수 있어요." title="초대 코드" />
+                <SectionHeader description="학생은 앱의 말하기 탭 면접에서 코드를 입력해 바로 참여해요. 이미 참여한 학생은 코드를 마감해도 그대로 이용할 수 있어요." title="초대 코드" />
                 <Card padding={false}>
                   {report.invites.map((invite, index) => (
                     <View key={invite.code} style={[styles.row, index < report.invites.length - 1 ? styles.divider : null]}>
