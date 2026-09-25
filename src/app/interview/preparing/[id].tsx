@@ -12,6 +12,7 @@ import { getResultPreparationCopy, RESULT_SLOW_NOTICE_MS } from '@/features/inte
 import { resolveSessionSource } from '@/features/interview/session-source';
 import type { InterviewSession } from '@/features/interview/types';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
 /**
@@ -20,6 +21,7 @@ import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
  * 결과 화면에서 다시 시도할 수 있다. (interview-result-preparing.tsx)
  */
 export default function InterviewPreparingScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -105,35 +107,35 @@ export default function InterviewPreparingScreen() {
             <AlertCircle color={colors.warningStrong} size={iconSizes.section} />
           </View>
           <AppText align="center" variant="heading">
-            연습 기록을 열지 못했어요.
+            {t('연습 기록을 열지 못했어요.')}
           </AppText>
           <AppText align="center" tone="muted" variant="body">
-            연습 기록에서 다시 확인해 주세요.
+            {t('연습 기록에서 다시 확인해 주세요.')}
           </AppText>
           <Button variant="primary" fullWidth onPress={() => router.replace('/interview/history')}>
-            연습 기록으로
+            {t('연습 기록으로')}
           </Button>
         </Card>
       ) : (
         <View style={styles.card}>
           <AppText align="center" variant="heroTitle">
-            연습하느라 수고했어요!
+            {t('연습하느라 수고했어요!')}
           </AppText>
           <AppText accessibilityLiveRegion="polite" align="center" tone="brand" variant="heading">
-            {copy.texts[textIndex % copy.texts.length]}
+            {t(copy.texts[textIndex % copy.texts.length] ?? '')}
           </AppText>
           <AppText align="center" tone="muted" variant="body">
-            {copy.description}
+            {t(copy.description)}
           </AppText>
           <PipelineSteps
             active={state?.kind === 'working'}
             stageIndex={phaseIndex}
-            label={withAudio ? `내가 한 말 정리 ${transcribed} / ${withAudio}` : undefined}
+            label={withAudio ? t('내가 한 말 정리 {done} / {total}', { done: transcribed, total: withAudio }) : undefined}
             progress={phaseIndex === 0 ? (withAudio ? (transcribed / withAudio) * 0.6 : 0.2) : 0.8}
-            steps={['내가 한 말 정리', '답변 피드백']}
+            steps={[t('내가 한 말 정리'), t('답변 피드백')]}
           />
           <AppText accessibilityLiveRegion="polite" align="center" tone="muted" variant="meta">
-            {copy.note}
+            {copy.note ? t(copy.note) : ''}
           </AppText>
         </View>
       )}

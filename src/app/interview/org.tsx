@@ -32,15 +32,17 @@ import {
 } from '@/features/interview/interview-api';
 import { useInterviewAccount } from '@/features/interview/use-interview-account';
 import { formatAnswerDuration } from '@/features/interview/view-model';
+import { enShortDate, useLocale, useT, type AppLocale } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 import { INTERVIEW_HOME } from '@/features/interview/routes';
 
 const PERIODS = ['7', '30', '90'] as const;
 
-function day(ms: number | null): string {
+function day(ms: number | null, locale: AppLocale = 'ko'): string {
   if (!ms) return '-';
   const date = new Date(ms);
+  if (locale === 'en') return enShortDate(date);
   return `${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
 }
 
@@ -54,6 +56,9 @@ function pct(a: number, b: number): string {
  * 학생이 직접 공유한 연습의 글만 따로 모아 본다(org-dashboard.tsx).
  */
 export default function InterviewOrgScreen() {
+  const t = useT();
+  const locale = useLocale();
+  const d = (ms: number | null) => day(ms, locale);
   const { breakpoint, gutter } = useLayout();
   const account = useInterviewAccount();
   const toast = useToast();
@@ -95,37 +100,37 @@ export default function InterviewOrgScreen() {
     const uses = Number(maxUses);
     const period = Number(validDays);
     if (!group.trim() || !Number.isInteger(uses) || uses < 1 || uses > 500 || !Number.isInteger(period) || period < 0 || period > 365) {
-      toast.show('그룹 이름과 인원(1~500명)을 확인해 주세요.');
+      toast.show(t('그룹 이름과 인원(1~500명)을 확인해 주세요.'));
       return;
     }
     if (demo) {
-      toast.show('데모에서는 코드를 만들지 않아요.');
+      toast.show(t('데모에서는 코드를 만들지 않아요.'));
       return;
     }
     setCreating(true);
     try {
       const code = await createOrgInvite(group.trim(), uses, period);
       await Clipboard.setStringAsync(code).catch(() => undefined);
-      toast.show(`코드 ${code}를 만들었어요. 복사해 두었어요.`);
+      toast.show(t('코드 {code}를 만들었어요. 복사해 두었어요.', { code }));
       setGroup('');
       setReloadKey((value) => value + 1);
     } catch (reason) {
-      toast.show(reason instanceof Error ? reason.message : '코드를 만들지 못했어요.');
+      toast.show(t(reason instanceof Error ? reason.message : '코드를 만들지 못했어요.'));
     } finally {
       setCreating(false);
     }
-  }, [demo, group, maxUses, toast, validDays]);
+  }, [demo, group, maxUses, t, toast, validDays]);
 
-  const header = <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title="기관 현황" />;
+  const header = <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title={t('기관 현황')} />;
 
   if (account.status === 'ready' && !isManager && !demo) {
     return (
       <Screen padded={false}>
         {header}
         <EmptyState
-          description="기관 담당자 계정으로 로그인하면 볼 수 있어요. 학교나 취업센터에서 도입을 원하시면 문의해 주세요."
+          description={t('기관 담당자 계정으로 로그인하면 볼 수 있어요. 학교나 취업센터에서 도입을 원하시면 문의해 주세요.')}
           icon={Users}
-          title="기관 현황"
+          title={t('기관 현황')}
         />
       </Screen>
     );
@@ -138,7 +143,7 @@ export default function InterviewOrgScreen() {
       <ScrollView style={styles.scroll}>
         <View style={[styles.content, { paddingHorizontal: gutter }]}>
           {error ? (
-            <ErrorState description={error} onRetry={() => setReloadKey((value) => value + 1)} retryLabel="다시 시도" />
+            <ErrorState description={t(error)} onRetry={() => setReloadKey((value) => value + 1)} retryLabel={t('다시 시도')} />
           ) : !report ? (
             <>
               <Skeleton height={96} />
@@ -148,41 +153,45 @@ export default function InterviewOrgScreen() {
             <>
               <View style={styles.heading}>
                 <View style={styles.badges}>
-                  {demo ? <StatusBadge label="예시" tone="info" /> : null}
-                  <StatusBadge label={report.org.kind} tone="neutral" />
-                  {report.org.licenseUntil ? <StatusBadge label={`${day(report.org.licenseUntil)}까지 스탠다드`} tone="brand" /> : null}
+                  {demo ? <StatusBadge label={t('예시')} tone="info" /> : null}
+                  <StatusBadge label={t(report.org.kind)} tone="neutral" />
+                  {report.org.licenseUntil ? <StatusBadge label={t('{date}까지 스탠다드', { date: d(report.org.licenseUntil) })} tone="brand" /> : null}
                 </View>
                 <AppText variant="pageTitle">{report.org.name}</AppText>
                 <AppText tone="muted" variant="body">
-                  학생들의 가입과 연습 참여를 한눈에 확인하세요. 답변 내용과 녹음은 학생 본인만 볼 수 있어요.
+                  {t('학생들의 가입과 연습 참여를 한눈에 확인하세요. 답변 내용과 녹음은 학생 본인만 볼 수 있어요.')}
                 </AppText>
               </View>
               <SegmentedControl
                 onChange={setDays}
-                options={PERIODS.map((value) => ({ value, label: `${value}일` }))}
+                options={PERIODS.map((value) => ({ value, label: t('{n}일', { n: value }) }))}
                 value={days}
               />
               <View style={[styles.tiles, wide ? styles.tilesRow : null]}>
-                <Tile label="참여 학생" sub={`참여율 ${pct(report.totals.activeMembers, report.totals.members)}`} value={`${report.totals.members}명`} />
-                <Tile label="연습한 학생" sub={`${day(report.from)} ~ ${day(report.to)}`} value={`${report.totals.activeMembers}명`} />
-                <Tile label="연습" sub={`학생당 ${report.totals.members ? (report.totals.practices / report.totals.members).toFixed(1) : '0'}회`} value={`${report.totals.practices}회`} />
-                <Tile label="AI 피드백 연습" sub={`자소서 질문 세트 ${report.totals.questionSets}개`} value={`${report.totals.aiPractices}회`} />
+                <Tile label={t('참여 학생')} sub={t('참여율 {rate}', { rate: pct(report.totals.activeMembers, report.totals.members) })} value={t.ctx('org', '{n}명', { n: report.totals.members })} />
+                <Tile label={t('연습한 학생')} sub={`${d(report.from)} ~ ${d(report.to)}`} value={t.ctx('org', '{n}명', { n: report.totals.activeMembers })} />
+                <Tile
+                  label={t('연습')}
+                  sub={t('학생당 {n}회', { n: report.totals.members ? (report.totals.practices / report.totals.members).toFixed(1) : '0' })}
+                  value={t.ctx('org', '{n}회', { n: report.totals.practices })}
+                />
+                <Tile label={t('AI 피드백 연습')} sub={t('자소서 질문 세트 {n}개', { n: report.totals.questionSets })} value={t.ctx('org', '{n}회', { n: report.totals.aiPractices })} />
               </View>
 
               <View style={styles.section}>
-                <SectionHeader title="주별 연습" />
+                <SectionHeader title={t('주별 연습')} />
                 <Card style={styles.weeks}>
                   {report.weeks.map((week) => {
                     const max = Math.max(1, ...report.weeks.map((item) => item.practices));
                     return (
-                      <View accessibilityLabel={`${day(week.weekStart)} 주 연습 ${week.practices}회, 학생 ${week.activeMembers}명`} key={week.weekStart} style={styles.weekRow}>
+                      <View accessibilityLabel={t('{date} 주 연습 {n}회, 학생 {m}명', { date: d(week.weekStart), n: week.practices, m: week.activeMembers })} key={week.weekStart} style={styles.weekRow}>
                         <AppText style={styles.weekLabel} tabular tone="muted" variant="meta">
-                          {day(week.weekStart)}
+                          {d(week.weekStart)}
                         </AppText>
                         <View style={styles.weekTrack}>
                           <View style={[styles.weekBar, { width: `${Math.round((week.practices / max) * 100)}%` }]} />
                         </View>
-                        <AppText style={styles.weekValue} tabular variant="meta">{`${week.practices}회`}</AppText>
+                        <AppText style={styles.weekValue} tabular variant="meta">{t.ctx('org', '{n}회', { n: week.practices })}</AppText>
                       </View>
                     );
                   })}
@@ -190,25 +199,25 @@ export default function InterviewOrgScreen() {
               </View>
 
               <View style={styles.section}>
-                <SectionHeader title="그룹별 참여" />
+                <SectionHeader title={t('그룹별 참여')} />
                 <Card padding={false}>
                   {report.groups.map((item, index) => (
                     <View key={item.name} style={[styles.row, index < report.groups.length - 1 ? styles.divider : null]}>
                       <AppText style={styles.flex} variant="itemTitle">
                         {item.name}
                       </AppText>
-                      <AppText tone="muted" variant="meta">{`${item.activeMembers} / ${item.members}명 / 연습 ${item.practices}회`}</AppText>
+                      <AppText tone="muted" variant="meta">{t('{active} / {n}명 / 연습 {p}회', { active: item.activeMembers, n: item.members, p: item.practices })}</AppText>
                     </View>
                   ))}
                 </Card>
               </View>
 
               <View style={styles.section}>
-                <SectionHeader description="이름, 그룹, 연습 횟수, 마지막 활동만 보여요." title="학생별 참여" />
+                <SectionHeader description={t('이름, 그룹, 연습 횟수, 마지막 활동만 보여요.')} title={t('학생별 참여')} />
                 {report.members.length === 0 ? (
                   <Card variant="soft">
                     <AppText tone="muted" variant="body">
-                      아직 가입한 학생이 없어요. 아래 초대 코드를 학생들에게 나눠 주세요.
+                      {t('아직 가입한 학생이 없어요. 아래 초대 코드를 학생들에게 나눠 주세요.')}
                     </AppText>
                   </Card>
                 ) : (
@@ -217,12 +226,12 @@ export default function InterviewOrgScreen() {
                       <View key={member.username} style={[styles.row, index < report.members.length - 1 ? styles.divider : null]}>
                         <View style={styles.flex}>
                           <AppText variant="itemTitle">{member.displayName}</AppText>
-                          <AppText tone="muted" variant="meta">{`${member.group || '그룹 없음'} / 가입 ${day(member.joinedAt)}`}</AppText>
+                          <AppText tone="muted" variant="meta">{t('{group} / 가입 {date}', { group: member.group || t('그룹 없음'), date: d(member.joinedAt) })}</AppText>
                         </View>
                         <View style={styles.memberRight}>
-                          <AppText tabular variant="bodyStrong">{`${member.practices}회`}</AppText>
+                          <AppText tabular variant="bodyStrong">{t.ctx('org', '{n}회', { n: member.practices })}</AppText>
                           <AppText tone="muted" variant="badge">
-                            {member.lastActiveAt ? `마지막 ${day(member.lastActiveAt)}` : '아직 없음'}
+                            {member.lastActiveAt ? t('마지막 {date}', { date: d(member.lastActiveAt) }) : t('아직 없음')}
                           </AppText>
                         </View>
                       </View>
@@ -232,7 +241,10 @@ export default function InterviewOrgScreen() {
               </View>
 
               <View style={styles.section}>
-                <SectionHeader description="학생은 앱의 말하기 탭 면접에서 코드를 입력해 바로 참여해요. 이미 참여한 학생은 코드를 마감해도 그대로 이용할 수 있어요." title="초대 코드" />
+                <SectionHeader
+                  description={t('학생은 앱의 말하기 탭 면접에서 코드를 입력해 바로 참여해요. 이미 참여한 학생은 코드를 마감해도 그대로 이용할 수 있어요.')}
+                  title={t('초대 코드')}
+                />
                 <Card padding={false}>
                   {report.invites.map((invite, index) => (
                     <View key={invite.code} style={[styles.row, index < report.invites.length - 1 ? styles.divider : null]}>
@@ -240,16 +252,21 @@ export default function InterviewOrgScreen() {
                         <AppText tabular variant="itemTitle">
                           {invite.code}
                         </AppText>
-                        <AppText tone="muted" variant="meta">{`${invite.group} / ${invite.uses} / ${invite.maxUses}명 / ${invite.expiresAt ? `${day(invite.expiresAt)}까지` : '제한 없음'}`}</AppText>
+                        <AppText tone="muted" variant="meta">{t('{group} / {uses} / {max}명 / {until}', {
+                          group: invite.group,
+                          uses: invite.uses,
+                          max: invite.maxUses,
+                          until: invite.expiresAt ? t.ctx('org', '{date}까지', { date: d(invite.expiresAt) }) : t('제한 없음'),
+                        })}</AppText>
                       </View>
                       {invite.disabled ? (
-                        <StatusBadge label="마감" tone="neutral" />
+                        <StatusBadge label={t('마감')} tone="neutral" />
                       ) : (
                         <>
                           <IconButton
                             icon={Copy}
-                            label={`${invite.code} 복사`}
-                            onPress={() => void Clipboard.setStringAsync(invite.code).then(() => toast.show('복사했어요'))}
+                            label={t('{code} 복사', { code: invite.code })}
+                            onPress={() => void Clipboard.setStringAsync(invite.code).then(() => toast.show(t('복사했어요')))}
                             size="small"
                             variant="ghost"
                           />
@@ -261,7 +278,7 @@ export default function InterviewOrgScreen() {
                             size="small"
                             variant="ghost"
                           >
-                            마감하기
+                            {t('마감하기')}
                           </Button>
                         </>
                       )}
@@ -269,48 +286,48 @@ export default function InterviewOrgScreen() {
                   ))}
                 </Card>
                 <Card style={styles.form}>
-                  <AuthField label="반, 학과, 프로그램" maxLength={40} onChangeText={setGroup} placeholder="예: 3학년 2반" value={group} />
+                  <AuthField label={t('반, 학과, 프로그램')} maxLength={40} onChangeText={setGroup} placeholder={t('예: 3학년 2반')} value={group} />
                   <View style={[styles.formRow, wide ? styles.tilesRow : null]}>
                     <View style={styles.flex}>
-                      <AuthField keyboardType="number-pad" label="인원" maxLength={3} onChangeText={setMaxUses} value={maxUses} />
+                      <AuthField keyboardType="number-pad" label={t('인원')} maxLength={3} onChangeText={setMaxUses} value={maxUses} />
                     </View>
                     <View style={styles.flex}>
-                      <AuthField keyboardType="number-pad" label="사용 기간(일)" maxLength={3} onChangeText={setValidDays} value={validDays} />
+                      <AuthField keyboardType="number-pad" label={t('사용 기간(일)')} maxLength={3} onChangeText={setValidDays} value={validDays} />
                     </View>
                   </View>
                   <Button variant="primary" leftIcon={<Plus color={colors.textInverse} size={iconSizes.inline} />} loading={creating} onPress={() => void createInvite()}>
-                    초대 코드 만들기
+                    {t('초대 코드 만들기')}
                   </Button>
                 </Card>
               </View>
 
               <View style={styles.section}>
-                <SectionHeader description="학생이 직접 공유한 연습만 보여요." title="학생이 공유한 연습" />
+                <SectionHeader description={t('학생이 직접 공유한 연습만 보여요.')} title={t('학생이 공유한 연습')} />
                 {!shares || shares.length === 0 ? (
                   <Card variant="soft">
                     <AppText tone="muted" variant="body">
-                      아직 공유된 연습이 없어요. 학생이 AI 피드백 연습 결과에서 ‘선생님께 공유하기’를 누르면 여기에 보여요.
+                      {t('아직 공유된 연습이 없어요. 학생이 AI 피드백 연습 결과에서 ‘선생님께 공유하기’를 누르면 여기에 보여요.')}
                     </AppText>
                   </Card>
                 ) : (
                   shares.map((share) => (
                     <Card key={share.id} style={styles.share}>
-                      <AppText tone="muted" variant="meta">{`${share.studentName} / ${share.group || '그룹 없음'} / ${day(share.sharedAt)} 공유`}</AppText>
-                      <AppText variant="itemTitle">{share.title}</AppText>
+                      <AppText tone="muted" variant="meta">{t('{name} / {group} / {date} 공유', { name: share.studentName, group: share.group || t('그룹 없음'), date: d(share.sharedAt) })}</AppText>
+                      <AppText variant="itemTitle">{t(share.title)}</AppText>
                       {share.payload.items.map((item, index) => (
                         <View key={index} style={styles.shareItem}>
-                          <AppText variant="bodyStrong">{`${index + 1}. ${item.question}`}</AppText>
+                          <AppText variant="bodyStrong">{`${index + 1}. ${t(item.question)}`}</AppText>
                           <AppText numberOfLines={4} tone="soft" variant="meta">
-                            {item.transcript || '전사문 없음'}
+                            {item.transcript || t('전사문 없음')}
                           </AppText>
                           <AppText tone="muted" variant="badge">
-                            {formatAnswerDuration(item.durationMs)}
+                            {formatAnswerDuration(item.durationMs, locale)}
                           </AppText>
-                          {item.missingPoints.length ? <AppText tone="warning" variant="meta">{`빠진 내용: ${item.missingPoints.join(', ')}`}</AppText> : null}
-                          {item.nextFocus ? <AppText variant="meta">{`다음에: ${item.nextFocus}`}</AppText> : null}
+                          {item.missingPoints.length ? <AppText tone="warning" variant="meta">{t('빠진 내용: {list}', { list: item.missingPoints.join(', ') })}</AppText> : null}
+                          {item.nextFocus ? <AppText variant="meta">{t('다음에: {text}', { text: item.nextFocus })}</AppText> : null}
                         </View>
                       ))}
-                      {share.payload.nextPractice ? <AppText tone="brand" variant="meta">{`다음 연습: ${share.payload.nextPractice}`}</AppText> : null}
+                      {share.payload.nextPractice ? <AppText tone="brand" variant="meta">{t('다음 연습: {text}', { text: share.payload.nextPractice })}</AppText> : null}
                     </Card>
                   ))
                 )}

@@ -56,9 +56,11 @@ import { decorative } from '@/lib/a11y';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 import { INTERVIEW_HOME } from '@/features/interview/routes';
+import { enDate, useLocale, useT, type AppLocale } from '@/lib/i18n';
 
-function formatDate(value: string | undefined): string {
+function formatDate(value: string | undefined, locale: AppLocale): string {
   if (!value) return '';
+  if (locale === 'en') return enDate(value);
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '' : `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
 }
@@ -69,6 +71,8 @@ function formatDate(value: string | undefined): string {
  * 말하지 않는다. 다른 기기의 기록은 읽기만 한다(녹음이 이 기기에 없다).
  */
 export default function InterviewReportScreen() {
+  const t = useT();
+  const locale = useLocale();
   const params = useLocalSearchParams<{ id: string; remote?: string }>();
   const remote = params.remote === '1';
   const local = useInterviewSession(remote ? undefined : params.id);
@@ -101,7 +105,7 @@ export default function InterviewReportScreen() {
   if (session === undefined) {
     return (
       <Screen padded={false}>
-        <AppHeader onBack={() => router.back()} title="연습 결과" />
+        <AppHeader onBack={() => router.back()} title={t('연습 결과')} />
         <View style={[styles.content, { paddingHorizontal: gutter }]}>
           <Skeleton height={120} />
           <Skeleton height={240} />
@@ -113,13 +117,13 @@ export default function InterviewReportScreen() {
   if (!session || !source) {
     return (
       <Screen padded={false}>
-        <AppHeader onBack={() => router.back()} title="연습 결과" />
+        <AppHeader onBack={() => router.back()} title={t('연습 결과')} />
         <EmptyState
-          actionLabel="연습 기록으로"
-          description="기록이 지워졌거나 이 기기에 없는 연습이에요."
+          actionLabel={t('연습 기록으로')}
+          description={t('기록이 지워졌거나 이 기기에 없는 연습이에요.')}
           icon={History}
           onAction={() => router.replace('/interview/history')}
-          title="연습 기록을 불러오지 못했어요."
+          title={t('연습 기록을 불러오지 못했어요.')}
         />
       </Screen>
     );
@@ -152,7 +156,7 @@ export default function InterviewReportScreen() {
       await mutate((current) => startQuestionRetry(current, question.id));
       router.push({ pathname: '/interview/room/[id]', params: { id: session.id } });
     } catch (reason) {
-      toast.show(reason instanceof Error ? reason.message : '다시 답변을 시작하지 못했어요.');
+      toast.show(t(reason instanceof Error ? reason.message : '다시 답변을 시작하지 못했어요.'));
     }
   };
 
@@ -178,10 +182,10 @@ export default function InterviewReportScreen() {
             </AppText>
             <View style={styles.flex}>
               <AppText numberOfLines={2} variant="body">
-                {question.text}
+                {t(question.text)}
               </AppText>
               <AppText tone="muted" variant="meta">
-                {!latest ? '아직 답하지 않았어요' : status ? status.label : latest.analysis?.evaluation.status === 'ready' ? '피드백 있음' : formatAnswerDuration(latest.durationMs)}
+                {!latest ? t('아직 답하지 않았어요') : status ? t(status.label) : latest.analysis?.evaluation.status === 'ready' ? t('피드백 있음') : formatAnswerDuration(latest.durationMs, locale)}
               </AppText>
             </View>
           </Pressable>
@@ -193,26 +197,34 @@ export default function InterviewReportScreen() {
   const header = (
     <Card style={styles.summary}>
       <View style={styles.badges}>
-        <StatusBadge label={source.kindLabel} tone="neutral" />
-        <StatusBadge label={modeLabel(session)} tone={session.feedbackMode === 'ai' ? 'brand' : 'neutral'} />
-        {remote ? <StatusBadge label="다른 기기의 기록" tone="info" /> : null}
+        <StatusBadge label={t(source.kindLabel)} tone="neutral" />
+        <StatusBadge label={t(modeLabel(session))} tone={session.feedbackMode === 'ai' ? 'brand' : 'neutral'} />
+        {remote ? <StatusBadge label={t('다른 기기의 기록')} tone="info" /> : null}
       </View>
-      <AppText variant="pageTitle">{source.title}</AppText>
+      <AppText variant="pageTitle">{t(source.title)}</AppText>
       <AppText tone="muted" variant="meta">
-        {[formatDate(session.completedAt ?? session.createdAt), `답변한 질문 ${answeredCount} / ${questions.length}개`, `총 말한 시간 ${formatAnswerDuration(totalSpeakingMs(session))}`].filter(Boolean).join(' / ')}
+        {[
+          formatDate(session.completedAt ?? session.createdAt, locale),
+          t('답변한 질문 {done} / {total}개', { done: answeredCount, total: questions.length }),
+          t('총 말한 시간 {time}', { time: formatAnswerDuration(totalSpeakingMs(session), locale) }),
+        ]
+          .filter(Boolean)
+          .join(' / ')}
       </AppText>
       {grounded ? (
         <View style={styles.reflect}>
           <AppText tone="brand" variant="badge">
-            이번 연습 돌아보기
+            {t('이번 연습 돌아보기')}
           </AppText>
           <AppText variant="bodyStrong">{clean(grounded.summary)}</AppText>
         </View>
       ) : null}
       <AppText tone="faint" variant="badge">
-        {ai
-          ? 'AI가 만든 전사문과 피드백이에요. 사실과 다를 수 있으니 참고로만 봐 주세요. 합격 가능성이나 성격은 판단하지 않아요.'
-          : '이 화면은 답변 시간과 메모를 정리하며, 답변 내용이나 합격 가능성을 평가하지 않아요.'}
+        {t(
+          ai
+            ? 'AI가 만든 전사문과 피드백이에요. 사실과 다를 수 있으니 참고로만 봐 주세요. 합격 가능성이나 성격은 판단하지 않아요.'
+            : '이 화면은 답변 시간과 메모를 정리하며, 답변 내용이나 합격 가능성을 평가하지 않아요.',
+        )}
       </AppText>
     </Card>
   );
@@ -223,10 +235,10 @@ export default function InterviewReportScreen() {
       editable={!remote}
       key={`${selectedQuestion.id}:${selectedAttempt?.id ?? 'none'}`}
       note={session.reviewNotes?.[selectedQuestion.id] ?? ''}
-      onMessage={toast.show}
+      onMessage={(message) => toast.show(t(message))}
       onRetryEvaluation={async (attemptId) => {
         const queued = await retryInterviewEvaluation(session.id, attemptId);
-        if (!queued) toast.show('지금은 다시 받을 피드백이 없어요.');
+        if (!queued) toast.show(t('지금은 다시 받을 피드백이 없어요.'));
       }}
       onRetryQuestion={() => void retryQuestion(selectedQuestion)}
       onRetryTranscription={(attemptId) => void retryInterviewTranscriptions(session.id, [attemptId])}
@@ -242,14 +254,14 @@ export default function InterviewReportScreen() {
 
   return (
     <Screen padded={false}>
-      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title="연습 결과" />
+      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title={t('연습 결과')} />
       <ScrollView style={styles.scroll}>
         <View style={[styles.content, { paddingHorizontal: gutter }]}>
         {header}
         {wide ? (
           <View style={styles.columns}>
             <View style={styles.listColumn}>
-              <SectionHeader title="질문별로 돌아보기" />
+              <SectionHeader title={t('질문별로 돌아보기')} />
               {questionList}
             </View>
             <View style={styles.detailColumn}>{detail}</View>
@@ -257,7 +269,7 @@ export default function InterviewReportScreen() {
         ) : (
           <>
             <View style={styles.section}>
-              <SectionHeader description="질문을 누르면 내가 한 답변을 볼 수 있어요." title="질문별로 돌아보기" />
+              <SectionHeader description={t('질문을 누르면 내가 한 답변을 볼 수 있어요.')} title={t('질문별로 돌아보기')} />
               {questionList}
             </View>
             {detail}
@@ -271,34 +283,34 @@ export default function InterviewReportScreen() {
               onPress={() => router.push({ pathname: '/interview/prepare', params: { again: session.id } })}
               style={styles.action}
             >
-              전체 다시 연습
+              {t('전체 다시 연습')}
             </Button>
           ) : null}
-          {canShare && user ? <ShareWithOrg onMessage={toast.show} orgName={user.orgName ?? '기관'} session={session} source={source} /> : null}
+          {canShare && user ? <ShareWithOrg onMessage={toast.show} orgName={user.orgName ?? t('기관')} session={session} source={source} /> : null}
           <Button onPress={() => router.push('/interview/history')} style={styles.action} variant="outline">
-            연습 기록으로
+            {t('연습 기록으로')}
           </Button>
         </View>
         {!remote ? (
           <Button leftIcon={<Trash2 color={colors.negative} size={iconSizes.inline} />} onPress={() => setDeleteOpen(true)} textStyle={styles.danger} variant="ghost">
-            이 연습 기록 지우기
+            {t('이 연습 기록 지우기')}
           </Button>
         ) : null}
         </View>
       </ScrollView>
       <Toast message={toast.message} />
       <Dialog
-        cancel={{ label: '취소', onPress: () => setDeleteOpen(false) }}
+        cancel={{ label: t('취소'), onPress: () => setDeleteOpen(false) }}
         confirm={{
-          label: '지우기',
+          label: t('지우기'),
           onPress: () => {
             setDeleteOpen(false);
             void Promise.all([deleteSession(session.id), forgetBackup(session.id)]).then(() => router.replace('/interview/history'));
           },
         }}
-        description="이 기기의 기록과 녹음, 계정에 남긴 글 사본을 모두 지워요. 되돌릴 수 없어요."
+        description={t('이 기기의 기록과 녹음, 계정에 남긴 글 사본을 모두 지워요. 되돌릴 수 없어요.')}
         onRequestClose={() => setDeleteOpen(false)}
-        title="이 연습 기록을 지울까요?"
+        title={t('이 연습 기록을 지울까요?')}
         visible={deleteOpen}
       />
     </Screen>
@@ -338,6 +350,8 @@ function QuestionDetail({
   onSaveNote,
   onMessage,
 }: QuestionDetailProps) {
+  const t = useT();
+  const locale = useLocale();
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [draftNote, setDraftNote] = useState(note);
@@ -373,21 +387,21 @@ function QuestionDetail({
       <Card style={styles.detailCard}>
         <View style={styles.badges}>
           <AppText tone="muted" variant="badge">
-            {question.kind === 'follow_up' ? '꼬리질문' : `${questionNumber}번 질문`}
+            {question.kind === 'follow_up' ? t('꼬리질문') : t('{n}번 질문', { n: questionNumber })}
           </AppText>
-          {question.traitIds.length > 0 ? <StatusBadge label="연결된 인재상" tone="neutral" /> : null}
+          {question.traitIds.length > 0 ? <StatusBadge label={t('연결된 인재상')} tone="neutral" /> : null}
         </View>
-        <AppText variant="heading">{question.text}</AppText>
+        <AppText variant="heading">{t(question.text)}</AppText>
         {question.sourceQuote ? (
-          <AppText tone="muted" variant="meta">{`질문과 연결된 내 자소서: ${question.sourceQuote}`}</AppText>
+          <AppText tone="muted" variant="meta">{t('질문과 연결된 내 자소서: {quote}', { quote: question.sourceQuote })}</AppText>
         ) : null}
 
         {attempts.length > 1 ? (
-          <View accessibilityLabel="답변 회차 선택" style={styles.chips}>
+          <View accessibilityLabel={t('답변 회차 선택')} style={styles.chips}>
             {attempts.map((attempt) => (
               <Chip
                 key={attempt.id}
-                label={`${attempt.attemptNo}회차${attempt.status === 'failed' ? ' 중단' : ''}`}
+                label={t(attempt.status === 'failed' ? '{n}회차 중단' : '{n}회차', { n: attempt.attemptNo })}
                 onPress={() => onSelectAttempt(attempt.id)}
                 selected={attempt.id === selected?.id}
               />
@@ -397,32 +411,37 @@ function QuestionDetail({
 
         {!selected ? (
           <AppText tone="muted" variant="body">
-            아직 답변 기록이 없는 질문이에요. 아래에서 전체 연습을 다시 시작할 수 있어요.
+            {t('아직 답변 기록이 없는 질문이에요. 아래에서 전체 연습을 다시 시작할 수 있어요.')}
           </AppText>
         ) : (
           <>
             <AppText tone="muted" variant="meta">
-              {`${formatAnswerDuration(selected.durationMs)} 동안 답변 / 권장 시간 ${formatAnswerDuration(question.maxDurationMs)}`}
+              {t('{time} 동안 답변 / 권장 시간 {suggested}', {
+                time: formatAnswerDuration(selected.durationMs, locale),
+                suggested: formatAnswerDuration(question.maxDurationMs, locale),
+              })}
             </AppText>
             {selected.mediaKey ? <RecordedVideo mediaKey={selected.mediaKey} /> : null}
 
             {analysis ? (
               <View style={styles.block}>
                 <View style={styles.rowBetween}>
-                  <AppText variant="itemTitle">내가 한 말</AppText>
+                  <AppText variant="itemTitle">{t('내가 한 말')}</AppText>
                   {editable && transcript && editing === null && !working ? (
                     <Button leftIcon={<Pencil color={colors.text} size={iconSizes.dense} />} onPress={() => setEditing(text)} size="small" variant="ghost">
-                      내용 고치기
+                      {t('내용 고치기')}
                     </Button>
                   ) : null}
                 </View>
                 {editing !== null ? (
                   <View style={styles.block}>
-                    <TextArea label="내가 한 말 고치기" maxLength={20_000} minHeight={140} onChangeText={setEditing} value={editing} />
+                    <TextArea label={t('내가 한 말 고치기')} maxLength={20_000} minHeight={140} onChangeText={setEditing} value={editing} />
                     <AppText tone="muted" variant="meta">
-                      {classifyInterviewTranscript(editing) === 'ready'
-                        ? '고친 내용으로 피드백을 받으려면 ‘저장하고 피드백 새로 받기’를 눌러주세요.'
-                        : '말한 내용이 너무 짧아요. 빠진 말이 있다면 적어주세요.'}
+                      {t(
+                        classifyInterviewTranscript(editing) === 'ready'
+                          ? '고친 내용으로 피드백을 받으려면 ‘저장하고 피드백 새로 받기’를 눌러주세요.'
+                          : '말한 내용이 너무 짧아요. 빠진 말이 있다면 적어주세요.',
+                      )}
                     </AppText>
                     <View style={styles.inlineActions}>
                       <Button variant="primary"
@@ -432,39 +451,39 @@ function QuestionDetail({
                         onPress={() => void saveTranscript(true)}
                         size="small"
                       >
-                        저장하고 피드백 새로 받기
+                        {t('저장하고 피드백 새로 받기')}
                       </Button>
                       <Button disabled={saving} onPress={() => void saveTranscript(false)} size="small" variant="secondary">
-                        저장하기
+                        {t('저장하기')}
                       </Button>
                       {transcript?.corrected !== undefined ? (
                         <Button disabled={saving} onPress={() => setEditing(transcript.original)} size="small" variant="ghost">
-                          처음 내용으로 되돌리기
+                          {t('처음 내용으로 되돌리기')}
                         </Button>
                       ) : null}
                       <Button disabled={saving} onPress={() => setEditing(null)} size="small" variant="ghost">
-                        취소
+                        {t('취소')}
                       </Button>
                     </View>
                   </View>
                 ) : analysis.transcription.status === 'queued' || analysis.transcription.status === 'processing' ? (
                   <AppText tone="muted" variant="body">
-                    말한 내용을 글로 옮기고 있어요.
+                    {t('말한 내용을 글로 옮기고 있어요.')}
                   </AppText>
                 ) : analysis.transcription.status === 'failed' && !transcript ? (
                   <Notice
                     action={
                       editable && canRetryReportTask(analysis.transcription.error) && analysis.audioKey ? (
                         <Button onPress={() => onRetryTranscription(selected.id)} size="small" variant="secondary">
-                          다시 시도하기
+                          {t('다시 시도하기')}
                         </Button>
                       ) : null
                     }
-                    text={reportAnalysisMessage('answer', analysis.transcription.error?.code)}
+                    text={t(reportAnalysisMessage('answer', analysis.transcription.error?.code))}
                   />
                 ) : text.length === 0 ? (
                   <AppText tone="muted" variant="body">
-                    글로 옮긴 내용이 없어요. ‘내용 고치기’에서 내가 한 말을 직접 적을 수 있어요.
+                    {t('글로 옮긴 내용이 없어요. ‘내용 고치기’에서 내가 한 말을 직접 적을 수 있어요.')}
                   </AppText>
                 ) : (
                   <AppText variant="body">
@@ -482,7 +501,7 @@ function QuestionDetail({
               </View>
             ) : session.feedbackMode === 'ai' ? (
               <AppText tone="muted" variant="body">
-                이 답변에는 녹음이 없어요.
+                {t('이 답변에는 녹음이 없어요.')}
               </AppText>
             ) : null}
 
@@ -494,24 +513,24 @@ function QuestionDetail({
                       action={
                         editable ? (
                           <Button disabled={working} onPress={() => void onRetryEvaluation(selected.id)} size="small" variant="secondary">
-                            고친 내용으로 피드백 받기
+                            {t('고친 내용으로 피드백 받기')}
                           </Button>
                         ) : null
                       }
-                      text="고친 내용은 아직 피드백에 반영되지 않았어요."
+                      text={t('고친 내용은 아직 피드백에 반영되지 않았어요.')}
                     />
                   ) : null}
-                  <StatusBadge label={FIT_COPY[result.fit]} tone={result.fit === 'direct' ? 'positive' : result.fit === 'partial' ? 'warning' : 'neutral'} />
+                  <StatusBadge label={t(FIT_COPY[result.fit])} tone={result.fit === 'direct' ? 'positive' : result.fit === 'partial' ? 'warning' : 'neutral'} />
                   <AppText tone="brand" variant="badge">
-                    다음엔 이렇게 해보세요
+                    {t('다음엔 이렇게 해보세요')}
                   </AppText>
                   <AppText variant="bodyStrong">{clean(conciseReportText(result.nextFocus))}</AppText>
                   {result.coverage.length > 0 ? (
                     <View style={styles.block}>
-                      <AppText variant="itemTitle">질문이 바란 내용</AppText>
+                      <AppText variant="itemTitle">{t('질문이 바란 내용')}</AppText>
                       {result.coverage.map((item) => (
                         <View key={item.point} style={styles.coverageRow}>
-                          <StatusBadge label={COVERAGE_COPY[item.status]} tone={item.status === 'met' ? 'positive' : item.status === 'partial' ? 'warning' : 'neutral'} />
+                          <StatusBadge label={t(COVERAGE_COPY[item.status])} tone={item.status === 'met' ? 'positive' : item.status === 'partial' ? 'warning' : 'neutral'} />
                           <AppText style={styles.flex} variant="body">
                             {clean(item.point)}
                           </AppText>
@@ -522,7 +541,7 @@ function QuestionDetail({
                   {result.strengths.length > 0 ? (
                     <View style={styles.block}>
                       <AppText tone="positive" variant="itemTitle">
-                        잘한 점
+                        {t('잘한 점')}
                       </AppText>
                       {result.strengths.map((item) => (
                         <AppText key={item.point} variant="body">
@@ -535,7 +554,7 @@ function QuestionDetail({
                   {result.missingPoints.length > 0 ? (
                     <View style={styles.block}>
                       <AppText tone="warning" variant="itemTitle">
-                        빠진 내용
+                        {t('빠진 내용')}
                       </AppText>
                       {result.missingPoints.map((point) => (
                         <AppText key={point} variant="body">{`• ${clean(point)}`}</AppText>
@@ -545,7 +564,7 @@ function QuestionDetail({
                   {result.suggestedStructure.length > 0 ? (
                     <View style={styles.block}>
                       <AppText tone="brand" variant="itemTitle">
-                        이렇게 구성해 보세요
+                        {t('이렇게 구성해 보세요')}
                       </AppText>
                       {result.suggestedStructure.map((step, index) => (
                         <AppText key={step} variant="body">{`${index + 1}. ${clean(step)}`}</AppText>
@@ -558,7 +577,7 @@ function QuestionDetail({
                   action={
                     editable && canRetryReportTask(evaluation.error) && transcript && isInterviewTranscriptReadyForFeedback(transcript) ? (
                       <Button disabled={working} onPress={() => void onRetryEvaluation(selected.id)} size="small" variant="secondary">
-                        다시 시도하기
+                        {t('다시 시도하기')}
                       </Button>
                     ) : null
                   }
@@ -569,7 +588,7 @@ function QuestionDetail({
                   action={
                     editable && canRetryReportTask(evaluation.error) ? (
                       <Button disabled={working} onPress={() => void onRetryEvaluation(selected.id)} size="small" variant="secondary">
-                        다시 시도하기
+                        {t('다시 시도하기')}
                       </Button>
                     ) : null
                   }
@@ -577,15 +596,15 @@ function QuestionDetail({
                 />
               ) : evaluation?.status === 'queued' || evaluation?.status === 'processing' ? (
                 <AppText tone="muted" variant="body">
-                  피드백 받는 중
+                  {t('피드백 받는 중')}
                 </AppText>
               ) : evaluation?.status === 'unavailable' ? (
                 <AppText tone="muted" variant="body">
-                  이 답변에는 피드백이 없어요. 위에 남겨둔 ‘내가 한 말’로 답변을 돌아보세요.
+                  {t('이 답변에는 피드백이 없어요. 위에 남겨둔 ‘내가 한 말’로 답변을 돌아보세요.')}
                 </AppText>
               ) : analysis.transcription.status === 'ready' && readiness && readiness !== 'ready' ? (
                 <AppText tone="muted" variant="body">
-                  {reportAnalysisMessage('answer', readiness)}
+                  {t(reportAnalysisMessage('answer', readiness))}
                 </AppText>
               ) : null
             ) : null}
@@ -596,61 +615,61 @@ function QuestionDetail({
       {compare ? (
         <Card style={styles.detailCard}>
           <View style={styles.rowBetween}>
-            <AppText variant="itemTitle">처음 답변과 비교</AppText>
+            <AppText variant="itemTitle">{t('처음 답변과 비교')}</AppText>
             {compare.missingDelta !== null && compare.missingDelta > 0 ? (
-              <StatusBadge label={`빠진 내용 ${compare.missingDelta}개 줄었어요`} tone="positive" />
+              <StatusBadge label={t('빠진 내용 {n}개 줄었어요', { n: compare.missingDelta })} tone="positive" />
             ) : null}
           </View>
           <View style={styles.compare}>
             {[compare.first, compare.last].map((side, index) => (
               <Pressable
-                accessibilityLabel={`${side.attempt.attemptNo}회차 답변 보기`}
+                accessibilityLabel={t('{n}회차 답변 보기', { n: side.attempt.attemptNo })}
                 accessibilityRole="button"
                 key={side.attempt.id}
                 onPress={() => onSelectAttempt(side.attempt.id)}
                 style={({ pressed }) => [styles.compareSide, pressed ? styles.pressed : null]}
               >
                 <View style={styles.rowBetween}>
-                  <AppText tone="muted" variant="badge">{`${index === 0 ? '처음' : '최근'} ${side.attempt.attemptNo}회차`}</AppText>
+                  <AppText tone="muted" variant="badge">{t(index === 0 ? '처음 {n}회차' : '최근 {n}회차', { n: side.attempt.attemptNo })}</AppText>
                   <AppText tabular tone="muted" variant="badge">
-                    {formatAnswerDuration(side.attempt.durationMs)}
+                    {formatAnswerDuration(side.attempt.durationMs, locale)}
                   </AppText>
                 </View>
-                {side.missing !== null ? <AppText variant="meta">{`빠진 내용 ${side.missing}개`}</AppText> : null}
+                {side.missing !== null ? <AppText variant="meta">{t('빠진 내용 {n}개', { n: side.missing })}</AppText> : null}
                 <AppText numberOfLines={3} variant="meta">
-                  {side.transcript || '전사문이 아직 없어요.'}
+                  {side.transcript || t('전사문이 아직 없어요.')}
                 </AppText>
               </Pressable>
             ))}
           </View>
-          {compare.last.nextFocus ? <AppText tone="muted" variant="meta">{`다음 연습: ${clean(compare.last.nextFocus)}`}</AppText> : null}
+          {compare.last.nextFocus ? <AppText tone="muted" variant="meta">{t('다음 연습: {text}', { text: clean(compare.last.nextFocus) })}</AppText> : null}
         </Card>
       ) : null}
 
       {editable ? (
         <Card style={styles.detailCard}>
           <TextArea
-            hint="다음에 해보고 싶은 것을 적어보세요. 비워둬도 괜찮아요."
-            label="다음 연습 메모"
+            hint={t('다음에 해보고 싶은 것을 적어보세요. 비워둬도 괜찮아요.')}
+            label={t('다음 연습 메모')}
             maxLength={500}
             minHeight={80}
             onBlur={() => {
               if (draftNote !== note) void onSaveNote(draftNote).then(() => onMessage('메모를 저장했어요.')).catch(() => onMessage('메모를 저장하지 못했어요.'));
             }}
             onChangeText={setDraftNote}
-            placeholder="예: 지원한 이유부터 말하고, 내 경험 하나 덧붙이기"
+            placeholder={t('예: 지원한 이유부터 말하고, 내 경험 하나 덧붙이기')}
             value={draftNote}
           />
           {selected ? (
             <Button leftIcon={<ArrowRight color={colors.text} size={iconSizes.inline} />} onPress={onRetryQuestion} variant="secondary">
-              이 질문 다시 연습하기
+              {t('이 질문 다시 연습하기')}
             </Button>
           ) : null}
         </Card>
       ) : note ? (
         <Card style={styles.detailCard} variant="soft">
           <AppText tone="muted" variant="badge">
-            다음 연습 메모
+            {t('다음 연습 메모')}
           </AppText>
           <AppText variant="body">{note}</AppText>
         </Card>

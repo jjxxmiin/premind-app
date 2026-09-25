@@ -22,6 +22,7 @@ import type { InterviewAttempt, InterviewQuestion, InterviewSession } from '@/fe
 import { refreshInterviewAccount } from '@/features/interview/use-interview-account';
 import { useAnswerRecorder } from '@/features/interview/use-answer-recorder';
 import { formatClock } from '@/features/interview/view-model';
+import { useT } from '@/lib/i18n';
 import type { RecordedAnswer } from '@/features/interview/answer-recorder.types';
 import { decorative } from '@/lib/a11y';
 import { useLayout } from '@/lib/layout';
@@ -48,6 +49,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * 요금은 첫 실제 답변을 시작할 때만 예약하고 확정한다(practice-charge).
  */
 export default function InterviewRoomScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { breakpoint, gutter } = useLayout();
   const recorder = useAnswerRecorder();
@@ -387,9 +389,9 @@ export default function InterviewRoomScreen() {
     return (
       <Screen background="stage" centered>
         <Notice
-          actions={<Button onPress={() => router.replace(INTERVIEW_HOME)} variant="primary">면접 연습으로 돌아가기</Button>}
-          description="기록이 지워졌거나 다른 기기에서 만든 연습이에요."
-          title="연습을 찾지 못했어요."
+          actions={<Button onPress={() => router.replace(INTERVIEW_HOME)} variant="primary">{t('면접 연습으로 돌아가기')}</Button>}
+          description={t('기록이 지워졌거나 다른 기기에서 만든 연습이에요.')}
+          title={t('연습을 찾지 못했어요.')}
         />
       </Screen>
     );
@@ -399,7 +401,7 @@ export default function InterviewRoomScreen() {
     return (
       <Screen background="stage" centered>
         <AppText tone="inverse" variant="meta">
-          면접실 여는 중...
+          {t('면접실 여는 중...')}
         </AppText>
       </Screen>
     );
@@ -413,33 +415,33 @@ export default function InterviewRoomScreen() {
             <>
               {planBlocked ? (
                 <Button onPress={() => router.push('/subscription')} variant="brand">
-                  요금제 보기
+                  {t('요금제 보기')}
                 </Button>
               ) : stage === 'device_error' ? (
                 <Button onPress={() => void connect()} variant="brand">
-                  다시 연결
+                  {t('다시 연결')}
                 </Button>
               ) : null}
               {(stage === 'blocked' || stage === 'device_error' || planBlocked) && session?.feedbackMode === 'ai' ? (
                 <Button onPress={() => void continueBasic()} variant="secondary">
-                  기본 연습으로 계속
+                  {t('기본 연습으로 계속')}
                 </Button>
               ) : null}
               <Button onPress={() => void exitRoom()} variant="ghost" textStyle={styles.inverseLink}>
-                {retrying ? '연습 기록으로 돌아가기' : '연습 준비로 돌아가기'}
+                {retrying ? t('연습 기록으로 돌아가기') : t('연습 준비로 돌아가기')}
               </Button>
             </>
           }
-          description={message ?? undefined}
-          title={
+          description={message ? t(message) : undefined}
+          title={t(
             stage === 'blocked'
               ? 'AI 피드백 연습을 시작할 수 없어요.'
               : stage === 'device_error'
                 ? '녹음을 이어갈 수 없어요.'
                 : planBlocked
                   ? 'AI 피드백 연습 횟수가 부족해요.'
-                  : '면접실을 열지 못했어요.'
-          }
+                  : '면접실을 열지 못했어요.',
+          )}
         />
       </Screen>
     );
@@ -448,7 +450,7 @@ export default function InterviewRoomScreen() {
   const thinking = stage === 'running' && phase === 'thinking';
   const answering = stage === 'running' && phase === 'answering';
   const overtime = answering && clockMs < 0;
-  const progressLabel = retrying ? `질문 ${questionIndex + 1} 다시 답변` : `${questionIndex + 1} / ${questions.length}`;
+  const progressLabel = retrying ? t('질문 {n} 다시 답변', { n: questionIndex + 1 }) : `${questionIndex + 1} / ${questions.length}`;
   const wide = breakpoint !== 'compact';
 
   return (
@@ -456,13 +458,13 @@ export default function InterviewRoomScreen() {
       <View style={[styles.top, { paddingHorizontal: gutter }]}>
         <View style={styles.flex}>
           <AppText numberOfLines={1} style={styles.inverseMuted} variant="meta">
-            {source?.title}
+            {source ? t(source.title) : null}
           </AppText>
           <AppText tabular tone="inverse" variant="itemTitle">
             {progressLabel}
           </AppText>
         </View>
-        <IconButton icon={X} label="면접실 나가기" onPress={leave} variant="inverse" />
+        <IconButton icon={X} label={t('면접실 나가기')} onPress={leave} variant="inverse" />
       </View>
       {!retrying && questions.length > 0 ? (
         <View style={{ paddingHorizontal: gutter }}>
@@ -481,11 +483,11 @@ export default function InterviewRoomScreen() {
             {stage === 'greeting' || stage === 'connecting' ? (
               <View style={styles.block}>
                 <AppText tone="inverse" variant="heroTitle">
-                  {retrying ? '이 질문을 다시 답해 볼게요.' : firstEntry ? '준비되면 시작해요.' : '이어서 연습해요.'}
+                  {t(retrying ? '이 질문을 다시 답해 볼게요.' : firstEntry ? '준비되면 시작해요.' : '이어서 연습해요.')}
                 </AppText>
                 <AppText style={styles.inverseMuted} variant="body">
-                  {retrying ? GREETING_RETRY : firstEntry ? GREETING_FIRST : GREETING_RESUME}
-                  {ai ? ' 답변은 녹음해서 글로 옮기고, 녹음은 바로 지워요.' : ''}
+                  {t(retrying ? GREETING_RETRY : firstEntry ? GREETING_FIRST : GREETING_RESUME)}
+                  {ai ? t(' 답변은 녹음해서 글로 옮기고, 녹음은 바로 지워요.') : ''}
                 </AppText>
                 <Button
                   leftIcon={<Mic color={colors.textInverse} size={iconSizes.inline} />}
@@ -494,63 +496,65 @@ export default function InterviewRoomScreen() {
                   size="large"
                   variant="brand"
                 >
-                  {retrying ? '다시 답변 시작' : firstEntry ? '연습 시작' : '이어서 시작'}
+                  {t(retrying ? '다시 답변 시작' : firstEntry ? '연습 시작' : '이어서 시작')}
                 </Button>
               </View>
             ) : stage === 'complete' ? (
               <View style={styles.block}>
                 <CheckCircle2 {...decorative} color={colors.positive} size={40} />
                 <AppText tone="inverse" variant="heroTitle">
-                  연습을 마쳤어요.
+                  {t('연습을 마쳤어요.')}
                 </AppText>
                 <AppText style={styles.inverseMuted} variant="body">
-                  답변을 정리하고 있어요. 저장이 끝나면 바로 다음 화면으로 넘어가요.
+                  {t('답변을 정리하고 있어요. 저장이 끝나면 바로 다음 화면으로 넘어가요.')}
                 </AppText>
               </View>
             ) : (
               <View style={styles.block}>
                 <AppText style={styles.inverseMuted} variant="badge">
-                  {question?.kind === 'follow_up' ? '꼬리질문' : `질문 ${questionIndex + 1}`}
+                  {question?.kind === 'follow_up' ? t('꼬리질문') : t('질문 {n}', { n: questionIndex + 1 })}
                 </AppText>
                 <AppText accessibilityRole="header" tone="inverse" variant="heroTitle">
-                  {question?.text}
+                  {question ? t(question.text) : null}
                 </AppText>
                 {question?.sourceQuote ? (
                   <AppText numberOfLines={2} style={styles.inverseMuted} variant="meta">
-                    {`자소서: ${question.sourceQuote}`}
+                    {t('자소서: {quote}', { quote: question.sourceQuote })}
                   </AppText>
                 ) : null}
 
                 <View style={styles.clockRow}>
                   {thinking || answering ? (
                     <View style={[styles.clock, answering ? styles.clockLive : null, overtime ? styles.clockOver : null]}>
-                      <AppText accessibilityLabel={thinking ? `생각 시간 ${Math.ceil(clockMs / 1000)}초 남음` : overtime ? `권장 시간 ${Math.floor(-clockMs / 1000)}초 초과` : `답변 시간 ${Math.ceil(clockMs / 1000)}초 남음`} tabular tone="inverse" variant="display">
+                      <AppText accessibilityLabel={thinking ? t('생각 시간 {n}초 남음', { n: Math.ceil(clockMs / 1000) }) : overtime ? t('권장 시간 {n}초 초과', { n: Math.floor(-clockMs / 1000) }) : t('답변 시간 {n}초 남음', { n: Math.ceil(clockMs / 1000) })} tabular tone="inverse" variant="display">
                         {formatClock(clockMs)}
                       </AppText>
                       <AppText style={styles.inverseMuted} variant="meta">
-                        {thinking ? '생각 시간' : overtime ? '권장 시간이 지났어요. 더 말해도 괜찮아요.' : ai ? '녹음 중' : '답변 중'}
+                        {t(thinking ? '생각 시간' : overtime ? '권장 시간이 지났어요. 더 말해도 괜찮아요.' : ai ? '녹음 중' : '답변 중')}
                       </AppText>
                     </View>
                   ) : (
                     <AppText style={styles.inverseMuted} variant="body">
-                      {phase === 'saving'
-                        ? ai
-                          ? '답변을 저장하고 있어요.'
-                          : '답변 시간을 기록하고 있어요.'
-                        : phase === 'next'
-                          ? '다음 질문으로 넘어갈게요.'
-                          : '질문을 확인해 주세요. 잠시 후 생각 시간이 시작돼요.'}
+                      {t(
+                        phase === 'saving'
+                          ? ai
+                            ? '답변을 저장하고 있어요.'
+                            : '답변 시간을 기록하고 있어요.'
+                          : phase === 'next'
+                            ? '다음 질문으로 넘어갈게요.'
+                            : '질문을 확인해 주세요. 잠시 후 생각 시간이 시작돼요.',
+                      )}
                     </AppText>
                   )}
                 </View>
 
                 {thinking ? (
                   <Button leftIcon={<Mic color={colors.textInverse} size={iconSizes.inline} />} onPress={startAnswer} size="large" variant="brand">
-                    바로 답하기
+                    {t('바로 답하기')}
                   </Button>
                 ) : answering ? (
                   <Button leftIcon={<Square color={colors.text} size={iconSizes.inline} />} onPress={endAnswer} size="large" variant="secondary">
-                    {finalAnswer ? '답변 마치고 끝내기' : '답변 마치기'}
+                    {t(finalAnswer ? '답변 마치고 끝내기' : '답변 마치기')}
                   </Button>
                 ) : null}
               </View>
@@ -560,17 +564,17 @@ export default function InterviewRoomScreen() {
       </View>
 
       <Dialog
-        cancel={{ label: '계속 답하기', onPress: () => setLeaveOpen(false) }}
+        cancel={{ label: t('계속 답하기'), onPress: () => setLeaveOpen(false) }}
         confirm={{
-          label: '나가기',
+          label: t('나가기'),
           onPress: () => {
             setLeaveOpen(false);
             void exitRoom();
           },
         }}
-        description="지금 답변은 저장하지 않아요. 앞에서 저장한 답변은 그대로 남아요."
+        description={t('지금 답변은 저장하지 않아요. 앞에서 저장한 답변은 그대로 남아요.')}
         onRequestClose={() => setLeaveOpen(false)}
-        title="면접실에서 나갈까요?"
+        title={t('면접실에서 나갈까요?')}
         visible={leaveOpen}
       />
     </Screen>

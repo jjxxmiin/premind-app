@@ -23,11 +23,13 @@ import { computePracticeStats } from '@/features/interview/practice-stats';
 import { useInterviewSessions } from '@/features/interview/use-interview-sessions';
 import { formatAnswerDuration, lastActivity, sessionDestination } from '@/features/interview/view-model';
 import { decorative } from '@/lib/a11y';
+import { useLocale, useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 import { INTERVIEW_HOME } from '@/features/interview/routes';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+const WEEKDAYS_EN = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 /**
  * 연습 기록. 멈춘 연습은 이어서 하고, 끝난 연습은 답변과 피드백을 다시 본다.
@@ -35,6 +37,8 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
  * 남긴 기록도 함께 보이고, 그 기록은 읽기만 한다.
  */
 export default function InterviewHistoryScreen() {
+  const t = useT();
+  const locale = useLocale();
   const { breakpoint, gutter } = useLayout();
   const { sessions } = useInterviewSessions();
   const [remote, setRemote] = useState<BackupMeta[] | null>(null);
@@ -82,12 +86,12 @@ export default function InterviewHistoryScreen() {
   const statsBlock = stats ? (
     <Card style={styles.stats}>
       <View style={styles.statRow}>
-        <Stat label="이번 주 연습" value={`${stats.weekPractices}회`} />
-        <Stat label="답변" value={`${stats.weekAnswers}개`} />
-        <Stat label="말한 시간" value={formatAnswerDuration(stats.weekSpeakingMs)} />
-        <Stat label="연속" value={`${stats.streakDays}일`} />
+        <Stat label={t('이번 주 연습')} value={t.ctx('stat', '{n}회', { n: stats.weekPractices })} />
+        <Stat label={t('답변')} value={t.ctx('stat', '{n}개', { n: stats.weekAnswers })} />
+        <Stat label={t('말한 시간')} value={formatAnswerDuration(stats.weekSpeakingMs, locale)} />
+        <Stat label={t('연속')} value={t.ctx('stat', '{n}일', { n: stats.streakDays })} />
       </View>
-      <View accessibilityLabel={`최근 7일 답변 수 ${stats.week.map((day) => day.answers).join(', ')}`} style={styles.bars}>
+      <View accessibilityLabel={t('최근 7일 답변 수 {list}', { list: stats.week.map((day) => day.answers).join(', ') })} style={styles.bars}>
         {stats.week.map((day) => {
           const date = new Date(`${day.date}T00:00:00`);
           return (
@@ -96,7 +100,7 @@ export default function InterviewHistoryScreen() {
                 <View style={[styles.bar, { height: `${Math.round((day.answers / maxDay) * 100)}%` }, day.answers ? null : styles.barEmpty]} />
               </View>
               <AppText tone="muted" variant="badge">
-                {WEEKDAYS[date.getDay()]}
+                {(locale === 'en' ? WEEKDAYS_EN : WEEKDAYS)[date.getDay()]}
               </AppText>
             </View>
           );
@@ -113,26 +117,26 @@ export default function InterviewHistoryScreen() {
         <CalendarDays {...decorative} color={colors.brand} size={iconSizes.section} />
         <View style={styles.flex}>
           <AppText tone="muted" variant="badge">
-            면접 날짜
+            {t('면접 날짜')}
           </AppText>
           <AppText variant="itemTitle">
-            {days === null ? '면접 날짜를 넣으면 오늘 할 만큼을 알려 드려요' : days > 0 ? `D-${days}, ${plan?.stage}` : plan?.stage}
+            {days === null ? t('면접 날짜를 넣으면 오늘 할 만큼을 알려 드려요') : days > 0 ? `D-${days}, ${t(plan?.stage ?? '')}` : t(plan?.stage ?? '')}
           </AppText>
         </View>
       </View>
       {plan && days !== null && days >= 0 ? (
-        <AppText tone="muted" variant="meta">{`오늘은 ${plan.goal}문항 말하기. ${plan.tip}`}</AppText>
+        <AppText tone="muted" variant="meta">{t('오늘은 {n}문항 말하기. {tip}', { n: plan.goal, tip: t(plan.tip) })}</AppText>
       ) : plan ? (
         <AppText tone="muted" variant="meta">
-          {plan.tip}
+          {t(plan.tip)}
         </AppText>
       ) : null}
       {editingDay ? (
         <View style={styles.block}>
-          <AuthField error={dayError} keyboardType="numbers-and-punctuation" label="면접 날짜" maxLength={10} onChangeText={setDayInput} placeholder="2026-10-15" value={dayInput} />
+          <AuthField error={dayError ? t(dayError) : dayError} keyboardType="numbers-and-punctuation" label={t('면접 날짜')} maxLength={10} onChangeText={setDayInput} placeholder="2026-10-15" value={dayInput} />
           <View style={styles.inline}>
             <Button variant="primary" onPress={() => void saveDay()} size="small">
-              저장
+              {t('저장')}
             </Button>
             {dday ? (
               <Button
@@ -143,7 +147,7 @@ export default function InterviewHistoryScreen() {
                 size="small"
                 variant="ghost"
               >
-                날짜 지우기
+                {t('날짜 지우기')}
               </Button>
             ) : null}
           </View>
@@ -157,11 +161,11 @@ export default function InterviewHistoryScreen() {
           size="small"
           variant="secondary"
         >
-          {dday ? '날짜 바꾸기' : '날짜 넣기'}
+          {t(dday ? '날짜 바꾸기' : '날짜 넣기')}
         </Button>
       )}
       <AppText tone="faint" variant="badge">
-        날짜는 이 기기에만 저장해요.
+        {t('날짜는 이 기기에만 저장해요.')}
       </AppText>
     </Card>
   );
@@ -170,11 +174,11 @@ export default function InterviewHistoryScreen() {
 
   return (
     <Screen padded={false}>
-      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title="연습 기록" />
+      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title={t('연습 기록')} />
       <ScrollView style={styles.scroll}>
         <View style={[styles.content, { paddingHorizontal: gutter }]}>
           <AppText tone="muted" variant="body">
-            멈춘 연습은 이어서 하고, 끝난 연습은 답변과 피드백을 다시 확인하세요.
+            {t('멈춘 연습은 이어서 하고, 끝난 연습은 답변과 피드백을 다시 확인하세요.')}
           </AppText>
           <View style={[styles.top, breakpoint !== 'compact' ? styles.topRow : null]}>
             <View style={styles.topItem}>{statsBlock}</View>
@@ -183,17 +187,17 @@ export default function InterviewHistoryScreen() {
 
           {empty ? (
             <EmptyState
-              actionLabel="새 연습 시작하기"
-              description="질문을 준비하고 첫 면접 연습을 시작해 보세요."
+              actionLabel={t('새 연습 시작하기')}
+              description={t('질문을 준비하고 첫 면접 연습을 시작해 보세요.')}
               icon={MessagesSquare}
               onAction={() => router.replace(INTERVIEW_HOME)}
-              title="아직 저장된 연습 기록이 없어요."
+              title={t('아직 저장된 연습 기록이 없어요.')}
             />
           ) : null}
 
           {active.length > 0 ? (
             <View style={styles.section}>
-              <SectionHeader title="이어할 연습" />
+              <SectionHeader title={t('이어할 연습')} />
               <Card padding={false}>
                 {active.map((session, index) => (
                   <InterviewSessionRow key={session.id} last={index === active.length - 1} onPress={() => router.push(sessionDestination(session))} session={session} />
@@ -204,7 +208,7 @@ export default function InterviewHistoryScreen() {
 
           {done.length > 0 ? (
             <View style={styles.section}>
-              <SectionHeader title="완료한 연습" />
+              <SectionHeader title={t('완료한 연습')} />
               <Card padding={false}>
                 {done.map((session, index) => (
                   <InterviewSessionRow key={session.id} last={index === done.length - 1} onPress={() => router.push(sessionDestination(session))} session={session} />
@@ -215,7 +219,7 @@ export default function InterviewHistoryScreen() {
 
           {remote && remote.length > 0 ? (
             <View style={styles.section}>
-              <SectionHeader description="다른 기기나 예전 면접 사이트에서 남긴 기록이에요. 녹음 없이 글만 볼 수 있어요." title="다른 기기의 기록" />
+              <SectionHeader description={t('다른 기기나 예전 면접 사이트에서 남긴 기록이에요. 녹음 없이 글만 볼 수 있어요.')} title={t('다른 기기의 기록')} />
               <Card padding={false}>
                 {remote.map((backup, index) => (
                   <RemoteSessionRow
@@ -231,7 +235,7 @@ export default function InterviewHistoryScreen() {
           ) : null}
 
           <AppText tone="faint" variant="badge">
-            녹음과 영상은 이 기기에만 저장돼요. 연습의 글(질문, 내가 한 말, 피드백, 메모)은 계정에 보관돼 다른 기기에서도 볼 수 있어요.
+            {t('녹음과 영상은 이 기기에만 저장돼요. 연습의 글(질문, 내가 한 말, 피드백, 메모)은 계정에 보관돼 다른 기기에서도 볼 수 있어요.')}
           </AppText>
         </View>
       </ScrollView>

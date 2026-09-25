@@ -3,10 +3,12 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui';
 import { interviewMedia } from '@/features/interview/interview-media';
+import { useT } from '@/lib/i18n';
 import { colors, radii, spacing } from '@/theme/tokens';
 
 /** Plays back an answer's camera recording from this browser's storage. */
 export function RecordedVideo({ mediaKey }: { mediaKey: string }) {
+  const t = useT();
   const [uri, setUri] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     let url: string | null = null;
@@ -24,7 +26,7 @@ export function RecordedVideo({ mediaKey }: { mediaKey: string }) {
   if (!uri) {
     return (
       <AppText tone="muted" variant="meta">
-        이 답변의 녹화본은 이 브라우저에 없어요.
+        {t('이 답변의 녹화본은 이 브라우저에 없어요.')}
       </AppText>
     );
   }
