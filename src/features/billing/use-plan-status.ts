@@ -4,6 +4,7 @@ import { apiClient, hasConfiguredApi } from '@/services/api/client';
 import { isDemoSession, sessionManager } from '@/services/api/session-manager';
 import { useAppStore } from '@/state/app-store';
 import type { PlanId, PlanUsage } from '@/types';
+import type { AppLocale } from '@/lib/i18n/core';
 
 export interface PlanStatus {
   plan: PlanId;
@@ -88,12 +89,14 @@ export function usePlanStatus(): PlanStatus {
   return { ...FREE, loading: true, refresh };
 }
 
-export function planLabel(plan: PlanId): string {
+export function planLabel(plan: PlanId, locale: AppLocale = 'ko'): string {
+  if (locale === 'en') return plan === 'standard' ? 'Standard' : 'Free';
   return plan === 'standard' ? '스탠다드' : '무료';
 }
 
 /** "이번 달 37분 / 120분" for a settings row; null when there is no usage. */
-export function usageLine(usage: PlanUsage | null): string | null {
+export function usageLine(usage: PlanUsage | null, locale: AppLocale = 'ko'): string | null {
   if (!usage) return null;
+  if (locale === 'en') return `This month ${usage.minutes_used} / ${usage.minutes_limit} min`;
   return `이번 달 ${usage.minutes_used}분 / ${usage.minutes_limit}분`;
 }

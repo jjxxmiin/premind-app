@@ -27,6 +27,7 @@ import { hasConfiguredApi } from '@/services/api/client';
 import { useAppStore } from '@/state/app-store';
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
 import { peekReturnTo, returnsToInterview } from '@/lib/return-to';
+import { useT } from '@/lib/i18n';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const serverConfigured = hasConfiguredApi();
@@ -42,6 +43,7 @@ const demoOffered = shouldOfferDemo({
  * competes with the real thing.
  */
 export default function LoginScreen() {
+  const t = useT();
   const { clearError, error, login, loginForDevelopment, session } = useAppStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -126,19 +128,19 @@ export default function LoginScreen() {
               {toInterview ? (
                 <>
                   <AppText align="center" variant="heroTitle">
-                    면접 연습을{'\n'}이어서 시작해요
+                    {t('면접 연습을\n이어서 시작해요')}
                   </AppText>
                   <AppText align="center" tone="muted" variant="body">
-                    PREMIND 계정으로 로그인하면 면접 연습으로 바로 가요
+                    {t('PREMIND 계정으로 로그인하면 면접 연습으로 바로 가요')}
                   </AppText>
                 </>
               ) : (
                 <>
                   <AppText align="center" variant="heroTitle">
-                    강의를 담기만 하면{'\n'}복습이 준비돼요
+                    {t('강의를 담기만 하면\n복습이 준비돼요')}
                   </AppText>
                   <AppText align="center" tone="muted" variant="body">
-                    녹음 한 번으로 대본, 요약, 마인드맵, 문제까지
+                    {t('녹음 한 번으로 대본, 요약, 마인드맵, 문제까지')}
                   </AppText>
                 </>
               )}
@@ -158,7 +160,7 @@ export default function LoginScreen() {
               />
             </View>
 
-            <AuthForm accessibilityLabel="PREMIND 로그인" onSubmit={() => void handleLogin()}>
+            <AuthForm accessibilityLabel={t('PREMIND 로그인')} onSubmit={() => void handleLogin()}>
               <View style={styles.form}>
                 {displayedError ? (
                   <View
@@ -167,7 +169,7 @@ export default function LoginScreen() {
                     style={styles.errorBox}
                   >
                     <AppText tone="negative" variant="meta">
-                      {displayedError}
+                      {t(displayedError)}
                     </AppText>
                   </View>
                 ) : null}
@@ -177,14 +179,14 @@ export default function LoginScreen() {
                   autoComplete="email"
                   editable={!isBusy}
                   keyboardType="email-address"
-                  label="이메일"
+                  label={t('이메일')}
                   onChangeText={(value) => {
                     setEmail(value);
                     setFormError(null);
                     clearError();
                   }}
                   onSubmitEditing={() => passwordInputRef.current?.focus()}
-                  placeholder="이메일을 입력해 주세요"
+                  placeholder={t('이메일을 입력해 주세요')}
                   returnKeyType="next"
                   textContentType="emailAddress"
                   value={email}
@@ -195,7 +197,7 @@ export default function LoginScreen() {
                   autoComplete="current-password"
                   editable={!isBusy}
                   inputRef={passwordInputRef}
-                  label="비밀번호"
+                  label={t('비밀번호')}
                   onChangeText={(value) => {
                     setPassword(value);
                     setFormError(null);
@@ -204,7 +206,7 @@ export default function LoginScreen() {
                   onSubmitEditing={
                     Platform.OS === 'web' ? undefined : () => void handleLogin()
                   }
-                  placeholder="비밀번호를 입력해 주세요"
+                  placeholder={t('비밀번호를 입력해 주세요')}
                   returnKeyType="done"
                   secureTextEntry={!passwordVisible}
                   textContentType="password"
@@ -212,7 +214,7 @@ export default function LoginScreen() {
                     <IconButton
                       disabled={isBusy}
                       icon={passwordVisible ? EyeOff : Eye}
-                      label={passwordVisible ? '비밀번호 숨기기' : '비밀번호 표시'}
+                      label={t(passwordVisible ? '비밀번호 숨기기' : '비밀번호 표시')}
                       onPress={() => setPasswordVisible((visible) => !visible)}
                     />
                   }
@@ -228,7 +230,7 @@ export default function LoginScreen() {
                   style={styles.submit}
                   variant="primary"
                 >
-                  로그인
+                  {t('로그인')}
                 </Button>
               </View>
             </AuthForm>
@@ -236,7 +238,7 @@ export default function LoginScreen() {
             <View style={styles.links}>
               <TextLink
                 disabled={isBusy}
-                label="회원가입"
+                label={t('회원가입')}
                 onPress={() => {
                   clearError();
                   router.push('/signup');
@@ -245,7 +247,7 @@ export default function LoginScreen() {
               <View style={styles.linkDivider} />
               <TextLink
                 disabled
-                label="비밀번호 찾기"
+                label={t('비밀번호 찾기')}
                 onPress={() => undefined}
               />
             </View>
@@ -256,7 +258,7 @@ export default function LoginScreen() {
               <View style={styles.divider}>
                 <View style={styles.dividerLine} />
                 <AppText tone="faint" variant="badge">
-                  또는
+                  {t('또는')}
                 </AppText>
                 <View style={styles.dividerLine} />
               </View>
@@ -269,18 +271,20 @@ export default function LoginScreen() {
                 size="large"
                 variant="secondary"
               >
-                데모로 둘러보기
+                {t('데모로 둘러보기')}
               </Button>
               <AppText align="center" tone="faint" variant="badge">
-                {serverConfigured
-                  ? '예시 자료로 먼저 둘러볼 수 있어요'
-                  : '이 빌드에서는 데모로만 둘러볼 수 있어요'}
+                {t(
+                  serverConfigured
+                    ? '예시 자료로 먼저 둘러볼 수 있어요'
+                    : '이 빌드에서는 데모로만 둘러볼 수 있어요',
+                )}
               </AppText>
             </AnimatedReveal>
           ) : null}
 
           <AppText align="center" style={styles.legal} tone="faint" variant="badge">
-            로그인하면 PREMIND 이용약관과 개인정보 처리방침에 동의한 것으로 봐요
+            {t('로그인하면 PREMIND 이용약관과 개인정보 처리방침에 동의한 것으로 봐요')}
           </AppText>
         </View>
       </KeyboardAvoidingView>

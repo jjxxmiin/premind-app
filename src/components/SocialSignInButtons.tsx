@@ -11,6 +11,7 @@ import {
 } from '@/features/auth/use-social-sign-in';
 import type { AuthProvider } from '@/services/api/client';
 import { decorative } from '@/lib/a11y';
+import { useT } from '@/lib/i18n';
 import { colors, radii, spacing } from '@/theme/tokens';
 
 const googleLogo = require('../../assets/social/google-g.png');
@@ -53,6 +54,7 @@ export function SocialSignInButtons({
   onBusyChange,
   onError,
 }: SocialSignInButtonsProps) {
+  const t = useT();
   const available = useAvailableProviders();
   if (available.length === 0) {
     return null;
@@ -63,14 +65,14 @@ export function SocialSignInButtons({
       <View style={styles.divider}>
         <View style={styles.line} />
         <AppText tone="faint" variant="badge">
-          간편 로그인
+          {t('간편 로그인')}
         </AppText>
         <View style={styles.line} />
       </View>
 
       {disabled ? (
         <AppText align="center" tone="muted" variant="meta">
-          필수 약관에 동의하면 간편 가입을 사용할 수 있어요.
+          {t('필수 약관에 동의하면 간편 가입을 사용할 수 있어요.')}
         </AppText>
       ) : null}
 
@@ -127,8 +129,10 @@ function ProviderButton({
   provider: AuthProvider;
   signIn: () => Promise<void>;
 }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const look = presentation[provider];
+  const label = t(look.label);
 
   const start = async () => {
     if (disabled || busy) return;
@@ -154,7 +158,7 @@ function ProviderButton({
   if (provider === 'kakao') {
     return (
       <Pressable
-        accessibilityLabel={look.label}
+        accessibilityLabel={label}
         accessibilityRole="button"
         accessibilityState={{ busy, disabled: busy || disabled }}
         disabled={busy || disabled}
@@ -202,7 +206,7 @@ function ProviderButton({
       textStyle={{ color: look.text }}
       variant="secondary"
     >
-      {look.label}
+      {label}
     </Button>
   );
 }

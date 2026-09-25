@@ -28,6 +28,7 @@ import { ApiError, hasConfiguredApi } from '@/services/api/client';
 import { useAppStore } from '@/state/app-store';
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
 import { peekReturnTo } from '@/lib/return-to';
+import { useT } from '@/lib/i18n';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const TERMS_URL = 'https://premind.co.kr/terms';
@@ -55,6 +56,7 @@ type FieldName = 'name' | 'email' | 'password' | 'confirm';
  * once every field is valid and the required terms are agreed.
  */
 export default function SignupScreen() {
+  const t = useT();
   const { clearError, error: storeError, register, session } = useAppStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -117,12 +119,15 @@ export default function SignupScreen() {
     }
   };
 
-  const shownError = (field: FieldName) =>
-    serverError?.field === field
-      ? serverError.message
-      : touched[field]
-        ? errors[field]
-        : undefined;
+  const shownError = (field: FieldName) => {
+    const message =
+      serverError?.field === field
+        ? serverError.message
+        : touched[field]
+          ? errors[field]
+          : undefined;
+    return message === undefined ? undefined : t(message);
+  };
 
   const setAllAgreed = (value: boolean) => {
     setAgreedTerms(value);
@@ -195,7 +200,7 @@ export default function SignupScreen() {
       scroll
       scrollViewProps={{ contentInsetAdjustmentBehavior: 'automatic' }}
     >
-      <AppHeader onBack={returnToLogin} title="회원가입" />
+      <AppHeader onBack={returnToLogin} title={t('회원가입')} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'web' ? undefined : 'padding'}
@@ -203,11 +208,11 @@ export default function SignupScreen() {
       >
         <View style={styles.container}>
           <AppText accessibilityRole="header" variant="heroTitle">
-            가입 정보를{'\n'}입력해 주세요
+            {t('가입 정보를\n입력해 주세요')}
           </AppText>
 
           <AuthForm
-            accessibilityLabel="PREMIND 회원가입"
+            accessibilityLabel={t('PREMIND 회원가입')}
             onSubmit={() => void handleRegister()}
             style={styles.formFlow}
           >
@@ -217,7 +222,7 @@ export default function SignupScreen() {
                 editable={!busy}
                 error={shownError('name')}
                 inputRef={nameInputRef}
-                label="이름"
+                label={t('이름')}
                 onBlur={() => setTouched((state) => ({ ...state, name: true }))}
                 onChangeText={(value) => {
                   setName(value);
@@ -225,7 +230,7 @@ export default function SignupScreen() {
                   clearError();
                 }}
                 onSubmitEditing={() => emailInputRef.current?.focus()}
-                placeholder="이름을 입력해 주세요"
+                placeholder={t('이름을 입력해 주세요')}
                 returnKeyType="next"
                 textContentType="name"
                 value={name}
@@ -239,7 +244,7 @@ export default function SignupScreen() {
                 error={shownError('email')}
                 inputRef={emailInputRef}
                 keyboardType="email-address"
-                label="이메일"
+                label={t('이메일')}
                 onBlur={() => setTouched((state) => ({ ...state, email: true }))}
                 onChangeText={(value) => {
                   setEmail(value);
@@ -260,7 +265,7 @@ export default function SignupScreen() {
                   editable={!busy}
                   error={shownError('password')}
                   inputRef={passwordInputRef}
-                  label="비밀번호"
+                  label={t('비밀번호')}
                   onBlur={() => setTouched((state) => ({ ...state, password: true }))}
                   onChangeText={(value) => {
                     setPassword(value);
@@ -268,7 +273,7 @@ export default function SignupScreen() {
                     clearError();
                   }}
                   onSubmitEditing={() => confirmInputRef.current?.focus()}
-                  placeholder="비밀번호를 입력해 주세요"
+                  placeholder={t('비밀번호를 입력해 주세요')}
                   returnKeyType="next"
                   secureTextEntry={!passwordVisible}
                   textContentType="newPassword"
@@ -276,7 +281,7 @@ export default function SignupScreen() {
                     <IconButton
                       disabled={busy}
                       icon={passwordVisible ? EyeOff : Eye}
-                      label={passwordVisible ? '비밀번호 숨기기' : '비밀번호 표시'}
+                      label={t(passwordVisible ? '비밀번호 숨기기' : '비밀번호 표시')}
                       onPress={() => setPasswordVisible((visible) => !visible)}
                     />
                   }
@@ -287,7 +292,7 @@ export default function SignupScreen() {
                   {passwordRules.map((rule) => (
                     <StatusBadge
                       key={rule.id}
-                      label={rule.label}
+                      label={t.ctx('password', rule.label)}
                       tone={rule.test(password) ? 'positive' : 'neutral'}
                     />
                   ))}
@@ -300,7 +305,7 @@ export default function SignupScreen() {
                 editable={!busy}
                 error={shownError('confirm')}
                 inputRef={confirmInputRef}
-                label="비밀번호 확인"
+                label={t('비밀번호 확인')}
                 onBlur={() => setTouched((state) => ({ ...state, confirm: true }))}
                 onChangeText={(value) => {
                   setConfirm(value);
@@ -310,7 +315,7 @@ export default function SignupScreen() {
                 onSubmitEditing={
                   Platform.OS === 'web' ? undefined : () => void handleRegister()
                 }
-                placeholder="한 번 더 입력해 주세요"
+                placeholder={t('한 번 더 입력해 주세요')}
                 returnKeyType="done"
                 secureTextEntry={!passwordVisible}
                 textContentType="newPassword"
@@ -335,7 +340,7 @@ export default function SignupScreen() {
               <Checkbox
                 checked={agreed}
                 disabled={busy}
-                label="모두 동의해요"
+                label={t('모두 동의해요')}
                 onChange={setAllAgreed}
               />
               <View style={styles.hairline} />
@@ -343,7 +348,7 @@ export default function SignupScreen() {
                 checked={agreedTerms}
                 compact
                 disabled={busy}
-                label="[필수] 이용약관"
+                label={t('[필수] 이용약관')}
                 onChange={(value) => {
                   setAgreedTerms(value);
                   setServerError(null);
@@ -352,7 +357,7 @@ export default function SignupScreen() {
                 trailing={
                   <TermsLink
                     disabled={busy}
-                    label="이용약관 보기"
+                    label={t('이용약관 보기')}
                     onPress={() => void Linking.openURL(TERMS_URL).catch(() => undefined)}
                   />
                 }
@@ -361,7 +366,7 @@ export default function SignupScreen() {
                 checked={agreedPrivacy}
                 compact
                 disabled={busy}
-                label="[필수] 개인정보 처리방침"
+                label={t('[필수] 개인정보 처리방침')}
                 onChange={(value) => {
                   setAgreedPrivacy(value);
                   setServerError(null);
@@ -370,7 +375,7 @@ export default function SignupScreen() {
                 trailing={
                   <TermsLink
                     disabled={busy}
-                    label="개인정보 처리방침 보기"
+                    label={t('개인정보 처리방침 보기')}
                     onPress={() => void Linking.openURL(PRIVACY_URL).catch(() => undefined)}
                   />
                 }
@@ -384,7 +389,7 @@ export default function SignupScreen() {
                 style={styles.errorBox}
               >
                 <AppText tone="negative" variant="meta">
-                  {formError}
+                  {t(formError)}
                 </AppText>
               </View>
             ) : null}
@@ -397,12 +402,12 @@ export default function SignupScreen() {
               size="large"
               variant="primary"
             >
-              가입 완료
+              {t('가입 완료')}
             </Button>
 
             <View style={styles.loginRow}>
               <AppText tone="muted" variant="meta">
-                이미 계정이 있나요?
+                {t('이미 계정이 있나요?')}
               </AppText>
               <Button
                 disabled={busy}
@@ -410,7 +415,7 @@ export default function SignupScreen() {
                 size="small"
                 variant="ghost"
               >
-                로그인
+                {t('로그인')}
               </Button>
             </View>
           </AuthForm>
@@ -430,6 +435,7 @@ function TermsLink({
   label: string;
   onPress: () => void;
 }) {
+  const t = useT();
   return (
     <Pressable
       accessibilityLabel={label}
@@ -441,7 +447,7 @@ function TermsLink({
       style={({ pressed }) => [styles.link, pressed ? styles.linkPressed : null]}
     >
       <AppText style={styles.linkText} tone="muted" variant="meta">
-        보기
+        {t.ctx('terms', '보기')}
       </AppText>
     </Pressable>
   );

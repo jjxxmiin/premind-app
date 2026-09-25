@@ -19,6 +19,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { AppText, Card, Screen, useReducedMotion } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { goBackOrReplace } from '@/lib/navigation';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes, motion, radii, sizes, spacing } from '@/theme/tokens';
 
 const SUPPORT_MAILTO = 'mailto:support@camorix.com';
@@ -109,6 +110,7 @@ const steps: GuideStep[] = [
 ];
 
 export default function GuideScreen() {
+  const t = useT();
   const [openId, setOpenId] = useState<string | null>(steps[0]?.id ?? null);
 
   const openSupport = () => {
@@ -121,27 +123,29 @@ export default function GuideScreen() {
       scroll
       scrollViewProps={{ showsVerticalScrollIndicator: false }}
     >
-      <AppHeader onBack={() => goBackOrReplace('/(tabs)/profile')} title="사용 가이드" />
+      <AppHeader onBack={() => goBackOrReplace('/(tabs)/profile')} title={t('사용 가이드')} />
       <View style={styles.content}>
         <View style={styles.heading}>
-          <AppText variant="pageTitle">녹음 한 번으로 복습까지</AppText>
+          <AppText variant="pageTitle">{t('녹음 한 번으로 복습까지')}</AppText>
           <AppText tone="muted" variant="body">
-            처음이라면 순서대로 따라해 보세요
+            {t('처음이라면 순서대로 따라해 보세요')}
           </AppText>
         </View>
 
         <Card
-          accessibilityLabel={`전체 흐름: ${loop.map((item) => item.label).join(', ')}`}
+          accessibilityLabel={t('전체 흐름: {items}', {
+            items: loop.map((item) => t(item.label)).join(', '),
+          })}
           style={styles.loopCard}
           variant="soft"
         >
           <AppText tone="muted" variant="badge">
-            전체 흐름
+            {t('전체 흐름')}
           </AppText>
           <View style={styles.loopRow}>
             {loop.map((item, index) => (
               <View key={item.label} style={styles.loopItemWrap}>
-                <LoopTile icon={item.icon} label={item.label} />
+                <LoopTile icon={item.icon} label={t(item.label)} />
                 {index < loop.length - 1 ? (
                   <ChevronRight
                     {...decorative}
@@ -168,8 +172,8 @@ export default function GuideScreen() {
             />
           ))}
           <Pressable
-            accessibilityHint="메일 앱이 열려요"
-            accessibilityLabel="문의하기"
+            accessibilityHint={t('메일 앱이 열려요')}
+            accessibilityLabel={t('문의하기')}
             accessibilityRole="button"
             onPress={openSupport}
             style={({ pressed }) => [
@@ -186,7 +190,7 @@ export default function GuideScreen() {
               />
             </View>
             <View style={styles.flex}>
-              <AppText variant="itemTitle">문의하기</AppText>
+              <AppText variant="itemTitle">{t('문의하기')}</AppText>
               <AppText tone="muted" variant="meta">
                 support@camorix.com
               </AppText>
@@ -231,6 +235,7 @@ function StepRow({
   open: boolean;
   step: GuideStep;
 }) {
+  const t = useT();
   const reduced = useReducedMotion();
   const [rotation] = useState(() => new Animated.Value(open ? 1 : 0));
   const Icon = step.icon;
@@ -250,8 +255,8 @@ function StepRow({
   return (
     <View style={styles.stepBlock}>
       <Pressable
-        accessibilityHint={open ? '접어요' : '펼쳐요'}
-        accessibilityLabel={`${step.number} ${step.title}. ${step.summary}`}
+        accessibilityHint={t.ctx('guide', open ? '접어요' : '펼쳐요')}
+        accessibilityLabel={`${step.number} ${t.ctx('guide', step.title)}. ${t(step.summary)}`}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         aria-expanded={open}
@@ -273,9 +278,9 @@ function StepRow({
           <AppText tone="brand" variant="badge">
             {step.number}
           </AppText>
-          <AppText variant="itemTitle">{step.title}</AppText>
+          <AppText variant="itemTitle">{t.ctx('guide', step.title)}</AppText>
           <AppText numberOfLines={1} tone="muted" variant="meta">
-            {step.summary}
+            {t(step.summary)}
           </AppText>
         </View>
         <Animated.View
@@ -304,7 +309,7 @@ function StepRow({
                 </AppText>
               </View>
               <AppText style={styles.flex} tone="soft" variant="body">
-                {line}
+                {t(line)}
               </AppText>
             </View>
           ))}
