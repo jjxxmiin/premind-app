@@ -118,7 +118,7 @@ export default function MasteryScreen() {
             }
             icon={BookOpenCheck}
             onAction={onPrimary}
-            title={t('아직 평가할 게 없어요')}
+            title={t('아직 이해도를 볼 게 없어요')}
           />
         </View>
       </Screen>

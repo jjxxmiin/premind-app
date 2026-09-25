@@ -74,7 +74,7 @@ export const EN_STUDY: EnDict = {
   '{title}. 이해도 {score}%, {verdict}. {line}': '{title}. Mastery {score}%, {verdict}. {line}',
   '문제 {n}개가 기다려요': { one: '{n} question waiting', other: '{n} questions waiting' },
   '핵심 내용 {n}개를 확인해요': { one: 'Check {n} key point', other: 'Check {n} key points' },
-  '아직 평가할 게 없어요': 'Nothing to measure yet',
+  '아직 이해도를 볼 게 없어요': 'Nothing to measure yet',
   '문제 {total}개 중 {correct}개 맞힘': '{correct} of {total} questions right',
   '취약 개념 {n}개': { one: '{n} weak concept', other: '{n} weak concepts' },
   '취약 개념 없음': 'No weak concepts',
@@ -115,7 +115,7 @@ export const EN_STUDY: EnDict = {
   '{title} / 문제 {n}개': { one: '{title} / {n} question', other: '{title} / {n} questions' },
 
   // 이해도 상세 (app/mastery/[id].tsx, lib/mastery.ts masteryHeadline)
-  '아직 평가할 게 없어요.': 'Nothing to measure yet.',
+  '아직 이해도를 볼 게 없어요.': 'Nothing to measure yet.',
   '이 자료는 {score}% 이해했어요.': 'You understand {score}% of this material.',
   '{first} {terms}{josa} 헷갈렸어요.': '{first} You mixed up {terms}.',
   '{first} 헷갈린 개념이 없어요.': '{first} No concepts mixed up.',

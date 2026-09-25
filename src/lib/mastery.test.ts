@@ -166,7 +166,7 @@ describe('summarizeMastery', () => {
     expect(summary.nextSteps).toEqual([
       { kind: 'start', title: '문제 풀기', detail: '문제 4개를 풀면 이해도가 생겨요' },
     ]);
-    expect(masteryHeadline(summary)).toBe('아직 평가할 게 없어요.');
+    expect(masteryHeadline(summary)).toBe('아직 이해도를 볼 게 없어요.');
     expect(masteryLine(summary)).toBe('문제 4개가 기다려요');
   });
 

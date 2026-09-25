@@ -29,7 +29,7 @@ function say(locale: AppLocale, ko: string, vars?: Vars): string {
  * the share of key points the learner ticked in their notebook. Whichever
  * side has nothing behind it drops out, so a material with no questions is
  * scored on the checklist alone, and a material nothing has been done with
- * scores `null` ("아직 평가할 게 없어요").
+ * scores `null` ("아직 이해도를 볼 게 없어요").
  */
 
 export const QUIZ_WEIGHT = 0.7;
@@ -363,7 +363,7 @@ export function summarizeMastery(
 
 /** "이 자료는 76% 이해했어요. 회귀와 분류를 헷갈렸어요." */
 export function masteryHeadline(summary: MasterySummary, locale: AppLocale = 'ko'): string {
-  if (summary.score === null) return say(locale, '아직 평가할 게 없어요.');
+  if (summary.score === null) return say(locale, '아직 이해도를 볼 게 없어요.');
   const first = say(locale, '이 자료는 {score}% 이해했어요.', { score: summary.score });
   if (summary.weakConcepts.length > 0) {
     const terms = joinTerms(
@@ -388,7 +388,7 @@ export function masteryLine(summary: MasterySummary, locale: AppLocale = 'ko'): 
       ? say(locale, '문제 {n}개가 기다려요', { n: summary.questionCount })
       : summary.keyPointCount > 0
         ? say(locale, '핵심 내용 {n}개를 확인해요', { n: summary.keyPointCount })
-        : say(locale, '아직 평가할 게 없어요');
+        : say(locale, '아직 이해도를 볼 게 없어요');
   }
   const parts: string[] = [];
   if (summary.answeredCount > 0) {

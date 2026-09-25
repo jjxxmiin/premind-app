@@ -181,7 +181,7 @@ export default function ProfileScreen() {
             // 영어를 못 읽는 사람도, 한국어를 못 읽는 사람도 찾게 두 말로.
             description={locale === 'en' ? '한국어로 바꿔요' : 'Language'}
             onPress={() => setLocale(locale === 'en' ? 'ko' : 'en')}
-            title="언어"
+            title={t('언어')}
             value={APP_LOCALE_LABELS[locale]}
           />
           <SettingsRow

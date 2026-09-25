@@ -2,6 +2,7 @@ import type { EnDict } from '../core';
 
 /** 영어 사전 — account 영역. 키는 화면의 한국어 문장 그대로. */
 export const EN_ACCOUNT: EnDict = {
+  언어: 'Language',
   // ── MY (profile) ──────────────────────────────────────────────────────────
   'PREMIND 사용자': 'PREMIND user',
   알림: 'Notifications',
