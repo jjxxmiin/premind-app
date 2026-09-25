@@ -42,6 +42,7 @@ import {
   sessionDestination,
 } from '@/features/interview/view-model';
 import { decorative } from '@/lib/a11y';
+import { useLocale, useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
@@ -60,6 +61,7 @@ const START_OPTIONS: StartOption[] = [
  */
 /** 말하기 탭의 면접 쪽. `switcher` 는 발표, 면접을 고르는 줄(머리 바로 아래). */
 export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
+  const t = useT();
   const { breakpoint, gutter } = useLayout();
   const account = useInterviewAccount();
   const { sessions } = useInterviewSessions();
@@ -83,9 +85,9 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
     <View style={styles.column}>
       <AnimatedReveal>
         <View style={styles.heading}>
-          <AppText variant="pageTitle">{view?.firstTime ? '첫 질문부터 말해볼까요?' : '무엇을 연습할까요?'}</AppText>
+          <AppText variant="pageTitle">{t(view?.firstTime ? '첫 질문부터 말해볼까요?' : '무엇을 연습할까요?')}</AppText>
           <AppText tone="muted" variant="body">
-            질문을 준비하고, 타이머에 맞춰 답하고, 내가 한 말을 돌아봐요.
+            {t('질문을 준비하고, 타이머에 맞춰 답하고, 내가 한 말을 돌아봐요.')}
           </AppText>
         </View>
       </AnimatedReveal>
@@ -94,7 +96,7 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
         <ContinueCard onPress={() => open(view.inProgress!)} session={view.inProgress} />
       ) : view?.next ? (
         <Card
-          accessibilityLabel={`지난 연습에서 이어갈 점. ${view.next.text}`}
+          accessibilityLabel={`${t('지난 연습에서 이어갈 점')}. ${view.next.text}`}
           accessibilityRole="button"
           onPress={() => router.push({ pathname: '/interview/report/[id]', params: { id: view.next!.sessionId } })}
           style={styles.hint}
@@ -103,7 +105,7 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
           <Lightbulb {...decorative} color={colors.warningStrong} size={iconSizes.section} strokeWidth={2} />
           <View style={styles.flex}>
             <AppText tone="warning" variant="badge">
-              지난 연습에서 이어갈 점
+              {t('지난 연습에서 이어갈 점')}
             </AppText>
             <AppText variant="bodyStrong">{view.next.text}</AppText>
           </View>
@@ -121,7 +123,10 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
         ))}
       </View>
       <AppText tone="muted" variant="meta">
-        {`기본 연습은 무료예요. AI 피드백 연습은 첫 회 무료, 스탠다드는 매달 ${PLAN.aiStandardMonthly}회예요. 같은 연습 안에서 다시 답하는 건 횟수에 들어가지 않아요.`}
+        {t(
+          '기본 연습은 무료예요. AI 피드백 연습은 첫 회 무료, 스탠다드는 매달 {n}회예요. 같은 연습 안에서 다시 답하는 건 횟수에 들어가지 않아요.',
+          { n: PLAN.aiStandardMonthly },
+        )}
       </AppText>
     </View>
   );
@@ -132,16 +137,16 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
 
       <View style={styles.section}>
         <SectionHeader
-          actionLabel={sessions && sessions.length > 0 ? '전체 기록' : undefined}
+          actionLabel={sessions && sessions.length > 0 ? t('전체 기록') : undefined}
           onAction={() => router.push('/interview/history')}
-          title="최근 연습"
+          title={t('최근 연습')}
         />
         {!view ? (
           <Skeleton height={68} />
         ) : view.recent.length === 0 ? (
           <Card variant="soft">
             <AppText tone="muted" variant="body">
-              아직 연습 기록이 없어요. 위에서 질문을 골라 첫 연습을 시작해 보세요.
+              {t('아직 연습 기록이 없어요. 위에서 질문을 골라 첫 연습을 시작해 보세요.')}
             </AppText>
           </Card>
         ) : (
@@ -154,7 +159,7 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
       </View>
 
       <View style={styles.section}>
-        <SectionHeader title="학교, 기관" />
+        <SectionHeader title={t('학교, 기관')} />
         <Card padding={false}>
           {user?.role === 'manager' ? (
             <ListRow
@@ -162,14 +167,14 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
               leadingIcon={Building2}
               onPress={() => router.push('/interview/org')}
               showChevron
-              subtitle="학생들의 가입과 연습 참여를 봐요"
-              title="기관 현황"
+              subtitle={t('학생들의 가입과 연습 참여를 봐요')}
+              title={t('기관 현황')}
             />
           ) : user?.role === 'student' && user.orgName ? (
             <ListRow
               divider={false}
               leadingIcon={Building2}
-              subtitle={user.groupName ? `${user.groupName}에 참여하고 있어요` : '기관에 참여하고 있어요'}
+              subtitle={user.groupName ? t('{group}에 참여하고 있어요', { group: user.groupName }) : t('기관에 참여하고 있어요')}
               title={user.orgName}
             />
           ) : (
@@ -178,8 +183,8 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
               leadingIcon={Ticket}
               onPress={() => router.push('/interview/join')}
               showChevron
-              subtitle="학교나 취업센터에서 받은 코드로 참여해요"
-              title="초대 코드 입력"
+              subtitle={t('학교나 취업센터에서 받은 코드로 참여해요')}
+              title={t('초대 코드 입력')}
             />
           )}
         </Card>
@@ -191,7 +196,7 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
     <Screen padded={false} safeAreaEdges={['top', 'left', 'right']} scroll scrollViewProps={{ showsVerticalScrollIndicator: false }}>
       <AppHeader
         brand
-        right={<IconButton icon={History} label="연습 기록" onPress={() => router.push('/interview/history')} />}
+        right={<IconButton icon={History} label={t('연습 기록')} onPress={() => router.push('/interview/history')} />}
       />
       {switcher ? <View style={[styles.switcher, { paddingHorizontal: gutter }]}>{switcher}</View> : null}
       <View style={[styles.content, { paddingHorizontal: gutter }, wide ? styles.wide : null]}>
@@ -203,12 +208,18 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
 }
 
 function ContinueCard({ session, onPress }: { session: InterviewSession; onPress: () => void }) {
+  const t = useT();
+  const locale = useLocale();
   const source = resolveSessionSource(session);
-  const title = source?.title ?? '면접 연습';
-  const meta = `${answeredQuestionCount(session)} / ${source?.questions.length ?? 0}개 답변, ${relativeDay(lastActivity(session))}`;
+  const title = t(source?.title ?? '면접 연습');
+  const meta = t('{done} / {total}개 답변, {when}', {
+    done: answeredQuestionCount(session),
+    total: source?.questions.length ?? 0,
+    when: relativeDay(lastActivity(session), new Date(), locale),
+  });
   return (
     <Pressable
-      accessibilityLabel={`이어서 하기. ${title}. ${meta}`}
+      accessibilityLabel={`${t('이어서 하기')}. ${title}. ${meta}`}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [styles.continue, pressed ? styles.pressed : null]}
@@ -216,7 +227,7 @@ function ContinueCard({ session, onPress }: { session: InterviewSession; onPress
       <PlayCircle {...decorative} color={colors.brand} size={32} strokeWidth={1.8} />
       <View style={styles.flex}>
         <AppText tone="brand" variant="badge">
-          이어서 하기
+          {t('이어서 하기')}
         </AppText>
         <AppText numberOfLines={1} variant="itemTitle">
           {title}
@@ -231,25 +242,26 @@ function ContinueCard({ session, onPress }: { session: InterviewSession; onPress
 }
 
 function StartCard({ option, onPress, row }: { option: StartOption; onPress: () => void; row: boolean }) {
+  const t = useT();
   const Icon = option.icon;
   return (
     <Card
-      accessibilityLabel={`${option.title}. ${option.body}`}
+      accessibilityLabel={`${t(option.title)}. ${t(option.body)}`}
       accessibilityRole="button"
       onPress={onPress}
       style={[styles.start, row ? styles.startRow : null]}
     >
       <View style={styles.startHead}>
         <Icon {...decorative} color={colors.brand} size={26} strokeWidth={1.9} />
-        {option.tag ? <StatusBadge label={option.tag} tone="brand" /> : null}
+        {option.tag ? <StatusBadge label={t(option.tag)} tone="brand" /> : null}
       </View>
-      <AppText variant="heading">{option.title}</AppText>
+      <AppText variant="heading">{t(option.title)}</AppText>
       <AppText style={styles.flexText} tone="muted" variant="body">
-        {option.body}
+        {t(option.body)}
       </AppText>
       <View style={styles.startCta}>
         <AppText tone="brand" variant="label">
-          시작하기
+          {t('시작하기')}
         </AppText>
         <ArrowRight {...decorative} color={colors.brand} size={iconSizes.dense} />
       </View>

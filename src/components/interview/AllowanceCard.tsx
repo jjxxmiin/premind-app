@@ -6,11 +6,13 @@ import { AppText, Button, Card, ProgressBar } from '@/components/ui';
 import type { InterviewAllowance } from '@/features/interview/interview-api';
 import { PLAN } from '@/features/interview/pricing';
 import { decorative } from '@/lib/a11y';
+import { enShortDate, useLocale, useT, type AppLocale } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
-function renewDate(ms: number | null): string | null {
+function renewDate(ms: number | null, locale: AppLocale): string | null {
   if (!ms) return null;
   const date = new Date(ms);
+  if (locale === 'en') return enShortDate(date);
   return `${date.getMonth() + 1}월 ${date.getDate()}일`;
 }
 
@@ -19,20 +21,23 @@ function renewDate(ms: number | null): string | null {
  * 결제)으로 보낸다. 면접은 PREMIND 학생 요금제의 한 줄이다.
  */
 export function AllowanceCard({ allowance, demo = false }: { allowance: InterviewAllowance | null; demo?: boolean }) {
+  const t = useT();
+  const locale = useLocale();
   const standard = allowance?.plan === 'standard';
   const left = allowance ? (allowance.ai.freeTrial ? 1 : Math.max(0, allowance.ai.limit - allowance.ai.used)) : null;
   const headline = demo
-    ? '데모에서는 기본 연습만 할 수 있어요'
+    ? t('데모에서는 기본 연습만 할 수 있어요')
     : !allowance
-      ? '남은 횟수를 확인하고 있어요'
+      ? t('남은 횟수를 확인하고 있어요')
     : allowance.ai.freeTrial
-      ? 'AI 피드백 무료 체험 1회가 남았어요'
+      ? t('AI 피드백 무료 체험 1회가 남았어요')
       : standard
-        ? `이번 달 AI 피드백 ${left}회 남았어요`
-        : 'AI 피드백 무료 체험을 썼어요';
+        ? t('이번 달 AI 피드백 {n}회 남았어요', { n: left })
+        : t('AI 피드백 무료 체험을 썼어요');
+  const renew = renewDate(allowance?.periodEnd ?? null, locale);
   const detail = standard
-    ? `스탠다드는 매달 ${allowance?.ai.limit ?? PLAN.aiStandardMonthly}회예요.${renewDate(allowance?.periodEnd ?? null) ? ` ${renewDate(allowance?.periodEnd ?? null)}에 다시 채워져요.` : ''}`
-    : `기본 연습은 언제나 무료예요. 스탠다드는 AI 피드백 연습을 매달 ${PLAN.aiStandardMonthly}회 할 수 있어요.`;
+    ? `${t('스탠다드는 매달 {n}회예요.', { n: allowance?.ai.limit ?? PLAN.aiStandardMonthly })}${renew ? ` ${t('{date}에 다시 채워져요.', { date: renew })}` : ''}`
+    : t('기본 연습은 언제나 무료예요. 스탠다드는 AI 피드백 연습을 매달 {n}회 할 수 있어요.', { n: PLAN.aiStandardMonthly });
   return (
     <Card style={styles.card}>
       <View style={styles.head}>
@@ -41,25 +46,25 @@ export function AllowanceCard({ allowance, demo = false }: { allowance: Intervie
         </View>
         <View style={styles.flex}>
           <AppText tone="muted" variant="meta">
-            {standard ? '스탠다드' : '무료'}
+            {t(standard ? '스탠다드' : '무료')}
           </AppText>
           <AppText variant="itemTitle">{headline}</AppText>
         </View>
       </View>
       {standard && allowance ? (
         <ProgressBar
-          label="이번 달 AI 피드백 연습"
+          label={t('이번 달 AI 피드백 연습')}
           max={Math.max(1, allowance.ai.limit)}
           tone="brand"
           value={Math.min(allowance.ai.used, allowance.ai.limit)}
         />
       ) : null}
       <AppText tone="muted" variant="meta">
-        {demo ? '로그인하면 AI 피드백 연습 첫 회를 무료로 해 볼 수 있어요.' : detail}
+        {demo ? t('로그인하면 AI 피드백 연습 첫 회를 무료로 해 볼 수 있어요.') : detail}
       </AppText>
       {!standard ? (
         <Button fullWidth onPress={() => router.push('/subscription')} variant="outline">
-          요금제 보기
+          {t('요금제 보기')}
         </Button>
       ) : null}
     </Card>

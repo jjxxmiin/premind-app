@@ -1,6 +1,7 @@
 import { createElement, useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/lib/i18n';
 import { colors, radii } from '@/theme/tokens';
 
 /**
@@ -8,6 +9,7 @@ import { colors, radii } from '@/theme/tokens';
  * recording stays in this browser; this is only a mirror.
  */
 export function CameraPreview({ stream }: { stream: MediaStream | null }) {
+  const t = useT();
   const ref = useRef<HTMLVideoElement | null>(null);
   useEffect(() => {
     const video = ref.current;
@@ -17,7 +19,7 @@ export function CameraPreview({ stream }: { stream: MediaStream | null }) {
   }, [stream]);
   if (!stream) return null;
   return (
-    <View accessibilityLabel="내 카메라 화면" style={styles.frame}>
+    <View accessibilityLabel={t('내 카메라 화면')} style={styles.frame}>
       {createElement('video', {
         ref,
         autoPlay: true,

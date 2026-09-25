@@ -6,6 +6,7 @@ import { getEffectiveTranscript } from '@/features/interview/analysis';
 import { fetchShareStatus, shareWithOrg, unshareWithOrg } from '@/features/interview/interview-api';
 import type { SessionSource } from '@/features/interview/session-source';
 import type { InterviewSession } from '@/features/interview/types';
+import { useT } from '@/lib/i18n';
 import { colors, iconSizes } from '@/theme/tokens';
 
 function buildShare(session: InterviewSession, source: SessionSource) {
@@ -44,6 +45,7 @@ export function ShareWithOrg({
   orgName: string;
   onMessage: (message: string) => void;
 }) {
+  const t = useT();
   const [shared, setShared] = useState<boolean | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -67,9 +69,9 @@ export function ShareWithOrg({
       if (!body.items.length) throw new Error('공유할 답변이 아직 없어요.');
       await shareWithOrg(body);
       setShared(true);
-      onMessage(`${orgName} 선생님께 공유했어요.`);
+      onMessage(t('{org} 선생님께 공유했어요.', { org: orgName }));
     } catch (reason) {
-      onMessage(reason instanceof Error && reason.message ? reason.message : '공유하지 못했어요.');
+      onMessage(t(reason instanceof Error && reason.message ? reason.message : '공유하지 못했어요.'));
     } finally {
       setBusy(false);
     }
@@ -80,9 +82,9 @@ export function ShareWithOrg({
     try {
       await unshareWithOrg(session.id);
       setShared(false);
-      onMessage('공유를 취소했어요.');
+      onMessage(t('공유를 취소했어요.'));
     } catch {
-      onMessage('공유를 취소하지 못했어요.');
+      onMessage(t('공유를 취소하지 못했어요.'));
     } finally {
       setBusy(false);
     }
@@ -92,25 +94,25 @@ export function ShareWithOrg({
     <>
       {shared ? (
         <Button leftIcon={<Undo2 color={colors.text} size={iconSizes.inline} />} loading={busy} onPress={() => void unshare()} variant="outline">
-          선생님 공유 취소
+          {t('선생님 공유 취소')}
         </Button>
       ) : (
         <Button leftIcon={<Share2 color={colors.text} size={iconSizes.inline} />} loading={busy} onPress={() => setConfirm(true)} variant="outline">
-          선생님께 공유하기
+          {t('선생님께 공유하기')}
         </Button>
       )}
       <Dialog
-        cancel={{ label: '취소', onPress: () => setConfirm(false) }}
+        cancel={{ label: t('취소'), onPress: () => setConfirm(false) }}
         confirm={{
-          label: '공유하기',
+          label: t('공유하기'),
           onPress: () => {
             setConfirm(false);
             void share();
           },
         }}
-        description="질문, 내가 한 말(전사문), 말한 시간, 다음 연습 포인트만 공유돼요. 영상과 음성, 자기소개서는 공유되지 않고, 언제든 공유를 취소할 수 있어요."
+        description={t('질문, 내가 한 말(전사문), 말한 시간, 다음 연습 포인트만 공유돼요. 영상과 음성, 자기소개서는 공유되지 않고, 언제든 공유를 취소할 수 있어요.')}
         onRequestClose={() => setConfirm(false)}
-        title={`${orgName} 선생님께 이 연습을 공유할까요?`}
+        title={t('{org} 선생님께 이 연습을 공유할까요?', { org: orgName })}
         visible={confirm}
       />
     </>

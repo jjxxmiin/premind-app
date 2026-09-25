@@ -11,14 +11,16 @@ import { joinOrg, lookupInvite, type InviteInfo } from '@/features/interview/int
 import { rememberPendingJoinCode } from '@/features/interview/pending-join';
 import { refreshInterviewAccount, useInterviewAccount } from '@/features/interview/use-interview-account';
 import { decorative } from '@/lib/a11y';
+import { enDate, useT, type T } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 import { INTERVIEW_HOME } from '@/features/interview/routes';
 
-function seatCopy(invite: InviteInfo): string {
-  if (!invite.licenseUntil || invite.licenseUntil <= Date.now()) return '기관의 참여 현황에 함께 기록돼요.';
+function seatCopy(invite: InviteInfo, t: T): string {
+  if (!invite.licenseUntil || invite.licenseUntil <= Date.now()) return t('기관의 참여 현황에 함께 기록돼요.');
   const until = new Date(invite.licenseUntil);
+  if (t.locale === 'en') return t('{date}까지 스탠다드로 연습할 수 있어요(AI 피드백 연습 매달 10회).', { date: enDate(until) });
   return `${until.getFullYear()}년 ${until.getMonth() + 1}월 ${until.getDate()}일까지 스탠다드로 연습할 수 있어요(AI 피드백 연습 매달 10회).`;
 }
 
@@ -27,6 +29,7 @@ function seatCopy(invite: InviteInfo): string {
  * 로그인 전에도 코드를 확인할 수 있고, 참여는 로그인한 계정으로 한다(join-form.tsx).
  */
 export default function InterviewJoinScreen() {
+  const t = useT();
   const params = useLocalSearchParams<{ code?: string }>();
   const { session } = useAppStore();
   const account = useInterviewAccount();
@@ -95,34 +98,34 @@ export default function InterviewJoinScreen() {
 
   return (
     <Screen maxWidth={520} padded={false}>
-      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(signedIn ? '/interview' : '/login'))} title="초대 코드" />
+      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(signedIn ? '/interview' : '/login'))} title={t('초대 코드')} />
       <ScrollView keyboardShouldPersistTaps="handled" style={styles.scroll}>
         <View style={[styles.content, { paddingHorizontal: gutter }]}>
           {!invite ? (
             <>
               <View style={styles.heading}>
-                <AppText variant="pageTitle">초대 코드를 입력해 주세요.</AppText>
+                <AppText variant="pageTitle">{t('초대 코드를 입력해 주세요.')}</AppText>
                 <AppText tone="muted" variant="body">
-                  학교나 취업센터에서 받은 코드로 참여하고 연습할 수 있어요.
+                  {t('학교나 취업센터에서 받은 코드로 참여하고 연습할 수 있어요.')}
                 </AppText>
               </View>
               <AuthField
                 autoCapitalize="characters"
                 autoCorrect={false}
-                error={error}
-                label="초대 코드"
+                error={error ? t(error) : error}
+                label={t('초대 코드')}
                 maxLength={12}
                 onChangeText={(value) => setCode(value.toUpperCase())}
                 onSubmitEditing={() => void check(code)}
-                placeholder="예: AB12CD34"
+                placeholder={t('예: AB12CD34')}
                 trailing={<Ticket {...decorative} color={colors.textFaint} size={iconSizes.inline} />}
                 value={code}
               />
               <Button variant="primary" fullWidth loading={checking} onPress={() => void check(code)} rightIcon={<ArrowRight color={colors.textInverse} size={iconSizes.inline} />} size="large">
-                코드 확인하기
+                {t('코드 확인하기')}
               </Button>
               <AppText tone="muted" variant="meta">
-                코드가 없다면 담당 선생님이나 센터에 문의해 주세요. 개인으로도 바로 연습할 수 있어요.
+                {t('코드가 없다면 담당 선생님이나 센터에 문의해 주세요. 개인으로도 바로 연습할 수 있어요.')}
               </AppText>
             </>
           ) : (
@@ -133,8 +136,8 @@ export default function InterviewJoinScreen() {
               </View>
               {!signedIn ? (
                 <>
-                  <AppText variant="pageTitle">먼저 로그인해 주세요.</AppText>
-                  <AppText tone="muted" variant="body">{`PREMIND 계정으로 로그인하거나 가입한 뒤, 이 화면으로 돌아와 참여해 주세요. ${seatCopy(invite)}`}</AppText>
+                  <AppText variant="pageTitle">{t('먼저 로그인해 주세요.')}</AppText>
+                  <AppText tone="muted" variant="body">{`${t('PREMIND 계정으로 로그인하거나 가입한 뒤, 이 화면으로 돌아와 참여해 주세요.')} ${seatCopy(invite, t)}`}</AppText>
                   <Button variant="primary"
                     fullWidth
                     onPress={() => {
@@ -142,28 +145,31 @@ export default function InterviewJoinScreen() {
                     }}
                     size="large"
                   >
-                    로그인하고 참여하기
+                    {t('로그인하고 참여하기')}
                   </Button>
                 </>
               ) : (
                 <>
-                  <AppText variant="pageTitle">{`${name}님, 참여할까요?`}</AppText>
-                  <AppText tone="muted" variant="body">{`참여하면 ${seatCopy(invite)} 계정: ${session?.user.email ?? ''}`}</AppText>
+                  <AppText variant="pageTitle">{t('{name}님, 참여할까요?', { name })}</AppText>
+                  <AppText tone="muted" variant="body">{t('참여하면 {seat} 계정: {email}', { seat: seatCopy(invite, t), email: session?.user.email ?? '' })}</AppText>
                   <Card style={styles.consents}>
-                    <Checkbox checked={age14} label="만 14세 이상이에요." onChange={setAge14} />
+                    <Checkbox checked={age14} label={t('만 14세 이상이에요.')} onChange={setAge14} />
                     <Checkbox
                       checked={consent}
-                      label={`[필수] 참여 현황(이름, 계정 이메일, 소속 그룹, 참여일, 연습 횟수, 마지막 활동일)을 ${invite.orgName} 담당자에게 제공하는 데 동의해요. 제공 목적은 취업 지원 프로그램 운영이며 계정 삭제 시까지 제공돼요. 답변 내용, 녹음, 자기소개서는 제공되지 않아요. 동의하지 않으면 기관에 참여할 수 없고, 개인으로는 계속 이용할 수 있어요.`}
+                      label={t(
+                        '[필수] 참여 현황(이름, 계정 이메일, 소속 그룹, 참여일, 연습 횟수, 마지막 활동일)을 {org} 담당자에게 제공하는 데 동의해요. 제공 목적은 취업 지원 프로그램 운영이며 계정 삭제 시까지 제공돼요. 답변 내용, 녹음, 자기소개서는 제공되지 않아요. 동의하지 않으면 기관에 참여할 수 없고, 개인으로는 계속 이용할 수 있어요.',
+                        { org: invite.orgName },
+                      )}
                       onChange={setConsent}
                     />
                   </Card>
                   {error ? (
                     <AppText accessibilityRole="alert" tone="negative" variant="meta">
-                      {error}
+                      {t(error)}
                     </AppText>
                   ) : null}
                   <Button variant="primary" disabled={!age14 || !consent} fullWidth loading={joining} onPress={() => void join()} size="large">
-                    참여하고 시작하기
+                    {t('참여하고 시작하기')}
                   </Button>
                 </>
               )}
@@ -174,7 +180,7 @@ export default function InterviewJoinScreen() {
                 }}
                 variant="ghost"
               >
-                다른 코드 입력하기
+                {t('다른 코드 입력하기')}
               </Button>
             </>
           )}

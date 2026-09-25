@@ -4,6 +4,9 @@
  * session-report) and keeps its rules: describe the practice, never judge
  * the person — no score, no pass chance, no personality.
  */
+import { enShortDate } from '@/lib/i18n/core';
+
+import { type AppLocale, enDuration } from './locale';
 import { derivePreparationState } from './result-preparation';
 import { resolveSessionSource } from './session-source';
 import type {
@@ -13,9 +16,10 @@ import type {
   InterviewSession,
 } from './types';
 
-/** "1분 04초", or "42초" under a minute (interview web media.ts). */
-export function formatAnswerDuration(ms: number): string {
+/** "1분 04초", or "42초" under a minute (interview web media.ts). English: "1 min 4 s". */
+export function formatAnswerDuration(ms: number, locale: AppLocale = 'ko'): string {
   const total = Math.max(0, Math.round(ms / 1000));
+  if (locale === 'en') return enDuration(total);
   const minutes = Math.floor(total / 60);
   const seconds = total % 60;
   if (minutes === 0) return `${seconds}초`;
@@ -30,7 +34,7 @@ export function formatClock(ms: number): string {
   return over ? `+${text}` : text;
 }
 
-export function relativeDay(value: string, now = new Date()): string {
+export function relativeDay(value: string, now = new Date(), locale: AppLocale = 'ko'): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
   const today = new Date(now);
@@ -38,6 +42,12 @@ export function relativeDay(value: string, now = new Date()): string {
   const day = new Date(date);
   day.setHours(0, 0, 0, 0);
   const diff = Math.round((today.getTime() - day.getTime()) / 86_400_000);
+  if (locale === 'en') {
+    if (diff <= 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    if (diff < 7) return `${diff} days ago`;
+    return enShortDate(date);
+  }
   if (diff <= 0) return '오늘';
   if (diff === 1) return '어제';
   if (diff < 7) return `${diff}일 전`;

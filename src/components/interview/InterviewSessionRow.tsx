@@ -14,6 +14,7 @@ import {
   totalSpeakingMs,
 } from '@/features/interview/view-model';
 import { decorative } from '@/lib/a11y';
+import { useLocale, useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
 export interface InterviewSessionRowProps {
@@ -24,19 +25,22 @@ export interface InterviewSessionRowProps {
 
 /** One practice in a list: what was practised, how far, and when. */
 export function InterviewSessionRow({ session, onPress, last = false }: InterviewSessionRowProps) {
+  const t = useT();
+  const locale = useLocale();
   const source = resolveSessionSource(session);
-  const title = source?.title ?? '질문 정보를 찾을 수 없는 면접';
+  const title = t(source?.title ?? '질문 정보를 찾을 수 없는 면접');
   const total = source?.questions.length ?? 0;
   const status = sessionStatusLabel(session);
+  const statusLabel = t(status.label);
   const meta = [
-    modeLabel(session),
-    `${answeredQuestionCount(session)} / ${total}개 답변`,
-    formatAnswerDuration(totalSpeakingMs(session)),
-    relativeDay(lastActivity(session)),
+    t(modeLabel(session)),
+    t('{done} / {total}개 답변', { done: answeredQuestionCount(session), total }),
+    formatAnswerDuration(totalSpeakingMs(session), locale),
+    relativeDay(lastActivity(session), new Date(), locale),
   ].join(' / ');
   return (
     <Pressable
-      accessibilityLabel={`${title}, ${status.label}, ${meta}`}
+      accessibilityLabel={`${title}, ${statusLabel}, ${meta}`}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [styles.row, !last ? styles.divider : null, pressed ? styles.pressed : null]}
@@ -52,7 +56,7 @@ export function InterviewSessionRow({ session, onPress, last = false }: Intervie
           {meta}
         </AppText>
       </View>
-      <StatusBadge label={status.label} tone={status.tone} />
+      <StatusBadge label={statusLabel} tone={status.tone} />
       <ChevronRight {...decorative} color={colors.textFaint} size={iconSizes.inline} />
     </Pressable>
   );
@@ -60,10 +64,12 @@ export function InterviewSessionRow({ session, onPress, last = false }: Intervie
 
 /** A practice kept on the server only (another device or the old interview site). */
 export function RemoteSessionRow({ title, updatedAt, onPress, last = false }: { title: string; updatedAt: number; onPress: () => void; last?: boolean }) {
-  const when = relativeDay(new Date(updatedAt).toISOString());
+  const t = useT();
+  const locale = useLocale();
+  const when = relativeDay(new Date(updatedAt).toISOString(), new Date(), locale);
   return (
     <Pressable
-      accessibilityLabel={`${title}, 다른 기기의 기록, ${when}`}
+      accessibilityLabel={`${t(title)}, ${t('다른 기기의 기록')}, ${when}`}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [styles.row, !last ? styles.divider : null, pressed ? styles.pressed : null]}
@@ -73,10 +79,10 @@ export function RemoteSessionRow({ title, updatedAt, onPress, last = false }: { 
       </View>
       <View style={styles.flex}>
         <AppText numberOfLines={1} variant="itemTitle">
-          {title}
+          {t(title)}
         </AppText>
         <AppText numberOfLines={1} tone="muted" variant="meta">
-          {`다른 기기의 기록 / 녹음 없음 / ${when}`}
+          {t('다른 기기의 기록 / 녹음 없음 / {when}', { when })}
         </AppText>
       </View>
       <ChevronRight {...decorative} color={colors.textFaint} size={iconSizes.inline} />

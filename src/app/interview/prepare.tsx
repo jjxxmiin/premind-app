@@ -50,6 +50,7 @@ import { createSessionRecord } from '@/features/interview/session-machine';
 import type { CustomInterviewQuestion, CustomInterviewSet, InterviewFeedbackMode } from '@/features/interview/types';
 import { setInterviewAllowance, useInterviewAccount } from '@/features/interview/use-interview-account';
 import { decorative } from '@/lib/a11y';
+import { fmtNumber, useLocale, useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
@@ -65,6 +66,8 @@ function blankQuestion(): CustomInterviewQuestion {
  * 고른다. 면접 웹의 setup-flow, interview-preparation 을 한 화면 두 단계로.
  */
 export default function InterviewPrepareScreen() {
+  const t = useT();
+  const locale = useLocale();
   const params = useLocalSearchParams<{ from?: string; company?: string; again?: string; mode?: string }>();
   const from: From = params.from === 'packs' || params.from === 'custom' ? params.from : 'resume';
   const { breakpoint, gutter } = useLayout();
@@ -116,7 +119,7 @@ export default function InterviewPrepareScreen() {
   const resumeReady = resumeText.length >= MIN_RESUME_LENGTH && resumeText.length <= GUIDED_INPUT_LIMITS.resumeText;
   const filled = questions.filter((question) => question.question.trim().length > 0);
   const pack = getCompanyPack(packId);
-  const aiProblem = aiAllowanceProblem(allowance);
+  const aiProblem = aiAllowanceProblem(allowance, locale);
   const server = interviewServerAvailable();
   const canRecordVideo = Platform.OS === 'web';
 
@@ -125,14 +128,14 @@ export default function InterviewPrepareScreen() {
     ? pack.name
     : from === 'custom' || (params.again && !form.company && !form.jobRole && customTitle)
       ? customTitle.trim() || UNTITLED_SET_TITLE
-      : interviewDraftTitle(form);
+      : interviewDraftTitle(form, locale);
 
   async function prepareFromResume() {
     if (preparing) return;
     setError(null);
     setNotice(null);
     if (!form.company.trim() && !form.jobRole.trim()) {
-      setError('지원할 회사나 직무를 적어 주세요.');
+      setError(t('지원할 회사나 직무를 적어 주세요.'));
       return;
     }
     setPreparing(true);
@@ -161,16 +164,16 @@ export default function InterviewPrepareScreen() {
         } catch (reason) {
           setNotice(
             isPlanLimit(reason) || (reason instanceof Error && /한도|많아요/.test(reason.message))
-              ? `${reason instanceof Error ? reason.message : ''} 기본 질문으로 먼저 준비했어요.`
-              : '자기소개서 질문을 만들지 못해 기본 질문으로 준비했어요. 입력한 내용은 그대로 있으니 잠시 후 아래에서 다시 만들 수 있어요.',
+              ? `${reason instanceof Error ? t(reason.message) : ''} ${t('기본 질문으로 먼저 준비했어요.')}`
+              : t('자기소개서 질문을 만들지 못해 기본 질문으로 준비했어요. 입력한 내용은 그대로 있으니 잠시 후 아래에서 다시 만들 수 있어요.'),
           );
         }
       } else if (resumeText && !resumeReady) {
-        setNotice(`자기소개서는 ${MIN_RESUME_LENGTH}자 이상일 때 맞춤 질문을 만들어요. 기본 질문으로 먼저 준비했어요.`);
+        setNotice(t('자기소개서는 {n}자 이상일 때 맞춤 질문을 만들어요. 기본 질문으로 먼저 준비했어요.', { n: MIN_RESUME_LENGTH }));
       } else if (resumeText && !server) {
-        setNotice('데모에서는 자기소개서 질문을 만들지 않아요. 기본 질문으로 준비했어요.');
+        setNotice(t('데모에서는 자기소개서 질문을 만들지 않아요. 기본 질문으로 준비했어요.'));
       }
-      setQuestions(buildDefaultInterviewQuestions(form));
+      setQuestions(buildDefaultInterviewQuestions(form, locale));
       setClaims([]);
       setGenerationMode('fallback');
     } finally {
@@ -181,7 +184,7 @@ export default function InterviewPrepareScreen() {
   async function expandFromResume() {
     if (expanding || !resumeReady || !server) return;
     if (questions.length > MAX_CUSTOM_QUESTIONS - 2) {
-      setError(`질문은 ${MAX_CUSTOM_QUESTIONS}개까지 만들 수 있어요.`);
+      setError(t('질문은 {n}개까지 만들 수 있어요.', { n: MAX_CUSTOM_QUESTIONS }));
       return;
     }
     setExpanding(true);
@@ -200,7 +203,7 @@ export default function InterviewPrepareScreen() {
         { company: form.company.trim(), jobRole: form.jobRole.trim(), jobDescription: form.jobDescription.trim(), resumeText, existingQuestions: existing },
         reservation.id,
       );
-      const { additions } = validateGuidedExpansion({ additions: response.additions }, { resumeText, existingQuestions: existing });
+      const { additions } = validateGuidedExpansion({ additions: response.additions }, { resumeText, existingQuestions: existing }, { lang: locale });
       const parentId = newId();
       const nextClaims = [...claims];
       const added: CustomInterviewQuestion[] = additions.map((addition, index) => {
@@ -225,12 +228,14 @@ export default function InterviewPrepareScreen() {
       setQuestions((current) => [...current, ...added]);
       setClaims(nextClaims);
       setGenerationMode('ai');
-      setNotice('자소서 질문과 꼬리질문을 하나씩 추가했어요.');
+      setNotice(t('자소서 질문과 꼬리질문을 하나씩 추가했어요.'));
     } catch (reason) {
       setError(
-        isPlanLimit(reason) && reason.message
-          ? reason.message
-          : 'AI 질문을 추가하지 못했어요. 기존 질문과 이용 횟수는 그대로예요. 다시 시도해 주세요.',
+        t(
+          isPlanLimit(reason) && reason.message
+            ? reason.message
+            : 'AI 질문을 추가하지 못했어요. 기존 질문과 이용 횟수는 그대로예요. 다시 시도해 주세요.',
+        ),
       );
     } finally {
       if (reservation && !applied) {
@@ -244,11 +249,11 @@ export default function InterviewPrepareScreen() {
     setError(null);
     if (from === 'packs') {
       if (!pack) {
-        setError('연습할 질문 세트를 골라 주세요.');
+        setError(t('연습할 질문 세트를 골라 주세요.'));
         return;
       }
     } else if (filled.length === 0) {
-      setError('질문을 한 개 이상 적어 주세요.');
+      setError(t('질문을 한 개 이상 적어 주세요.'));
       return;
     }
     setStep('mode');
@@ -294,7 +299,7 @@ export default function InterviewPrepareScreen() {
       await putSession(session);
       router.replace({ pathname: '/interview/room/[id]', params: { id: session.id } });
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '연습을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      setError(t(reason instanceof Error ? reason.message : '연습을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.'));
       setStarting(false);
     }
   }
@@ -302,8 +307,8 @@ export default function InterviewPrepareScreen() {
   const header = (
     <AppHeader
       onBack={() => (step === 'mode' && !params.company && !params.again ? setStep('questions') : router.back())}
-      subtitle={step === 'questions' ? '1 / 2 단계' : '2 / 2 단계'}
-      title={step === 'questions' ? (from === 'packs' ? '질문 세트' : from === 'custom' ? '질문 만들기' : '자기소개서로 연습') : '연습 방식'}
+      subtitle={t(step === 'questions' ? '1 / 2 단계' : '2 / 2 단계')}
+      title={t(step === 'questions' ? (from === 'packs' ? '질문 세트' : from === 'custom' ? '질문 만들기' : '자기소개서로 연습') : '연습 방식')}
     />
   );
 
@@ -317,11 +322,11 @@ export default function InterviewPrepareScreen() {
       {step === 'questions' ? (
         from === 'resume' && questions.length === 0 ? (
           <Button variant="primary" fullWidth loading={preparing} onPress={() => void prepareFromResume()} size="large">
-            질문 만들기
+            {t('질문 만들기')}
           </Button>
         ) : (
           <Button variant="primary" disabled={expanding} fullWidth onPress={toModeStep} size="large">
-            다음
+            {t('다음')}
           </Button>
         )
       ) : (
@@ -334,7 +339,7 @@ export default function InterviewPrepareScreen() {
           size="large"
           variant="brand"
         >
-          {mode === 'ai' ? 'AI 피드백 연습 시작' : '기본 연습 시작'}
+          {t(mode === 'ai' ? 'AI 피드백 연습 시작' : '기본 연습 시작')}
         </Button>
       )}
     </View>
@@ -351,38 +356,42 @@ export default function InterviewPrepareScreen() {
             ) : from === 'resume' ? (
               <View style={styles.section}>
                 <AppText tone="muted" variant="body">
-                  지원 정보와 자기소개서를 적으면 나올 질문과 꼬리질문을 만들어요. 자기소개서는 질문을 만드는 데만 쓰고 저장하지 않아요.
+                  {t('지원 정보와 자기소개서를 적으면 나올 질문과 꼬리질문을 만들어요. 자기소개서는 질문을 만드는 데만 쓰고 저장하지 않아요.')}
                 </AppText>
                 <View style={[styles.fields, breakpoint !== 'compact' ? styles.fieldsRow : null]}>
                   <View style={styles.field}>
-                    <AuthField label="지원 회사" maxLength={GUIDED_INPUT_LIMITS.company} onChangeText={(company) => setForm((current) => ({ ...current, company }))} placeholder="예: 한빛전자" value={form.company} />
+                    <AuthField label={t('지원 회사')} maxLength={GUIDED_INPUT_LIMITS.company} onChangeText={(company) => setForm((current) => ({ ...current, company }))} placeholder={t('예: 한빛전자')} value={form.company} />
                   </View>
                   <View style={styles.field}>
-                    <AuthField label="직무" maxLength={GUIDED_INPUT_LIMITS.jobRole} onChangeText={(jobRole) => setForm((current) => ({ ...current, jobRole }))} placeholder="예: 영업관리" value={form.jobRole} />
+                    <AuthField label={t('직무')} maxLength={GUIDED_INPUT_LIMITS.jobRole} onChangeText={(jobRole) => setForm((current) => ({ ...current, jobRole }))} placeholder={t('예: 영업관리')} value={form.jobRole} />
                   </View>
                 </View>
                 <TextArea
-                  hint="선택이에요. 공고의 주요 업무나 자격 요건을 붙여 넣어요."
-                  label="채용 공고 (선택)"
+                  hint={t('선택이에요. 공고의 주요 업무나 자격 요건을 붙여 넣어요.')}
+                  label={t('채용 공고 (선택)')}
                   maxLength={GUIDED_INPUT_LIMITS.jobDescription}
                   minHeight={88}
                   onChangeText={(jobDescription) => setForm((current) => ({ ...current, jobDescription }))}
                   value={form.jobDescription}
                 />
                 <TextArea
-                  hint={`${resumeText.length.toLocaleString('ko-KR')}자 / 맞춤 질문은 ${MIN_RESUME_LENGTH}자 이상`}
-                  label="자기소개서"
+                  hint={
+                    locale === 'en'
+                      ? t('{n}자 / 맞춤 질문은 {min}자 이상', { n: fmtNumber(resumeText.length, 'en'), min: MIN_RESUME_LENGTH })
+                      : `${resumeText.length.toLocaleString('ko-KR')}자 / 맞춤 질문은 ${MIN_RESUME_LENGTH}자 이상`
+                  }
+                  label={t('자기소개서')}
                   maxLength={GUIDED_INPUT_LIMITS.resumeText}
                   minHeight={180}
                   onChangeText={(value) => setForm((current) => ({ ...current, resumeText: value }))}
-                  placeholder="자기소개서 내용을 붙여 넣어 주세요."
+                  placeholder={t('자기소개서 내용을 붙여 넣어 주세요.')}
                   value={form.resumeText}
                 />
                 {questions.length > 0 ? (
                   <View style={styles.section}>
                     <SectionHeader
-                      description={generationMode === 'ai' ? '자기소개서의 문장에서 만든 질문이에요. 고치거나 지워도 돼요.' : '기본 질문이에요. 고치거나 질문을 더해도 돼요.'}
-                      title={`질문 ${filled.length}개`}
+                      description={t(generationMode === 'ai' ? '자기소개서의 문장에서 만든 질문이에요. 고치거나 지워도 돼요.' : '기본 질문이에요. 고치거나 질문을 더해도 돼요.')}
+                      title={t('질문 {n}개', { n: filled.length })}
                     />
                     {notice ? (
                       <Card variant="soft">
@@ -392,12 +401,14 @@ export default function InterviewPrepareScreen() {
                     <QuestionListEditor disabled={expanding} onAdd={() => setQuestions((current) => [...current, blankQuestion()])} onChange={setQuestions} questions={questions} />
                     {server && resumeReady ? (
                       <Button disabled={expanding} leftIcon={<Sparkles color={colors.text} size={iconSizes.inline} />} loading={expanding} onPress={() => void expandFromResume()} variant="outline">
-                        자소서 질문 더 만들기
+                        {t('자소서 질문 더 만들기')}
                       </Button>
                     ) : null}
                     {server && resumeReady && allowance ? (
                       <AppText tone="muted" variant="meta">
-                        {`자소서 질문 만들기는 이번 달 ${Math.max(0, allowance.questions.limit - allowance.questions.used)}회 남았어요. 질문과 꼬리질문을 한 쌍씩 더해요.`}
+                        {t('자소서 질문 만들기는 이번 달 {n}회 남았어요. 질문과 꼬리질문을 한 쌍씩 더해요.', {
+                          n: Math.max(0, allowance.questions.limit - allowance.questions.used),
+                        })}
                       </AppText>
                     ) : null}
                   </View>
@@ -405,74 +416,78 @@ export default function InterviewPrepareScreen() {
               </View>
             ) : (
               <View style={styles.section}>
-                <AuthField label="연습 이름 (선택)" maxLength={60} onChangeText={setCustomTitle} placeholder={UNTITLED_SET_TITLE} value={customTitle} />
+                <AuthField label={t('연습 이름 (선택)')} maxLength={60} onChangeText={setCustomTitle} placeholder={t(UNTITLED_SET_TITLE)} value={customTitle} />
                 <QuestionListEditor onAdd={() => setQuestions((current) => [...current, blankQuestion()])} onChange={setQuestions} questions={questions} />
               </View>
             )
           ) : (
             <View style={styles.section}>
               <Card variant="soft" style={styles.summary}>
-                <AppText variant="itemTitle">{title}</AppText>
+                <AppText variant="itemTitle">{t(title)}</AppText>
                 <AppText tone="muted" variant="meta">
-                  {`질문 ${questionCount}개 / 최대 ${totalAnswerLabel(
-                    pack ? pack.questions.map((question) => ({ answerDurationSec: question.maxDurationMs / 1000 })) : filled,
-                  )}`}
+                  {t('질문 {count}개 / 최대 {time}', {
+                    count: questionCount,
+                    time: totalAnswerLabel(
+                      pack ? pack.questions.map((question) => ({ answerDurationSec: question.maxDurationMs / 1000 })) : filled,
+                      locale,
+                    ),
+                  })}
                 </AppText>
               </Card>
-              <SectionHeader description="준비한 질문 전체, 연습 1회 기준이에요." title="어떻게 연습할까요?" />
+              <SectionHeader description={t('준비한 질문 전체, 연습 1회 기준이에요.')} title={t('어떻게 연습할까요?')} />
               <View accessibilityRole="radiogroup" style={[styles.modes, breakpoint !== 'compact' ? styles.modesRow : null]}>
                 <ModeOption
-                  body="녹음 없이 질문과 타이머로 혼자 연습해요. 말하는 데 집중해요."
+                  body={t('녹음 없이 질문과 타이머로 혼자 연습해요. 말하는 데 집중해요.')}
                   onPress={() => setMode('basic')}
-                  price="무료"
+                  price={t('무료')}
                   selected={mode === 'basic'}
-                  title="기본 연습"
+                  title={t('기본 연습')}
                 />
                 <ModeOption
-                  body="답변을 녹음해 내가 한 말, 잘한 점, 빠진 내용, 다음에 해볼 것을 받아요."
+                  body={t('답변을 녹음해 내가 한 말, 잘한 점, 빠진 내용, 다음에 해볼 것을 받아요.')}
                   onPress={() => setMode('ai')}
-                  price={demo ? '데모에서는 못 써요' : aiPriceLabel(allowance)}
+                  price={demo ? t('데모에서는 못 써요') : t(aiPriceLabel(allowance, locale))}
                   selected={mode === 'ai'}
-                  title="AI 피드백 연습"
+                  title={t('AI 피드백 연습')}
                 />
               </View>
               {mode === 'ai' ? (
                 <Card style={styles.aiNotes}>
                   {demo ? (
                     <AppText tone="muted" variant="meta">
-                      데모에는 서버가 없어서 AI 피드백 연습을 할 수 없어요. 기본 연습으로 둘러봐 주세요.
+                      {t('데모에는 서버가 없어서 AI 피드백 연습을 할 수 없어요. 기본 연습으로 둘러봐 주세요.')}
                     </AppText>
                   ) : aiProblem ? (
                     <View style={styles.section}>
                       <AppText tone="negative" variant="meta">
-                        {aiProblem}
+                        {t(aiProblem)}
                       </AppText>
                       <Button onPress={() => router.push('/subscription')} variant="outline">
-                        요금제 보기
+                        {t('요금제 보기')}
                       </Button>
                     </View>
                   ) : (
                     <AppText tone="muted" variant="meta">
-                      {`첫 답변을 시작할 때 한 번으로 세요. 스탠다드는 매달 ${PLAN.aiStandardMonthly}회예요. 녹음은 이 기기에만 두고, 글로 옮긴 뒤 바로 지워요.`}
+                      {t('첫 답변을 시작할 때 한 번으로 세요. 스탠다드는 매달 {n}회예요. 녹음은 이 기기에만 두고, 글로 옮긴 뒤 바로 지워요.', { n: PLAN.aiStandardMonthly })}
                     </AppText>
                   )}
                   {canRecordVideo && !demo ? (
                     <View style={styles.toggle}>
                       <Video {...decorative} color={colors.textSoft} size={iconSizes.inline} />
                       <View style={styles.flex}>
-                        <AppText variant="bodyStrong">내 모습도 녹화하기</AppText>
+                        <AppText variant="bodyStrong">{t('내 모습도 녹화하기')}</AppText>
                         <AppText tone="muted" variant="meta">
-                          영상은 이 브라우저에만 저장하고 어디에도 보내지 않아요.
+                          {t('영상은 이 브라우저에만 저장하고 어디에도 보내지 않아요.')}
                         </AppText>
                       </View>
-                      <Switch accessibilityLabel="내 모습도 녹화하기" onValueChange={setVideo} thumbColor={colors.surface} trackColor={{ false: colors.borderStrong, true: colors.brand }} value={video} />
+                      <Switch accessibilityLabel={t('내 모습도 녹화하기')} onValueChange={setVideo} thumbColor={colors.surface} trackColor={{ false: colors.borderStrong, true: colors.brand }} value={video} />
                     </View>
                   ) : null}
                 </Card>
               ) : null}
               {pack ? (
                 <AppText tone="faint" variant="badge">
-                  {INTERVIEW_DISCLAIMER.replace(/\n/g, ' ')}
+                  {t(INTERVIEW_DISCLAIMER).replace(/\n/g, ' ')}
                 </AppText>
               ) : null}
             </View>
@@ -508,6 +523,7 @@ function ModeOption({ title, body, price, selected, onPress }: { title: string; 
 }
 
 function PackPicker({ selected, onPick }: { selected: string | null; onPick: (id: string) => void }) {
+  const t = useT();
   const groups = useMemo(
     () => [
       { key: 'common', title: '공통 질문', packs: COMMON_PACKS },
@@ -518,17 +534,17 @@ function PackPicker({ selected, onPick }: { selected: string | null; onPick: (id
   return (
     <View style={styles.section}>
       <AppText tone="muted" variant="body">
-        공통 질문이나 지원할 회사의 질문 세트를 골라 바로 연습해요.
+        {t('공통 질문이나 지원할 회사의 질문 세트를 골라 바로 연습해요.')}
       </AppText>
       {groups.map((group) => (
         <View key={group.key} style={styles.section}>
-          <SectionHeader title={group.title} />
+          <SectionHeader title={t.ctx('pack', group.title)} />
           <Card padding={false}>
             {group.packs.map((pack, index) => {
               const on = selected === pack.id;
               return (
                 <Pressable
-                  accessibilityLabel={`${pack.name}, ${pack.audience ?? pack.stage}, 질문 ${pack.questions.length}개`}
+                  accessibilityLabel={`${t(pack.name)}, ${t(pack.audience ?? pack.stage)}, ${t('질문 {n}개', { n: pack.questions.length })}`}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: on, checked: on }}
                   key={pack.id}
@@ -536,11 +552,11 @@ function PackPicker({ selected, onPick }: { selected: string | null; onPick: (id
                   style={({ pressed }) => [styles.packRow, index < group.packs.length - 1 ? styles.divider : null, on ? styles.packOn : null, pressed ? styles.pressed : null]}
                 >
                   <View style={styles.flex}>
-                    <AppText variant="itemTitle">{pack.name}</AppText>
-                    <AppText tone="muted" variant="meta">{`${pack.audience ?? pack.stage} / 질문 ${pack.questions.length}개`}</AppText>
+                    <AppText variant="itemTitle">{t(pack.name)}</AppText>
+                    <AppText tone="muted" variant="meta">{t('{label} / 질문 {n}개', { label: t(pack.audience ?? pack.stage), n: pack.questions.length })}</AppText>
                     {pack.traits.length > 0 ? (
                       <AppText numberOfLines={1} tone="faint" variant="badge">
-                        {pack.traits.map((trait) => trait.label).join(', ')}
+                        {pack.traits.map((trait) => t(trait.label)).join(', ')}
                       </AppText>
                     ) : null}
                   </View>
@@ -555,7 +571,7 @@ function PackPicker({ selected, onPick }: { selected: string | null; onPick: (id
       ))}
       <Card variant="soft">
         <AppText tone="muted" variant="meta">
-          {INTERVIEW_DISCLAIMER.replace(/\n/g, ' ')}
+          {t(INTERVIEW_DISCLAIMER).replace(/\n/g, ' ')}
         </AppText>
       </Card>
     </View>

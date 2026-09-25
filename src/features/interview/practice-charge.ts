@@ -14,6 +14,7 @@
  * practice is never charged twice.
  */
 import { cancelUsage, commitUsage, reserveUsage, type InterviewAllowance, type Reservation, type UsageKind } from './interview-api';
+import type { AppLocale } from './locale';
 import type { InterviewSession } from './types';
 
 export interface ChargeApi {
@@ -54,12 +55,15 @@ export async function startPaidPractice(
 }
 
 /** 시작 전에 미리 알려 주는 한 줄. 최종 판단은 예약 때 학생 서버가 한다. */
-export function aiAllowanceProblem(allowance: InterviewAllowance | null): string | null {
+export function aiAllowanceProblem(allowance: InterviewAllowance | null, locale: AppLocale = 'ko'): string | null {
   if (!allowance || allowance.ai.freeTrial) return null;
   if (allowance.plan !== 'standard') {
     return '무료 체험을 이미 썼어요. AI 피드백 연습은 스탠다드에서 매달 할 수 있어요.';
   }
   if (allowance.ai.used >= allowance.ai.limit) {
+    if (locale === 'en') {
+      return `You've used all ${allowance.ai.limit} AI feedback practices this month. They refill on the 1st of next month.`;
+    }
     return `이번 달 AI 피드백 연습 ${allowance.ai.limit}회를 모두 썼어요. 다음 달 1일에 다시 채워져요.`;
   }
   return null;
@@ -73,8 +77,11 @@ export function aiPracticesLeft(allowance: InterviewAllowance | null): number | 
 }
 
 /** AI 연습 버튼 옆 한 줄: 첫 회 무료 / 이번 달 N회 남음 / 스탠다드. */
-export function aiPriceLabel(allowance: InterviewAllowance | null): string {
+export function aiPriceLabel(allowance: InterviewAllowance | null, locale: AppLocale = 'ko'): string {
   if (!allowance || allowance.ai.freeTrial) return '첫 회 무료';
-  if (allowance.plan === 'standard') return `이번 달 ${aiPracticesLeft(allowance) ?? 0}회 남음`;
+  if (allowance.plan === 'standard') {
+    if (locale === 'en') return `${aiPracticesLeft(allowance) ?? 0} left this month`;
+    return `이번 달 ${aiPracticesLeft(allowance) ?? 0}회 남음`;
+  }
   return '스탠다드';
 }
