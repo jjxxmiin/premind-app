@@ -13,7 +13,7 @@ import type { AppTextTone } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatRelativeDate } from '@/lib/format';
 import { useT } from '@/lib/i18n';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, radii, spacing } from '@/theme/tokens';
 
 import { formatDelta, pointsAttr, scoreDelta, sparklinePoints } from './lens-charts';
 
@@ -133,7 +133,7 @@ export function ScoreTrend({ entries, style }: ScoreTrendProps) {
 }
 
 const styles = StyleSheet.create({
-  card: { gap: spacing.sm },
+  card: { borderRadius: radii.hero, gap: spacing.sm },
   head: {
     alignItems: 'center',
     flexDirection: 'row',

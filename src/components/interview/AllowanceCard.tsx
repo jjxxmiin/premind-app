@@ -1,13 +1,12 @@
 import { router } from 'expo-router';
-import { Sparkles } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Button, Card, ProgressBar } from '@/components/ui';
+import { MiniRing, Surface } from '@/components/speak/SpeakKit';
+import { AppText, Button } from '@/components/ui';
 import type { InterviewAllowance } from '@/features/interview/interview-api';
 import { PLAN } from '@/features/interview/pricing';
-import { decorative } from '@/lib/a11y';
 import { enShortDate, useLocale, useT, type AppLocale } from '@/lib/i18n';
-import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
+import { colors, spacing } from '@/theme/tokens';
 
 function renewDate(ms: number | null, locale: AppLocale): string | null {
   if (!ms) return null;
@@ -19,12 +18,14 @@ function renewDate(ms: number | null, locale: AppLocale): string | null {
 /**
  * 이번 달 AI 피드백 연습이 몇 번 남았는지. 결제는 앱의 요금제 화면(웹에서만
  * 결제)으로 보낸다. 면접은 PREMIND 학생 요금제의 한 줄이다.
+ * 2026-09-26 앱다운: 막대 대신 작은 링 하나(가운데 남은 횟수) + 한 문장, 채운 면.
  */
 export function AllowanceCard({ allowance, demo = false }: { allowance: InterviewAllowance | null; demo?: boolean }) {
   const t = useT();
   const locale = useLocale();
   const standard = allowance?.plan === 'standard';
   const left = allowance ? (allowance.ai.freeTrial ? 1 : Math.max(0, allowance.ai.limit - allowance.ai.used)) : null;
+  const ringMax = standard ? Math.max(1, allowance?.ai.limit ?? 1) : 1;
   const headline = demo
     ? t('데모에서는 기본 연습만 할 수 있어요')
     : !allowance
@@ -39,11 +40,13 @@ export function AllowanceCard({ allowance, demo = false }: { allowance: Intervie
     ? `${t('스탠다드는 매달 {n}회예요.', { n: allowance?.ai.limit ?? PLAN.aiStandardMonthly })}${renew ? ` ${t('{date}에 다시 채워져요.', { date: renew })}` : ''}`
     : t('기본 연습은 언제나 무료예요. 스탠다드는 AI 피드백 연습을 매달 {n}회 할 수 있어요.', { n: PLAN.aiStandardMonthly });
   return (
-    <Card style={styles.card}>
+    <Surface style={styles.card} tone="soft">
       <View style={styles.head}>
-        <View {...decorative} style={styles.icon}>
-          <Sparkles color={colors.brand} size={iconSizes.inline} strokeWidth={2} />
-        </View>
+        <MiniRing max={ringMax} size={56} stroke={6} value={demo ? 0 : left ?? 0}>
+          <AppText tabular variant="heading">
+            {demo || left === null ? '0' : String(left)}
+          </AppText>
+        </MiniRing>
         <View style={styles.flex}>
           <AppText tone="muted" variant="meta">
             {t(standard ? '스탠다드' : '무료')}
@@ -51,36 +54,21 @@ export function AllowanceCard({ allowance, demo = false }: { allowance: Intervie
           <AppText variant="itemTitle">{headline}</AppText>
         </View>
       </View>
-      {standard && allowance ? (
-        <ProgressBar
-          label={t('이번 달 AI 피드백 연습')}
-          max={Math.max(1, allowance.ai.limit)}
-          tone="brand"
-          value={Math.min(allowance.ai.used, allowance.ai.limit)}
-        />
-      ) : null}
       <AppText tone="muted" variant="meta">
         {demo ? t('로그인하면 AI 피드백 연습 첫 회를 무료로 해 볼 수 있어요.') : detail}
       </AppText>
       {!standard ? (
-        <Button fullWidth onPress={() => router.push('/subscription')} variant="outline">
+        <Button fullWidth onPress={() => router.push('/subscription')} style={styles.plan} variant="outline">
           {t('요금제 보기')}
         </Button>
       ) : null}
-    </Card>
+    </Surface>
   );
 }
 
 const styles = StyleSheet.create({
   card: { gap: spacing.md },
   head: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
-  icon: {
-    alignItems: 'center',
-    backgroundColor: colors.brandSoft,
-    borderRadius: radii.full,
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
-  },
   flex: { flex: 1, gap: spacing.xxs, minWidth: 0 },
+  plan: { borderColor: colors.transparent },
 });

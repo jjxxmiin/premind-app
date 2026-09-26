@@ -200,4 +200,11 @@ export const EN_LENS: EnDict = {
   '같은 대본으로 평가를 새로 만들어요.': 'Makes a new review from the same transcript.',
   '다시 평가': 'Review again',
   '그 부분부터 재생해요.': 'Plays from that point.',
+
+  // ── 2026-09-26 앱다운 재설계: 말하기 탭 큰 제목, 머리 카드, 리포트 ─────────────────
+  '내가 말한 것을 돌려받아요': 'Get feedback on what you said',
+  '한 번 더 말해 볼까요?': 'Ready for another run?',
+  '발표를 들려주세요': "Let's hear your presentation",
+  '녹음 화면을 열어요': 'Opens the recorder',
+  '다시 녹음하기': 'Record again',
 };

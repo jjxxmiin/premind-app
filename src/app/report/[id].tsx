@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import {
-  ArrowUpRight,
   ChevronRight,
+  Mic,
   FlaskConical,
   History,
   Lightbulb,
@@ -19,7 +19,9 @@ import {
 } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
+import { BOTTOM_ACTION_SPACE, BottomAction } from '@/components/app';
 import { SpeakFrame } from '@/components/speak/SpeakColumns';
+import { SpeakHero, SpeakSectionTitle, StatTile, Surface, TileGrid } from '@/components/speak/SpeakKit';
 import {
   BalanceStrip,
   LensHistoryList,
@@ -30,7 +32,7 @@ import {
   RubricRadar,
   SCORE_MAX,
   ScoreRing,
-  SpeechHabits,
+  bandTone,
   momentKey,
   comparisonPair,
   formatEvaluatedAt,
@@ -58,6 +60,7 @@ import { decorative } from '@/lib/a11y';
 import { formatDuration } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
+import type { SpeechMetrics } from '@/lib/speech-metrics';
 import { goBackOrReplace } from '@/lib/navigation';
 import { speechMetrics } from '@/lib/speech-metrics';
 import { isDemoSession } from '@/services/api/session-manager';
@@ -259,34 +262,70 @@ export default function LensReportScreen() {
   };
 
   // 총평부터 평가 이력까지는 읽는 칸, 점수와 방사형 그림, 다음 연습은 옆 칸(데스크톱).
+  // 머리: 큰 점수 링 + 총평 한 문장(토스: 제일 중요한 숫자 하나를 크게).
   const scoreBlock = (
     <>
-      <Card style={styles.scoreCard} variant="soft">
+      <SpeakHero style={styles.scoreHero}>
+        <StatusBadge
+          label={demo ? t('예시 평가') : t('근거 기반')}
+          style={styles.center}
+          tone={demo ? 'neutral' : 'brand'}
+        />
         <ScoreRing score={report.overall} />
-        {/* A YouTube title is long; one line turned it into an ellipsis
-                  that told the reader nothing about which recording this was. */}
-        <AppText align="center" numberOfLines={2} tone="faint" variant="meta">
-          {material.title}
-        </AppText>
-        <AppText tone="faint" variant="badge">
-          {t('{items}개 항목 / 근거 {moments}개', {
-            items: report.rubric.length,
-            moments: momentCount,
-          })}
-        </AppText>
+        <View style={styles.heroCopy}>
+          {/* A YouTube title is long; one line turned it into an ellipsis
+                    that told the reader nothing about which recording this was. */}
+          <AppText align="center" numberOfLines={2} tone="muted" variant="meta">
+            {material.title}
+          </AppText>
+          <AppText align="center" variant="heading">
+            {conclusion.sentence}
+          </AppText>
+          <AppText align="center" tone="faint" variant="badge">
+            {t('{items}개 항목 / 근거 {moments}개', {
+              items: report.rubric.length,
+              moments: momentCount,
+            })}
+          </AppText>
+        </View>
         <BalanceStrip
           improvementCount={report.improvements.length}
           strengthCount={report.strengths.length}
           style={styles.balance}
         />
-      </Card>
-      <Card>
-        <RubricRadar rubric={report.rubric} />
-      </Card>
+      </SpeakHero>
+      {wide ? (
+        <Surface tone="raised">
+          <RubricRadar rubric={report.rubric} />
+        </Surface>
+      ) : null}
     </>
   );
+  const recordAgain = (
+    <Button
+      fullWidth
+      leftIcon={<Mic color={colors.textInverse} size={iconSizes.inline} />}
+      onPress={() => router.push('/record')}
+      size="large"
+      variant="primary"
+    >
+      {t('다시 녹음하기')}
+    </Button>
+  );
+  const reviewAgain = (
+    <Button
+      accessibilityHint={t('같은 대본으로 평가를 새로 만들어요.')}
+      fullWidth
+      leftIcon={<RefreshCw color={colors.textSoft} size={iconSizes.inline} />}
+      loading={requesting}
+      onPress={evaluate}
+      variant="outline"
+    >
+      {t('다시 평가')}
+    </Button>
+  );
   const nextBlock = (
-    <Card style={styles.nextCard} variant="soft">
+    <Surface style={styles.nextCard} tone="soft">
       <View style={styles.nextTitle}>
         <Lightbulb {...decorative} color={colors.text} size={iconSizes.section} strokeWidth={1.9} />
         <AppText variant="itemTitle">{t('다음 연습에서 해 보기')}</AppText>
@@ -294,26 +333,9 @@ export default function LensReportScreen() {
       <AppText tone="muted" variant="body">
         {t('먼저 고칠 것 하나만 기억하고 다시 한번 연습을 녹음해 보세요.')}
       </AppText>
-      <Button
-        fullWidth
-        onPress={() => router.push('/record')}
-        rightIcon={<ArrowUpRight color={colors.textInverse} size={iconSizes.inline} />}
-        size="large"
-        variant="primary"
-      >
-        {t('녹음 시작')}
-      </Button>
-      <Button
-        accessibilityHint={t('같은 대본으로 평가를 새로 만들어요.')}
-        fullWidth
-        leftIcon={<RefreshCw color={colors.textSoft} size={iconSizes.inline} />}
-        loading={requesting}
-        onPress={evaluate}
-        variant="outline"
-      >
-        {t('다시 평가')}
-      </Button>
-    </Card>
+      {wide ? recordAgain : null}
+      {reviewAgain}
+    </Surface>
   );
 
   return (
@@ -336,19 +358,8 @@ export default function LensReportScreen() {
         style={styles.fill}
       >
         <SpeakFrame>
-          <View style={[styles.content, { paddingHorizontal: gutter }]}>
-            <View style={styles.heading}>
-              <StatusBadge
-                label={demo ? t('예시 평가') : t('근거 기반')}
-                tone={demo ? 'neutral' : 'brand'}
-              />
-              <AppText variant="pageTitle">{t('내 발표를 평가했어요')}</AppText>
-              <AppText tone="muted" variant="body">
-                {t(
-                  '발표, 스피치, 면접 연습 녹음을 대본으로 채점했어요. 결론부터 읽고, 시간을 눌러 그 부분을 들어요.',
-                )}
-              </AppText>
-            </View>
+          <View style={[styles.content, { paddingHorizontal: gutter }, wide ? null : styles.dockSpace]}>
+            {wide ? null : scoreBlock}
 
             {viewing && !viewingIsLatest ? (
               <Card style={styles.noticeCard} variant="soft">
@@ -385,36 +396,27 @@ export default function LensReportScreen() {
               style={wide ? styles.bodyRow : styles.bodyStack}
             >
               <View style={wide ? styles.mainColumn : styles.bodyStack}>
-                <Card style={styles.conclusionCard}>
-                  <AppText tone="muted" variant="badge">
-                    {t('총평')}
-                  </AppText>
-                  <AppText variant="heading">{conclusion.sentence}</AppText>
-                  {conclusion.highlight ? (
-                    <ConclusionLine
-                      label={t('가장 잘한 것')}
-                      moment={conclusion.highlight}
-                      onPress={jumpTo}
-                    />
-                  ) : null}
-                  {conclusion.fix ? (
-                    <ConclusionLine
-                      label={t('먼저 고칠 것')}
-                      moment={conclusion.fix}
-                      onPress={jumpTo}
-                    />
-                  ) : null}
-                </Card>
+                {habits ? <HabitTiles habits={habits} /> : null}
 
-                {habits ? (
+                {conclusion.highlight || conclusion.fix ? (
                   <View style={styles.section}>
-                    <SectionHeader
-                      description={t(
-                        '대본에서 바로 잰 숫자예요. 눈금의 진한 구간이 알맞은 범위예요.',
-                      )}
-                      title={t('말하기 습관')}
-                    />
-                    <SpeechHabits metrics={habits} />
+                    <SpeakSectionTitle title={t('총평')} />
+                    {conclusion.highlight ? (
+                      <ConclusionLine
+                        label={t('가장 잘한 것')}
+                        moment={conclusion.highlight}
+                        onPress={jumpTo}
+                        tone="positive"
+                      />
+                    ) : null}
+                    {conclusion.fix ? (
+                      <ConclusionLine
+                        label={t('먼저 고칠 것')}
+                        moment={conclusion.fix}
+                        onPress={jumpTo}
+                        tone="brand"
+                      />
+                    ) : null}
                   </View>
                 ) : null}
 
@@ -426,14 +428,14 @@ export default function LensReportScreen() {
                       )}
                       title={t('지난번과 비교')}
                     />
-                    <Card>
+                    <Surface tone="raised">
                       <RubricCompare
                         current={comparison.current.report}
                         currentAt={comparison.current.evaluatedAt}
                         previous={comparison.previous.report}
                         previousAt={comparison.previous.evaluatedAt}
                       />
-                    </Card>
+                    </Surface>
                   </View>
                 ) : null}
 
@@ -444,8 +446,12 @@ export default function LensReportScreen() {
                     )}
                     title={t('얼마나 잘했나요')}
                   />
-                  {wide ? null : scoreBlock}
-                  <Card padding={false}>
+                  {wide ? null : (
+                    <Surface tone="raised">
+                      <RubricRadar rubric={report.rubric} />
+                    </Surface>
+                  )}
+                  <Surface padding={0} style={styles.clip} tone="raised">
                     {report.rubric.map((metric, index) => (
                       <View
                         accessibilityLabel={`${t(
@@ -488,7 +494,7 @@ export default function LensReportScreen() {
                         </AppText>
                       </View>
                     ))}
-                  </Card>
+                  </Surface>
                 </View>
 
                 {report.strengths.length > 0 ? (
@@ -500,9 +506,11 @@ export default function LensReportScreen() {
                       description={t('시간을 누르면 그 부분부터 들어요.')}
                       title={t('무엇이 좋았나요')}
                     />
-                    <Card
+                    <Surface
                       onLayout={(event) => rememberOffset('card-strength', event)}
-                      padding={false}
+                      padding={0}
+                      style={styles.clip}
+                      tone="raised"
                     >
                       {report.strengths.map((strength, index) => {
                         const key = momentKey('strength', index);
@@ -517,7 +525,7 @@ export default function LensReportScreen() {
                           />
                         );
                       })}
-                    </Card>
+                    </Surface>
                   </View>
                 ) : null}
 
@@ -531,7 +539,7 @@ export default function LensReportScreen() {
                       title={t('무엇부터 고칠까요')}
                     />
                     {priority ? (
-                      <Card style={styles.priorityCard}>
+                      <Surface style={styles.priorityCard} tone="brand">
                         <StatusBadge label={t('우선순위')} showDot tone="brand" />
                         <AppText variant="heading">{priority.text}</AppText>
                         {priority.action ? (
@@ -552,12 +560,14 @@ export default function LensReportScreen() {
                             time: formatDuration(priority.sourceStartMs / 1_000),
                           })}
                         </Button>
-                      </Card>
+                      </Surface>
                     ) : null}
                     {report.improvements.length > 0 ? (
-                      <Card
+                      <Surface
                         onLayout={(event) => rememberOffset('card-improvement', event)}
-                        padding={false}
+                        padding={0}
+                        style={styles.clip}
+                        tone="raised"
                       >
                         {report.improvements.map((improvement, index) => {
                           const key = momentKey('improvement', index);
@@ -572,7 +582,7 @@ export default function LensReportScreen() {
                             />
                           );
                         })}
-                      </Card>
+                      </Surface>
                     ) : null}
                   </View>
                 ) : null}
@@ -585,7 +595,7 @@ export default function LensReportScreen() {
                       )}
                       title={t('어디를 다시 들을까요')}
                     />
-                    <Card>
+                    <Surface tone="raised">
                       <MomentsTimeline
                         activeKey={activeKey}
                         durationMs={material.source.durationMs}
@@ -600,7 +610,7 @@ export default function LensReportScreen() {
                         strengths={report.strengths}
                         style={styles.densityBlock}
                       />
-                    </Card>
+                    </Surface>
                   </View>
                 ) : null}
 
@@ -634,8 +644,42 @@ export default function LensReportScreen() {
           </View>
         </SpeakFrame>
       </ScrollView>
+      {wide ? null : <BottomAction>{recordAgain}</BottomAction>}
       {errorDialog}
     </Screen>
+  );
+}
+
+/**
+ * 말하기 습관을 Yoodli 처럼 지표 타일 2열로(2026-09-26, 눈금 표 대신): 말 속도, 군말, 긴 멈춤,
+ * 말한 시간. 모두 대본에서 이미 잰 값이고, 새로 매기는 점수는 없다.
+ */
+function HabitTiles({ habits }: { habits: SpeechMetrics }) {
+  const t = useT();
+  const gauges = [habits.pace, habits.fillers, habits.pauses];
+  return (
+    <View style={styles.tiles}>
+      <SpeakSectionTitle title={t('말하기 습관')} />
+      <TileGrid>
+        {gauges.map((metric) => (
+          <StatTile
+            caption={t.ctx('speech', metric.band)}
+            captionTone={bandTone(metric)}
+            detail={t.ctx('speech', metric.advice)}
+            key={metric.key}
+            label={t.ctx('speech', metric.title)}
+            unit={t.ctx('speech', metric.unit)}
+            value={metric.valueText}
+          />
+        ))}
+        {habits.spokenMs > 0 ? (
+          <StatTile
+            label={t('말한 시간')}
+            value={formatDuration(habits.spokenMs / 1_000)}
+          />
+        ) : null}
+      </TileGrid>
+    </View>
   );
 }
 
@@ -644,10 +688,13 @@ function ConclusionLine({
   label,
   moment,
   onPress,
+  tone,
 }: {
   label: string;
   moment: LensMoment;
   onPress: (moment: LensMoment) => void;
+  /** 잘한 것은 초록 면, 고칠 것은 주황 면. */
+  tone: 'positive' | 'brand';
 }) {
   const t = useT();
   const time = formatDuration(moment.sourceStartMs / 1_000);
@@ -659,11 +706,12 @@ function ConclusionLine({
       onPress={() => onPress(moment)}
       style={({ pressed }) => [
         styles.conclusionLine,
+        tone === 'positive' ? styles.conclusionPositive : styles.conclusionBrand,
         pressed ? styles.conclusionLinePressed : null,
       ]}
     >
       <View style={styles.conclusionHead}>
-        <AppText tone="muted" variant="badge">
+        <AppText tone={tone} variant="label">
           {label}
         </AppText>
         <View style={styles.timeChip}>
@@ -672,7 +720,7 @@ function ConclusionLine({
           </AppText>
         </View>
       </View>
-      <AppText variant="body">{moment.text}</AppText>
+      <AppText variant="bodyStrong">{moment.text}</AppText>
       {moment.action ? (
         <View style={styles.actionCallout}>
           <AppText tone="muted" variant="badge">
@@ -820,17 +868,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
-  conclusionCard: {
-    gap: spacing.md,
-  },
   conclusionLine: {
-    backgroundColor: colors.backgroundSoft,
-    borderRadius: radii.input,
-    gap: spacing.xs,
-    padding: spacing.md,
+    borderRadius: radii.hero,
+    gap: spacing.sm,
+    padding: spacing.gutter,
+  },
+  conclusionPositive: {
+    backgroundColor: colors.positiveSoft,
+  },
+  conclusionBrand: {
+    backgroundColor: colors.brandSoft,
   },
   conclusionLinePressed: {
-    backgroundColor: colors.backgroundMuted,
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
   },
   conclusionHead: {
     alignItems: 'center',
@@ -916,8 +967,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundMuted,
   },
   priorityCard: {
-    backgroundColor: colors.brandSoft,
-    borderColor: colors.brandSoft,
+    gap: spacing.md,
+  },
+  scoreHero: {
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  heroCopy: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  center: {
+    alignSelf: 'center',
+  },
+  clip: {
+    overflow: 'hidden',
+  },
+  dockSpace: {
+    paddingBottom: BOTTOM_ACTION_SPACE + spacing.md,
+  },
+  tiles: {
     gap: spacing.md,
   },
   actionCallout: {

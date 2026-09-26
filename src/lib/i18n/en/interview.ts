@@ -648,4 +648,8 @@ export const EN_INTERVIEW: EnDict = {
   "다른 앱이 마이크를 쓰고 있어요. 그 앱을 닫고 다시 시도해 주세요.": "Another app is using the microphone. Close that app and try again.",
   "카메라와 마이크를 켜지 못했어요. 잠시 후 다시 시도해 주세요.": "We couldn't turn on the camera and microphone. Please try again in a moment.",
   "마이크를 켜지 못했어요. 잠시 후 다시 시도해 주세요.": "We couldn't turn on the microphone. Please try again in a moment.",
+
+  // ── 2026-09-26 앱다운 재설계: 면접 홈 머리 카드, 결과 인사이트 칩 ──
+  "어떻게 시작할까요?": "How would you like to start?",
+  "다룬 요점 {n}개": { one: "{n} point covered", other: "{n} points covered" },
 };

@@ -9,7 +9,6 @@ import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 import type { LensReport } from '@/types';
 
-import { RubricSummary } from './RubricSummary';
 import { ScoreRing } from './ScoreRing';
 import { reportConclusion, scoreWord } from './lens-copy';
 import { verdictTone } from './lens-home';
@@ -54,6 +53,7 @@ export function LatestReportCard({
 
   return (
     <SpeakCard
+      tone="raised"
       accessibilityHint={t('발표 평가 결과를 열어요')}
       accessibilityLabel={spoken}
       onPress={onPress}
@@ -68,22 +68,21 @@ export function LatestReportCard({
       <View style={styles.main}>
         <ScoreRing label={t('전체 평가')} score={report.overall} size="medium" />
         <View style={styles.copy}>
-          <AppText numberOfLines={2} variant="itemTitle">
+          <AppText numberOfLines={2} variant="heading">
             {title}
           </AppText>
-          <AppText tone="faint" variant="badge">
+          <AppText numberOfLines={1} tone="faint" variant="meta">
             {meta}
-          </AppText>
-          <AppText style={styles.sentence} tone="soft" variant="meta">
-            {conclusion.sentence}
           </AppText>
         </View>
       </View>
-      <RubricSummary rubric={report.rubric} />
+      <AppText tone="soft" variant="body">
+        {conclusion.sentence}
+      </AppText>
       {conclusion.fix && fixTime ? (
         <View style={styles.fix}>
           <View style={styles.fixHead}>
-            <AppText tone="muted" variant="badge">
+            <AppText tone="brand" variant="badge">
               {t('먼저 고칠 것')}
             </AppText>
             <View style={styles.timeChip}>
@@ -107,7 +106,7 @@ export function LatestReportCard({
 
 const styles = StyleSheet.create({
   card: {
-    gap: spacing.md,
+    gap: spacing.lg,
   },
   head: {
     alignItems: 'center',
@@ -124,11 +123,8 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
     minWidth: 0,
   },
-  sentence: {
-    marginTop: spacing.xs,
-  },
   fix: {
-    backgroundColor: colors.backgroundSoft,
+    backgroundColor: colors.brandSubtle,
     borderRadius: radii.tile,
     gap: spacing.xs,
     padding: spacing.md,
@@ -140,9 +136,7 @@ const styles = StyleSheet.create({
   },
   timeChip: {
     backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radii.badge,
-    borderWidth: 1,
+    borderRadius: radii.chip,
     paddingHorizontal: 6,
     paddingVertical: spacing.xxs,
   },
