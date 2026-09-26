@@ -43,7 +43,7 @@ export function InterviewSessionRow({ session, onPress, last = false }: Intervie
       accessibilityLabel={`${title}, ${statusLabel}, ${meta}`}
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.row, !last ? styles.divider : null, pressed ? styles.pressed : null]}
+      style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [styles.row, !last ? styles.divider : null, hovered || pressed ? styles.pressed : null]}
     >
       <View {...decorative} style={styles.icon}>
         <MessagesSquare color={colors.textSoft} size={iconSizes.inline} strokeWidth={2} />
@@ -56,7 +56,7 @@ export function InterviewSessionRow({ session, onPress, last = false }: Intervie
           {meta}
         </AppText>
       </View>
-      <StatusBadge label={statusLabel} tone={status.tone} />
+      <StatusBadge label={statusLabel} style={styles.badge} tone={status.tone} />
       <ChevronRight {...decorative} color={colors.textFaint} size={iconSizes.inline} />
     </Pressable>
   );
@@ -72,7 +72,7 @@ export function RemoteSessionRow({ title, updatedAt, onPress, last = false }: { 
       accessibilityLabel={`${t(title)}, ${t('다른 기기의 기록')}, ${when}`}
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.row, !last ? styles.divider : null, pressed ? styles.pressed : null]}
+      style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [styles.row, !last ? styles.divider : null, hovered || pressed ? styles.pressed : null]}
     >
       <View {...decorative} style={styles.icon}>
         <CloudDownload color={colors.textSoft} size={iconSizes.inline} strokeWidth={2} />
@@ -93,6 +93,7 @@ export function RemoteSessionRow({ title, updatedAt, onPress, last = false }: { 
 const styles = StyleSheet.create({
   row: {
     alignItems: 'center',
+    cursor: 'pointer',
     flexDirection: 'row',
     gap: spacing.md,
     minHeight: 68,
@@ -102,6 +103,10 @@ const styles = StyleSheet.create({
   divider: {
     borderBottomColor: colors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  badge: {
+    alignSelf: 'center',
+    flexShrink: 0,
   },
   pressed: {
     backgroundColor: colors.backgroundSoft,

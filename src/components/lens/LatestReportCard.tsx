@@ -1,7 +1,8 @@
 import { ChevronRight } from 'lucide-react-native';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { AppText, Card, StatusBadge } from '@/components/ui';
+import { SpeakCard } from '@/components/speak/SpeakCard';
+import { AppText, StatusBadge } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatDuration, formatRelativeDate } from '@/lib/format';
 import { useT } from '@/lib/i18n';
@@ -52,7 +53,7 @@ export function LatestReportCard({
     .join(' ');
 
   return (
-    <Card
+    <SpeakCard
       accessibilityHint={t('발표 평가 결과를 열어요')}
       accessibilityLabel={spoken}
       onPress={onPress}
@@ -67,7 +68,9 @@ export function LatestReportCard({
       <View style={styles.main}>
         <ScoreRing label={t('전체 평가')} score={report.overall} size="medium" />
         <View style={styles.copy}>
-          <AppText variant="itemTitle">{title}</AppText>
+          <AppText numberOfLines={2} variant="itemTitle">
+            {title}
+          </AppText>
           <AppText tone="faint" variant="badge">
             {meta}
           </AppText>
@@ -98,7 +101,7 @@ export function LatestReportCard({
         </AppText>
         <ChevronRight color={colors.textFaint} size={iconSizes.inline} strokeWidth={2} />
       </View>
-    </Card>
+    </SpeakCard>
   );
 }
 

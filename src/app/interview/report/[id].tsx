@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, CircleAlert, History, Pencil, RefreshCw, RotateCcw, Trash2 } from 'lucide-react-native';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
 import { RecordedVideo } from '@/components/interview/RecordedVideo';
 import { ShareWithOrg } from '@/components/interview/ShareWithOrg';
+import { SpeakFrame } from '@/components/speak/SpeakColumns';
 import {
   AppText,
   Button,
@@ -175,7 +176,7 @@ export default function InterviewReportScreen() {
               setSelectedQuestionId(question.id);
               setSelectedAttemptId(null);
             }}
-            style={({ pressed }) => [styles.qRow, index < questions.length - 1 ? styles.divider : null, on ? styles.qRowOn : null, pressed ? styles.pressed : null]}
+            style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [styles.qRow, index < questions.length - 1 ? styles.divider : null, hovered && !on ? styles.qRowHover : null, on ? styles.qRowOn : null, pressed ? styles.pressed : null]}
           >
             <AppText style={styles.qNumber} tabular tone={on ? 'brand' : 'muted'} variant="bodyStrong">
               {index + 1}
@@ -253,9 +254,12 @@ export default function InterviewReportScreen() {
   ) : null;
 
   return (
-    <Screen padded={false}>
-      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title={t('연습 결과')} />
+    <Screen fullBleed padded={false}>
+      <SpeakFrame>
+        <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title={t('연습 결과')} />
+      </SpeakFrame>
       <ScrollView style={styles.scroll}>
+        <SpeakFrame>
         <View style={[styles.content, { paddingHorizontal: gutter }]}>
         {header}
         {wide ? (
@@ -297,6 +301,7 @@ export default function InterviewReportScreen() {
           </Button>
         ) : null}
         </View>
+        </SpeakFrame>
       </ScrollView>
       <Toast message={toast.message} />
       <Dialog
@@ -698,10 +703,17 @@ const styles = StyleSheet.create({
   badges: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   reflect: { backgroundColor: colors.brandSubtle, borderRadius: radii.tile, gap: spacing.xs, marginTop: spacing.xs, padding: spacing.md },
   columns: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.xl },
-  listColumn: { flex: 2, gap: spacing.md, minWidth: 0 },
-  detailColumn: { flex: 3, minWidth: 0 },
-  qRow: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.gutter, paddingVertical: spacing.md },
+  listColumn: {
+    flexShrink: 0,
+    gap: spacing.md,
+    position: Platform.OS === 'web' ? ('sticky' as 'relative') : 'relative',
+    top: spacing.md,
+    width: 360,
+  },
+  detailColumn: { flex: 1, minWidth: 0 },
+  qRow: { alignItems: 'flex-start', cursor: 'pointer', flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.gutter, paddingVertical: spacing.md },
   qRowOn: { backgroundColor: colors.brandSubtle },
+  qRowHover: { backgroundColor: colors.backgroundSoft },
   qNumber: { minWidth: 20 },
   divider: { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
   pressed: { opacity: 0.7 },

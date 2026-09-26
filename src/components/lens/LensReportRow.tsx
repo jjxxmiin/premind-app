@@ -52,10 +52,11 @@ export function LensReportRow({
       accessibilityLabel={`${material.title}${featured ? `, ${t.ctx('lens', '최근')}` : ''}. ${t('{score}점', { score: overall.toFixed(1) })}, ${verdict}. ${spokenMeta}`}
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [
+      style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
         styles.row,
+        styles.pointer,
         !last ? styles.rowDivider : null,
-        pressed ? styles.rowPressed : null,
+        hovered || pressed ? styles.rowPressed : null,
       ]}
     >
       <ScoreRing score={overall} size="small" />
@@ -123,6 +124,9 @@ const styles = StyleSheet.create({
     minHeight: 68,
     paddingHorizontal: spacing.gutter,
     paddingVertical: spacing.md,
+  },
+  pointer: {
+    cursor: 'pointer',
   },
   rowDivider: {
     borderBottomColor: colors.border,

@@ -3,12 +3,12 @@ import { MessagesSquare, Presentation } from 'lucide-react-native';
 
 import { InterviewHome } from '@/components/speak/InterviewHome';
 import { PresentationHome } from '@/components/speak/PresentationHome';
-import { SegmentedControl, type SegmentOption } from '@/components/ui';
+import { SpeakTabs, type SpeakTab } from '@/components/speak/SpeakTabs';
 import { useT } from '@/lib/i18n';
 
 export type SpeakMode = 'presentation' | 'interview';
 
-const OPTIONS: readonly SegmentOption<SpeakMode>[] = [
+const OPTIONS: readonly SpeakTab<SpeakMode>[] = [
   { value: 'presentation', label: '발표', icon: Presentation, accessibilityLabel: '발표 평가' },
   { value: 'interview', label: '면접', icon: MessagesSquare, accessibilityLabel: '면접 연습' },
 ];
@@ -28,7 +28,7 @@ export default function SpeakScreen() {
   const params = useLocalSearchParams<{ mode?: string }>();
   const mode: SpeakMode = params.mode === 'interview' ? 'interview' : 'presentation';
   const switcher = (
-    <SegmentedControl<SpeakMode>
+    <SpeakTabs<SpeakMode>
       onChange={(next) => router.setParams({ mode: next })}
       options={options}
       testID="speak-mode"

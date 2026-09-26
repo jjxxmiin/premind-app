@@ -16,6 +16,7 @@ import {
   type LensFailure,
 } from '@/components/lens';
 import { MediaArtwork } from '@/components/MediaArtwork';
+import { SpeakColumns, SpeakFrame } from '@/components/speak/SpeakColumns';
 import {
   AnimatedReveal,
   AppText,
@@ -40,7 +41,8 @@ import type { StudyMaterial } from '@/types';
 export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
   const t = useT();
   const { evaluatingMaterialIds, materials, projects, requestLens } = useAppStore();
-  const { gutter } = useLayout();
+  const { breakpoint, gutter } = useLayout();
+  const wide = breakpoint === 'expanded';
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [failure, setFailure] = useState<LensFailure | null>(null);
@@ -73,121 +75,166 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
       .catch((error: unknown) => setFailure(lensFailure(error)));
   };
 
+  const actionButtons = (
+    <View style={styles.actions}>
+      <Button
+        fullWidth
+        leftIcon={<BarChart3 color={colors.textInverse} size={iconSizes.inline} />}
+        onPress={openPicker}
+        size="large"
+        variant="primary"
+      >
+        {t('새 평가 시작')}
+      </Button>
+      <Button
+        fullWidth
+        leftIcon={<Mic color={colors.text} size={iconSizes.inline} />}
+        onPress={openRecorder}
+        variant="outline"
+      >
+        {t('발표 녹음하기')}
+      </Button>
+    </View>
+  );
+
+  const latestCard = latest?.lensReport ? (
+    <LatestReportCard
+      onPress={() => openReport(latest)}
+      projectTitle={projectTitle(latest)}
+      report={latest.lensReport}
+      title={latest.title}
+      updatedAt={latest.updatedAt}
+    />
+  ) : (
+    <LensIntroCard onPick={openPicker} onRecord={openRecorder} />
+  );
+
+  const trend = history.length >= 2 ? <ScoreTrend entries={history} /> : null;
+
+  const pastRows = showRows ? (
+    <View style={styles.section}>
+      <SectionHeader title={t('지난 평가')} />
+      <Card padding={false}>
+        {rows.map((material, index) =>
+          isEvaluating(material.id) ? (
+            <LensEvaluatingRow
+              key={material.id}
+              last={index === rows.length - 1}
+              material={material}
+              projectTitle={projectTitle(material)}
+            />
+          ) : (
+            <LensReportRow
+              featured={material.id === latest?.id}
+              key={material.id}
+              last={index === rows.length - 1}
+              material={material}
+              onPress={() => openReport(material)}
+              projectTitle={projectTitle(material)}
+            />
+          ),
+        )}
+      </Card>
+    </View>
+  ) : null;
+
+  const tips = showTips ? (
+    <View style={styles.section}>
+      <SectionHeader
+        description={t('점수가 제대로 나오는 녹음이에요.')}
+        title={t('이렇게 써요')}
+      />
+      <LensTipsCard />
+    </View>
+  ) : null;
+
+  const heading = (
+    <View style={styles.heading}>
+      <AppText accessibilityRole="header" variant="pageTitle">
+        {t('발표 평가')}
+      </AppText>
+      {latest ? (
+        <AppText tone="muted" variant="body">
+          {t('발표나 스피치를 대본으로 채점해요. 녹음, 올린 영상, 유튜브 링크 다 돼요.')}
+        </AppText>
+      ) : null}
+    </View>
+  );
+
   return (
     <Screen
+      fullBleed
       padded={false}
       safeAreaEdges={['top', 'left', 'right']}
       scroll
       scrollViewProps={{ showsVerticalScrollIndicator: false }}
     >
-      <AppHeader
-        brand
-        right={
-          <IconButton
-            icon={Bell}
-            label={t('알림')}
-            onPress={() => router.push('/notifications')}
-          />
-        }
-      />
+      <SpeakFrame>
+        <AppHeader
+          brand
+          right={
+            <IconButton
+              icon={Bell}
+              label={t('알림')}
+              onPress={() => router.push('/notifications')}
+            />
+          }
+        />
 
-      <View style={[styles.content, { paddingHorizontal: gutter }]}>
-        {switcher}
-        <AnimatedReveal>
-          <View style={styles.heading}>
-            <AppText variant="pageTitle">{t('발표 평가')}</AppText>
-            {latest ? (
-              <AppText tone="muted" variant="body">
-                {t('발표나 스피치를 대본으로 채점해요. 녹음, 올린 영상, 유튜브 링크 다 돼요.')}
-              </AppText>
-            ) : null}
-          </View>
-        </AnimatedReveal>
-
-        <AnimatedReveal delay={80}>
-          {latest?.lensReport ? (
-            <View style={styles.section}>
-              <LatestReportCard
-                onPress={() => openReport(latest)}
-                projectTitle={projectTitle(latest)}
-                report={latest.lensReport}
-                title={latest.title}
-                updatedAt={latest.updatedAt}
+        <View style={[styles.content, { paddingHorizontal: gutter }]}>
+          {switcher}
+          {wide ? (
+            <>
+              <AnimatedReveal>{heading}</AnimatedReveal>
+              <SpeakColumns
+                main={
+                  <>
+                    <AnimatedReveal delay={80}>{latestCard}</AnimatedReveal>
+                    {trend ? <AnimatedReveal delay={140}>{trend}</AnimatedReveal> : null}
+                    {pastRows ? <AnimatedReveal delay={200}>{pastRows}</AnimatedReveal> : null}
+                  </>
+                }
+                side={
+                  <>
+                    {latest?.lensReport ? (
+                      <AnimatedReveal delay={80}>
+                        <Card style={styles.sideCard}>
+                          <View style={styles.sideHead}>
+                            <AppText variant="heading">{t('새로 평가받기')}</AppText>
+                            <AppText tone="muted" variant="meta">
+                              {t('가진 자료를 고르거나 지금 녹음해요.')}
+                            </AppText>
+                          </View>
+                          {actionButtons}
+                        </Card>
+                      </AnimatedReveal>
+                    ) : null}
+                    {tips ? <AnimatedReveal delay={140}>{tips}</AnimatedReveal> : null}
+                  </>
+                }
+                sideWidth={340}
               />
-              <View style={styles.actions}>
-                <Button
-                  fullWidth
-                  leftIcon={
-                    <BarChart3 color={colors.textInverse} size={iconSizes.inline} />
-                  }
-                  onPress={openPicker}
-                  size="large"
-                  variant="primary"
-                >
-                  {t('새 평가 시작')}
-                </Button>
-                <Button
-                  fullWidth
-                  leftIcon={<Mic color={colors.text} size={iconSizes.inline} />}
-                  onPress={openRecorder}
-                  variant="outline"
-                >
-                  {t('발표 녹음하기')}
-                </Button>
-              </View>
-            </View>
+            </>
           ) : (
-            <LensIntroCard onPick={openPicker} onRecord={openRecorder} />
-          )}
-        </AnimatedReveal>
-
-        {history.length >= 2 ? (
-          <AnimatedReveal delay={140}>
-            <ScoreTrend entries={history} />
-          </AnimatedReveal>
-        ) : null}
-
-        {showRows ? (
-          <AnimatedReveal delay={200}>
-            <View style={styles.section}>
-              <SectionHeader title={t('지난 평가')} />
-              <Card padding={false}>
-                {rows.map((material, index) =>
-                  isEvaluating(material.id) ? (
-                    <LensEvaluatingRow
-                      key={material.id}
-                      last={index === rows.length - 1}
-                      material={material}
-                      projectTitle={projectTitle(material)}
-                    />
-                  ) : (
-                    <LensReportRow
-                      featured={material.id === latest?.id}
-                      key={material.id}
-                      last={index === rows.length - 1}
-                      material={material}
-                      onPress={() => openReport(material)}
-                      projectTitle={projectTitle(material)}
-                    />
-                  ),
+            <>
+              <AnimatedReveal>{heading}</AnimatedReveal>
+              <AnimatedReveal delay={80}>
+                {latest?.lensReport ? (
+                  <View style={styles.section}>
+                    {latestCard}
+                    {actionButtons}
+                  </View>
+                ) : (
+                  latestCard
                 )}
-              </Card>
-            </View>
-          </AnimatedReveal>
-        ) : null}
-
-        {showTips ? (
-          <AnimatedReveal delay={260}>
-            <View style={styles.section}>
-              <SectionHeader
-                description={t('점수가 제대로 나오는 녹음이에요.')}
-                title={t('이렇게 써요')}
-              />
-              <LensTipsCard />
-            </View>
-          </AnimatedReveal>
-        ) : null}
-      </View>
+              </AnimatedReveal>
+              {trend ? <AnimatedReveal delay={140}>{trend}</AnimatedReveal> : null}
+              {pastRows ? <AnimatedReveal delay={200}>{pastRows}</AnimatedReveal> : null}
+              {tips ? <AnimatedReveal delay={260}>{tips}</AnimatedReveal> : null}
+            </>
+          )}
+        </View>
+      </SpeakFrame>
 
       <BottomSheetModal
         description={t(
@@ -298,9 +345,10 @@ function CandidateRow({
       accessibilityRole="radio"
       accessibilityState={{ selected, checked: selected }}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
         styles.row,
         !last ? styles.rowDivider : null,
+        hovered && !selected ? styles.rowPressed : null,
         selected ? styles.rowSelected : null,
         pressed ? styles.rowPressed : null,
       ]}
@@ -345,8 +393,11 @@ const styles = StyleSheet.create({
   actions: {
     gap: spacing.sm,
   },
-  action: {
-    flex: 1,
+  sideCard: {
+    gap: spacing.lg,
+  },
+  sideHead: {
+    gap: spacing.xs,
   },
   flex: {
     flex: 1,
@@ -355,6 +406,7 @@ const styles = StyleSheet.create({
   },
   row: {
     alignItems: 'center',
+    cursor: 'pointer',
     flexDirection: 'row',
     gap: spacing.md,
     minHeight: 68,

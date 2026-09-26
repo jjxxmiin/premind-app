@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import {
   ArrowRight,
   Building2,
+  ChevronRight,
   FileText,
   History,
   Lightbulb,
@@ -12,11 +13,13 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useEffect, useMemo, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
 import { AllowanceCard } from '@/components/interview/AllowanceCard';
 import { InterviewSessionRow } from '@/components/interview/InterviewSessionRow';
+import { SpeakCard } from '@/components/speak/SpeakCard';
+import { SpeakColumns, SpeakFrame } from '@/components/speak/SpeakColumns';
 import {
   AnimatedReveal,
   AppText,
@@ -81,16 +84,20 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
   const demo = account.status === 'ready' && account.demo;
   const open = (session: InterviewSession) => router.push(sessionDestination(session));
 
+  const heading = (
+    <AnimatedReveal>
+      <View style={styles.heading}>
+        <AppText variant="pageTitle">{t(view?.firstTime ? '첫 질문부터 말해볼까요?' : '무엇을 연습할까요?')}</AppText>
+        <AppText tone="muted" variant="body">
+          {t('질문을 준비하고, 타이머에 맞춰 답하고, 내가 한 말을 돌아봐요.')}
+        </AppText>
+      </View>
+    </AnimatedReveal>
+  );
+
   const main = (
     <View style={styles.column}>
-      <AnimatedReveal>
-        <View style={styles.heading}>
-          <AppText variant="pageTitle">{t(view?.firstTime ? '첫 질문부터 말해볼까요?' : '무엇을 연습할까요?')}</AppText>
-          <AppText tone="muted" variant="body">
-            {t('질문을 준비하고, 타이머에 맞춰 답하고, 내가 한 말을 돌아봐요.')}
-          </AppText>
-        </View>
-      </AnimatedReveal>
+      {wide ? null : heading}
 
       {view?.inProgress ? (
         <ContinueCard onPress={() => open(view.inProgress!)} session={view.inProgress} />
@@ -112,15 +119,18 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
         </Card>
       ) : null}
 
-      <View style={[styles.options, breakpoint !== 'compact' ? styles.optionsRow : null]}>
-        {START_OPTIONS.map((option) => (
-          <StartCard
-            key={option.from}
-            onPress={() => router.push({ pathname: '/interview/prepare', params: { from: option.from } })}
-            option={option}
-            row={breakpoint !== 'compact'}
-          />
-        ))}
+      <View style={styles.section}>
+        <SectionHeader title={t('새 연습 시작')} />
+        <View style={[styles.options, breakpoint !== 'compact' ? styles.optionsRow : null]}>
+          {START_OPTIONS.map((option) => (
+            <StartCard
+              compact={breakpoint === 'compact'}
+              key={option.from}
+              onPress={() => router.push({ pathname: '/interview/prepare', params: { from: option.from } })}
+              option={option}
+            />
+          ))}
+        </View>
       </View>
       <AppText tone="muted" variant="meta">
         {t(
@@ -144,8 +154,9 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
         {!view ? (
           <Skeleton height={68} />
         ) : view.recent.length === 0 ? (
-          <Card variant="soft">
-            <AppText tone="muted" variant="body">
+          <Card style={styles.emptyRecent}>
+            <History {...decorative} color={colors.textFaint} size={iconSizes.section} strokeWidth={1.8} />
+            <AppText style={styles.flex} tone="muted" variant="meta">
               {t('아직 연습 기록이 없어요. 위에서 질문을 골라 첫 연습을 시작해 보세요.')}
             </AppText>
           </Card>
@@ -193,16 +204,27 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
   );
 
   return (
-    <Screen padded={false} safeAreaEdges={['top', 'left', 'right']} scroll scrollViewProps={{ showsVerticalScrollIndicator: false }}>
-      <AppHeader
-        brand
-        right={<IconButton icon={History} label={t('연습 기록')} onPress={() => router.push('/interview/history')} />}
-      />
-      {switcher ? <View style={[styles.switcher, { paddingHorizontal: gutter }]}>{switcher}</View> : null}
-      <View style={[styles.content, { paddingHorizontal: gutter }, wide ? styles.wide : null]}>
-        <View style={wide ? styles.mainColumn : null}>{main}</View>
-        <View style={wide ? styles.sideColumn : null}>{side}</View>
-      </View>
+    <Screen fullBleed padded={false} safeAreaEdges={['top', 'left', 'right']} scroll scrollViewProps={{ showsVerticalScrollIndicator: false }}>
+      <SpeakFrame>
+        <AppHeader
+          brand
+          right={<IconButton icon={History} label={t('연습 기록')} onPress={() => router.push('/interview/history')} />}
+        />
+        <View style={[styles.content, { paddingHorizontal: gutter }]}>
+          {switcher}
+          {wide ? (
+            <>
+              {heading}
+              <SpeakColumns main={main} side={side} sideWidth={340} />
+            </>
+          ) : (
+            <>
+              {main}
+              {side}
+            </>
+          )}
+        </View>
+      </SpeakFrame>
     </Screen>
   );
 }
@@ -218,12 +240,7 @@ function ContinueCard({ session, onPress }: { session: InterviewSession; onPress
     when: relativeDay(lastActivity(session), new Date(), locale),
   });
   return (
-    <Pressable
-      accessibilityLabel={`${t('이어서 하기')}. ${title}. ${meta}`}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [styles.continue, pressed ? styles.pressed : null]}
-    >
+    <SpeakCard accessibilityLabel={`${t('이어서 하기')}. ${title}. ${meta}`} onPress={onPress} style={styles.continue} tone="brand">
       <PlayCircle {...decorative} color={colors.brand} size={32} strokeWidth={1.8} />
       <View style={styles.flex}>
         <AppText tone="brand" variant="badge">
@@ -237,26 +254,46 @@ function ContinueCard({ session, onPress }: { session: InterviewSession; onPress
         </AppText>
       </View>
       <ArrowRight {...decorative} color={colors.brand} size={iconSizes.section} />
-    </Pressable>
+    </SpeakCard>
   );
 }
 
-function StartCard({ option, onPress, row }: { option: StartOption; onPress: () => void; row: boolean }) {
+function StartCard({ option, onPress, compact }: { option: StartOption; onPress: () => void; compact: boolean }) {
   const t = useT();
   const Icon = option.icon;
+  const label = `${t(option.title)}. ${t(option.body)}`;
+  if (compact) {
+    // 폰: 세 장이 세로로 쌓이면 화면 하나를 다 먹는다. 아이콘, 제목, 한 줄 설명의 낮은 카드로.
+    return (
+      <SpeakCard accessibilityLabel={label} onPress={onPress} style={styles.startCompact}>
+        <View {...decorative} style={styles.startIcon}>
+          <Icon color={colors.brand} size={iconSizes.section} strokeWidth={1.9} />
+        </View>
+        <View style={styles.flex}>
+          <View style={styles.startTitleLine}>
+            <AppText numberOfLines={2} style={styles.shrink} variant="itemTitle">
+              {t(option.title)}
+            </AppText>
+            {option.tag ? <StatusBadge label={t(option.tag)} tone="brand" /> : null}
+          </View>
+          <AppText numberOfLines={3} tone="muted" variant="meta">
+            {t(option.body)}
+          </AppText>
+        </View>
+        <ChevronRight {...decorative} color={colors.textFaint} size={iconSizes.section} strokeWidth={1.8} />
+      </SpeakCard>
+    );
+  }
   return (
-    <Card
-      accessibilityLabel={`${t(option.title)}. ${t(option.body)}`}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={[styles.start, row ? styles.startRow : null]}
-    >
+    <SpeakCard accessibilityLabel={label} onPress={onPress} style={styles.start}>
       <View style={styles.startHead}>
-        <Icon {...decorative} color={colors.brand} size={26} strokeWidth={1.9} />
+        <View {...decorative} style={styles.startIcon}>
+          <Icon color={colors.brand} size={iconSizes.section} strokeWidth={1.9} />
+        </View>
         {option.tag ? <StatusBadge label={t(option.tag)} tone="brand" /> : null}
       </View>
       <AppText variant="heading">{t(option.title)}</AppText>
-      <AppText style={styles.flexText} tone="muted" variant="body">
+      <AppText style={styles.flexText} tone="muted" variant="meta">
         {t(option.body)}
       </AppText>
       <View style={styles.startCta}>
@@ -265,47 +302,38 @@ function StartCard({ option, onPress, row }: { option: StartOption; onPress: () 
         </AppText>
         <ArrowRight {...decorative} color={colors.brand} size={iconSizes.dense} />
       </View>
-    </Card>
+    </SpeakCard>
   );
 }
 
 const styles = StyleSheet.create({
-  switcher: {
-    paddingBottom: spacing.md,
-    paddingTop: spacing.sm,
-  },
   content: {
     gap: spacing.xl,
     paddingBottom: spacing.xxl,
     paddingTop: spacing.sm,
   },
-  wide: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-  },
-  mainColumn: { flex: 3, minWidth: 0 },
-  sideColumn: { flex: 2, minWidth: 0 },
   column: { gap: spacing.xl },
   heading: { gap: spacing.xs },
   section: { gap: spacing.md },
   flex: { flex: 1, gap: spacing.xxs, minWidth: 0 },
   flexText: { flexGrow: 1 },
   hint: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.md },
-  continue: {
+  continue: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
+  emptyRecent: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
+  options: { gap: spacing.sm },
+  optionsRow: { flexDirection: 'row', gap: spacing.md },
+  start: { flexBasis: 0, flexGrow: 1, gap: spacing.sm, minWidth: 0 },
+  startCompact: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md },
+  startIcon: {
     alignItems: 'center',
     backgroundColor: colors.brandSubtle,
-    borderColor: colors.brandSoft,
-    borderRadius: radii.card,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.md,
-    padding: spacing.gutter,
+    borderRadius: radii.tile,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
   },
-  pressed: { opacity: 0.7 },
-  options: { gap: spacing.md },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap' },
-  start: { gap: spacing.sm },
-  startRow: { flexBasis: 220, flexGrow: 1 },
+  startTitleLine: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+  shrink: { flexShrink: 1, minWidth: 0 },
   startHead: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
   startCta: { alignItems: 'center', flexDirection: 'row', gap: spacing.xs, marginTop: spacing.xs },
 });

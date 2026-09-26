@@ -243,6 +243,7 @@ export const EN_INTERVIEW: EnDict = {
   "연습 기록": "History",
   "첫 질문부터 말해볼까요?": "Ready to answer your first question?",
   "무엇을 연습할까요?": "What do you want to practice?",
+  "새 연습 시작": "Start a new practice",
   "질문을 준비하고, 타이머에 맞춰 답하고, 내가 한 말을 돌아봐요.": "Prepare your questions, answer against the timer, and look back at what you said.",
   "지난 연습에서 이어갈 점": "Carry over from last practice",
   "기본 연습은 무료예요. AI 피드백 연습은 첫 회 무료, 스탠다드는 매달 {n}회예요. 같은 연습 안에서 다시 답하는 건 횟수에 들어가지 않아요.": "Basic practice is free. Your first AI feedback practice is free, and Standard gives you {n} a month. Answering again within the same practice doesn't count.",
