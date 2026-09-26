@@ -254,4 +254,37 @@ export const EN_STUDY: EnDict = {
   '대본이 만들어지면 근거를 보며 질문할 수 있어요.':
     'Once the transcript is ready, you can ask questions with the sources in view.',
   '아직 대본을 만드는 중이에요': 'Still making the transcript',
+
+  // 앱다운 이해도 (2026-09-26): 머리 카드, 넘기는 카드, 상세, 결과
+  '이번 주': 'This week',
+  '연속 {n}일 공부했어요': { one: 'Studied {n} day in a row', other: 'Studied {n} days in a row' },
+  '연속 {n}일': { one: '{n}-day streak', other: '{n}-day streak' },
+  '이번 주 {n}문제': { one: '{n} question this week', other: '{n} questions this week' },
+  '전체 이해도': 'Overall Mastery',
+  '오늘 복습 시작': "Start today's review",
+  '첫 문제 풀기': 'Answer your first question',
+  '{title}부터 시작해요': 'Starts with {title}',
+  '옆으로 넘겨 보세요. 누르면 무엇부터 볼지 알려 줘요.':
+    'Swipe to see more. Tap one to see what to review first.',
+  '지금 복습할 자료': 'Review now',
+  '시작할 자료': 'Start here',
+  '헷갈린 곳': 'Confusing spots',
+  '나머지 자료': 'Other materials',
+  '이해도 {score}%, {verdict}': 'Mastery {score}%, {verdict}',
+  '헷갈린 개념: {terms}': 'Mixed-up concepts: {terms}',
+  '{total}개 중 {correct}개 맞힘': '{correct} of {total} right',
+  '문제 정답률': 'Quiz accuracy',
+  '{total}개 중 {checked}개 확인': '{checked} of {total} checked',
+  '이해도는 정답률 {quiz}%, 핵심 내용 확인 {check}%로 계산해요':
+    'Mastery counts quiz accuracy {quiz}% and key points checked {check}%',
+  '마지막 답이 틀린 개념이에요. 누르면 그 부분부터 들어요.':
+    'Concepts whose last answer was wrong. Tap to replay from that part.',
+  '다시 볼 곳': 'Worth another look',
+  '잘했어요! 틀린 {n}문제만 다시 보면 돼요': {
+    one: 'Nice work! Just review the {n} you missed',
+    other: 'Nice work! Just review the {n} you missed',
+  },
+  '괜찮아요, 틀린 곳을 다시 들으면 금방 늘어요':
+    "That's okay. Replaying the parts you missed helps fast",
+  '맞힌 문제': 'Correct',
 };

@@ -1,22 +1,23 @@
 import { router } from 'expo-router';
 import { Bell, Check } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
+import { Carousel } from '@/components/app';
 import {
   MasteryHero,
   MaterialMasteryRow,
   MaterialMasteryTile,
-  SurfaceButton,
+  PressFace,
+  ReviewCard,
   TileGrid,
-  type InteractionState,
+  studyStreak,
 } from '@/components/mastery';
 import {
   AnimatedReveal,
   AppText,
   Button,
-  Card,
   EmptyMasteryArtwork,
   EmptyState,
   IconButton,
@@ -51,11 +52,15 @@ function isStudyable(material: StudyMaterial): boolean {
 const VISIBLE_ROWS = 6;
 /** Marked passages shown at once: a reminder, not a backlog. */
 const VISIBLE_SPOTS = 4;
+/** Cards in 지금 복습할 자료: a handful to swipe through; the rest are listed below. */
+const REVIEW_CARDS = 5;
 
 /**
- * The 이해도 tab: one ring for everything studied, the week's activity, what
- * to do next across every material, and a row per material. Everything is
- * computed on the device from the learner's own answers and ticks.
+ * The 이해도 tab, laid out as an app rather than a dashboard (2026-09-26):
+ * a large title; one hero with the overall ring, the number in large type,
+ * the week as dots and a single "오늘 복습 시작"; the materials to review as a
+ * carousel; the passages marked 헷갈려요; and the rest as progress rows.
+ * Everything is computed on the device from the learner's own answers and ticks.
  */
 export default function MasteryScreen() {
   const t = useT();
@@ -101,6 +106,7 @@ export default function MasteryScreen() {
     () => weekdayActivity(quizAttempts, undefined, locale),
     [locale, quizAttempts],
   );
+  const streak = useMemo(() => studyStreak(quizAttempts), [quizAttempts]);
   const score = overallMastery(mastery.map((row) => row.summary));
   const studiedCount = mastery.filter((row) => row.summary.score !== null).length;
   const unansweredCount = mastery.reduce(
@@ -123,7 +129,7 @@ export default function MasteryScreen() {
       params: { id: materialId, from: 'mastery' satisfies QuizOrigin },
     });
 
-  /** The hero's one button: the newest material with questions, or the recorder. */
+  /** The newest material with questions, or the recorder when there is none. */
   const startFirstQuiz = () => {
     const newest = [...mastery]
       .filter((row) => row.material.quiz.length > 0)
@@ -145,8 +151,50 @@ export default function MasteryScreen() {
     }
   };
 
-  const visibleRows = expanded ? mastery : mastery.slice(0, VISIBLE_ROWS);
-  const hiddenCount = mastery.length - visibleRows.length;
+  const openSpot = (spot: ConfusionSpot) =>
+    router.push({
+      pathname: '/material/[id]',
+      params: { at: String(spot.positionMs), id: spot.materialId, tab: 'transcript' },
+    });
+
+  /**
+   * 지금 복습할 자료, the carousel: scored materials not yet at 100, weakest
+   * first, then materials with questions nobody has tried yet, newest first.
+   * Before anything is scored the same row holds the untried ones, so the
+   * carousel is also the "where do I start".
+   */
+  const review = useMemo(() => {
+    const weak = mastery
+      .filter((row) => row.summary.score !== null && (row.summary.score < 100 || row.summary.weakConcepts.length > 0))
+      .sort((left, right) => (left.summary.score ?? 0) - (right.summary.score ?? 0));
+    const untried = mastery.filter(
+      (row) => row.summary.score === null && row.material.quiz.length > 0,
+    );
+    return [...weak, ...untried].slice(0, REVIEW_CARDS);
+  }, [mastery]);
+  const rest = mastery.filter((row) => !review.includes(row));
+
+  /**
+   * The hero's one button, the day's single path (Duolingo): the weakest
+   * material's questions, else the first spot marked 헷갈려요, else the first
+   * quiz. Every target is a route the tab already used.
+   */
+  const target = review.find((row) => row.material.quiz.length > 0);
+  const anyScored = studiedCount > 0;
+  const actionLabel = anyScored ? t('오늘 복습 시작') : t('첫 문제 풀기');
+  const actionDetail = target
+    ? t('{title}부터 시작해요', { title: target.material.title })
+    : spots[0]
+      ? t('{title}부터 시작해요', { title: spots[0].materialTitle })
+      : undefined;
+  const startToday = () => {
+    if (target) openQuiz(target.material.id);
+    else if (spots[0]) openSpot(spots[0]);
+    else startFirstQuiz();
+  };
+
+  const visibleRows = expanded ? rest : rest.slice(0, VISIBLE_ROWS);
+  const hiddenCount = rest.length - visibleRows.length;
 
   return (
     <Screen
@@ -169,7 +217,9 @@ export default function MasteryScreen() {
       <View style={[styles.content, { paddingHorizontal: gutter }]}>
         <AnimatedReveal>
           <View style={styles.heading}>
-            <AppText variant="pageTitle">{t('이해도')}</AppText>
+            <AppText accessibilityRole="header" variant="display">
+              {t('이해도')}
+            </AppText>
             <AppText tone="muted" variant="body">
               {t('푼 문제와 확인한 내용으로 자료마다 계산해요')}
             </AppText>
@@ -178,7 +228,7 @@ export default function MasteryScreen() {
 
         {mastery.length === 0 ? (
           <AnimatedReveal delay={40}>
-            <Card padding={false}>
+            <View style={styles.emptyFace}>
               <EmptyState
                 actionLabel={t('마인드팩 만들기')}
                 // A ring at zero over an unticked 확인 목록: the two things
@@ -191,63 +241,75 @@ export default function MasteryScreen() {
                 onAction={() => router.push('/record')}
                 title={t('아직 이해도를 볼 자료가 없어요')}
               />
-            </Card>
+            </View>
           </AnimatedReveal>
         ) : (
           <>
             <AnimatedReveal delay={40}>
-              <MasteryHero copy={copy} days={days} onStart={startFirstQuiz} score={score} />
+              <MasteryHero
+                actionDetail={actionDetail}
+                actionLabel={actionLabel}
+                copy={copy}
+                days={days}
+                onAction={startToday}
+                score={score}
+                streak={streak}
+              />
             </AnimatedReveal>
 
+            {review.length ? (
+              <AnimatedReveal delay={60}>
+                <View style={styles.section}>
+                  <SectionHeader
+                    description={t('옆으로 넘겨 보세요. 누르면 무엇부터 볼지 알려 줘요.')}
+                    title={anyScored ? t('지금 복습할 자료') : t('시작할 자료')}
+                  />
+                  <Carousel
+                    accessibilityLabel={anyScored ? t('지금 복습할 자료') : t('시작할 자료')}
+                    itemWidth={isTablet ? 280 : undefined}
+                  >
+                    {review.map(({ material, summary }) => (
+                      <ReviewCard
+                        key={material.id}
+                        material={material}
+                        onPress={openMastery}
+                        summary={summary}
+                      />
+                    ))}
+                  </Carousel>
+                </View>
+              </AnimatedReveal>
+            ) : null}
+
             {spots.length ? (
-              <AnimatedReveal delay={50}>
+              <AnimatedReveal delay={70}>
                 <View style={styles.section}>
                   <SectionHeader
                     description={t('누르면 그 대목으로 가요. 알게 됐으면 지워 주세요.')}
-                    title={t('헷갈린다고 표시한 곳')}
+                    title={t('헷갈린 곳')}
                   />
                   {isTablet ? (
                     <TileGrid columns={2}>
-                      {visibleSpots.map((spot, index) => (
-                    <ConfusionSpotRow
-                      divider={!isTablet && index < visibleSpots.length - 1}
-                      key={spot.id}
-                      onOpen={() =>
-                        router.push({
-                          pathname: '/material/[id]',
-                          params: {
-                            at: String(spot.positionMs),
-                            id: spot.materialId,
-                            tab: 'transcript',
-                          },
-                        })
-                      }
-                      onResolve={() => resolveConfusion(spot.id)}
-                      spot={spot}
-                      tile={isTablet}
-                    />
-                  ))}
+                      {visibleSpots.map((spot) => (
+                        <ConfusionSpotCard
+                          key={spot.id}
+                          onOpen={() => openSpot(spot)}
+                          onResolve={() => resolveConfusion(spot.id)}
+                          spot={spot}
+                        />
+                      ))}
                     </TileGrid>
                   ) : (
-                    <Card padding={false}>{visibleSpots.map((spot, index) => (
-                    <ConfusionSpotRow
-                      divider={!isTablet && index < visibleSpots.length - 1}
-                      key={spot.id}
-                      onOpen={() =>
-                        router.push({
-                          pathname: '/material/[id]',
-                          params: {
-                            at: String(spot.positionMs),
-                            id: spot.materialId,
-                            tab: 'transcript',
-                          },
-                        })
-                      }
-                      onResolve={() => resolveConfusion(spot.id)}
-                      spot={spot}
-                      tile={isTablet}
-                    />
-                  ))}</Card>
+                    <View style={styles.stack}>
+                      {visibleSpots.map((spot) => (
+                        <ConfusionSpotCard
+                          key={spot.id}
+                          onOpen={() => openSpot(spot)}
+                          onResolve={() => resolveConfusion(spot.id)}
+                          spot={spot}
+                        />
+                      ))}
+                    </View>
                   )}
                   {spots.length > visibleSpots.length ? (
                     <AppText tone="muted" variant="meta">
@@ -261,18 +323,14 @@ export default function MasteryScreen() {
               </AnimatedReveal>
             ) : null}
 
-            {/* No "다음에 할 일" list here: it repeated what each material's
-                own screen already says, and the study actions (문제, 카드,
-                다시 듣기) now live on the material itself. */}
-            <AnimatedReveal delay={60}>
-              <View style={styles.section}>
-                <SectionHeader
-                  description={t('자료를 누르면 취약 개념과 무엇부터 볼지 알려 줘요.')}
-                  title={t('자료별 이해도')}
-                />
-                {isTablet ? (
-                  <>
-                    <TileGrid columns={Math.max(2, columns)}>
+            {rest.length ? (
+              <AnimatedReveal delay={80}>
+                <View style={styles.section}>
+                  <SectionHeader
+                    title={review.length ? t('나머지 자료') : t('자료별 이해도')}
+                  />
+                  {isTablet ? (
+                    <TileGrid columns={Math.max(2, columns)} gap={spacing.sm}>
                       {visibleRows.map(({ material, summary }) => (
                         <MaterialMasteryTile
                           key={material.id}
@@ -282,43 +340,31 @@ export default function MasteryScreen() {
                         />
                       ))}
                     </TileGrid>
-                    {hiddenCount > 0 ? (
-                      <Button
-                        accessibilityLabel={t('자료 {n}개 더 보기', { n: hiddenCount })}
-                        onPress={() => setExpanded(true)}
-                        style={styles.moreTablet}
-                        variant="outline"
-                      >
-                        {t('더 보기 {n}개', { n: hiddenCount })}
-                      </Button>
-                    ) : null}
-                  </>
-                ) : (
-                  <Card padding={false}>
-                    {visibleRows.map(({ material, summary }, index) => (
-                      <MaterialMasteryRow
-                        divider={index < visibleRows.length - 1 || hiddenCount > 0}
-                        key={material.id}
-                        material={material}
-                        onPress={openMastery}
-                        summary={summary}
-                      />
-                    ))}
-                    {hiddenCount > 0 ? (
-                      <Button
-                        accessibilityLabel={t('자료 {n}개 더 보기', { n: hiddenCount })}
-                        fullWidth
-                        onPress={() => setExpanded(true)}
-                        style={styles.more}
-                        variant="ghost"
-                      >
-                        {t('더 보기 {n}개', { n: hiddenCount })}
-                      </Button>
-                    ) : null}
-                  </Card>
-                )}
-              </View>
-            </AnimatedReveal>
+                  ) : (
+                    <View style={styles.stack}>
+                      {visibleRows.map(({ material, summary }) => (
+                        <MaterialMasteryRow
+                          key={material.id}
+                          material={material}
+                          onPress={openMastery}
+                          summary={summary}
+                        />
+                      ))}
+                    </View>
+                  )}
+                  {hiddenCount > 0 ? (
+                    <Button
+                      accessibilityLabel={t('자료 {n}개 더 보기', { n: hiddenCount })}
+                      onPress={() => setExpanded(true)}
+                      style={styles.more}
+                      variant="secondary"
+                    >
+                      {t('더 보기 {n}개', { n: hiddenCount })}
+                    </Button>
+                  ) : null}
+                </View>
+              </AnimatedReveal>
+            ) : null}
           </>
         )}
       </View>
@@ -327,136 +373,90 @@ export default function MasteryScreen() {
 }
 
 /**
- * One marked passage: tap the body to go there, tap the check to clear it.
+ * One marked passage as its own filled card: tap the body to go there, tap
+ * the check to clear it.
  *
- * Written out rather than built from `ListRow` because the row needs two
- * independent targets. A button nested inside a button is invalid on the web
- * and ambiguous to a screen reader on the phone, so they are siblings.
+ * The check is a sibling laid over the card's corner, not a child: a button
+ * inside a button is invalid on the web and ambiguous to a screen reader.
  */
-function ConfusionSpotRow({
-  divider,
+function ConfusionSpotCard({
   onOpen,
   onResolve,
   spot,
-  tile = false,
 }: {
-  divider: boolean;
   onOpen: () => void;
   onResolve: () => void;
   spot: ConfusionSpot;
-  /** The tablet form: a card of its own in a two-column grid. */
-  tile?: boolean;
 }) {
   const t = useT();
   const reason = t(spot.reasonLabel);
-  const where = `${spot.materialTitle} / ${formatSourcePosition(spot.positionMs, spot.isDocument)} / ${reason}`;
-  const body = (
-    <>
-      <AppText numberOfLines={tile ? 3 : 2} variant="itemTitle">
-        {spot.passage}
-      </AppText>
-      <AppText numberOfLines={2} tone="muted" variant="meta">
-        {where}
-      </AppText>
-    </>
-  );
-  const resolve = (
-    <IconButton
-      icon={Check}
-      label={t('{reason} 표시 지우기', { reason })}
-      onPress={onResolve}
-    />
-  );
-
-  if (tile) {
-    return (
-      <View style={styles.spotTile}>
-        <SurfaceButton
-          accessibilityHint={t('표시한 대목을 대본에서 열어요.')}
-          accessibilityLabel={`${spot.passage}, ${where}`}
-          accessibilityRole="button"
-          onPress={onOpen}
-          style={styles.spotTileBody}
-        >
-          {body}
-        </SurfaceButton>
-        {/* A sibling laid over the card's corner, not a child: a button in a
-            button is invalid on the web. */}
-        <View style={styles.spotTileResolve}>{resolve}</View>
-      </View>
-    );
-  }
-
+  const where = `${spot.materialTitle} / ${formatSourcePosition(spot.positionMs, spot.isDocument)}`;
   return (
-    <View style={[styles.spotRow, divider ? styles.spotDivider : null]}>
-      <Pressable
+    <View style={styles.spot}>
+      <PressFace
         accessibilityHint={t('표시한 대목을 대본에서 열어요.')}
-        accessibilityLabel={`${spot.passage}, ${where}`}
+        accessibilityLabel={`${spot.passage}, ${where}, ${reason}`}
         accessibilityRole="button"
         onPress={onOpen}
-        style={(state) => {
-          const { hovered, pressed } = state as InteractionState;
-          return [
-            styles.spotBody,
-            hovered ? styles.spotHovered : null,
-            pressed ? styles.spotPressed : null,
-          ];
-        }}
+        style={styles.spotBody}
       >
-        {body}
-      </Pressable>
-      {resolve}
+        <View style={styles.reason}>
+          <AppText numberOfLines={1} style={styles.reasonText} variant="badge">
+            {reason}
+          </AppText>
+        </View>
+        <AppText numberOfLines={2} variant="itemTitle">
+          {spot.passage}
+        </AppText>
+        <AppText numberOfLines={1} tone="muted" variant="meta">
+          {where}
+        </AppText>
+      </PressFace>
+      <View style={styles.spotResolve}>
+        <IconButton
+          icon={Check}
+          label={t('{reason} 표시 지우기', { reason })}
+          onPress={onResolve}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  spotRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+  /** Header → title 8; between blocks 32; last block → end 40. */
+  content: {
+    gap: spacing.xxl,
+    paddingBottom: spacing.xxxl,
+    paddingTop: spacing.sm,
   },
-  spotDivider: {
-    borderBottomColor: colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  heading: { gap: spacing.xs },
+  section: { gap: spacing.md },
+  stack: { gap: spacing.sm },
+  emptyFace: {
+    backgroundColor: colors.backgroundSoft,
+    borderRadius: radii.hero,
+    paddingVertical: spacing.lg,
   },
-  spotBody: { flex: 1, gap: spacing.xxs, minWidth: 0 },
-  spotPressed: { opacity: 0.7 },
-  spotHovered: { opacity: 0.85 },
-  spotTile: { flex: 1 },
-  /** Right padding leaves the corner to the check button laid over it. */
-  spotTileBody: {
+  more: { alignSelf: 'center', borderRadius: radii.chip },
+  spot: { flex: 1 },
+  /** Right padding leaves the corner to the check laid over it. */
+  spotBody: {
+    backgroundColor: colors.backgroundSoft,
+    borderRadius: radii.card,
     flex: 1,
     gap: spacing.xs,
-    minHeight: 112,
     padding: spacing.lg,
     paddingRight: spacing.huge + spacing.sm,
   },
-  spotTileResolve: {
-    position: 'absolute',
-    right: spacing.sm,
-    top: spacing.sm,
-  },
-  /** Header → first block 8; between blocks 24; last block → end 32. */
-  content: {
-    gap: spacing.xl,
-    paddingBottom: spacing.xxl,
-    paddingTop: spacing.sm,
-  },
-  heading: {
-    gap: spacing.xs,
-  },
-  section: {
-    gap: spacing.md,
-  },
-  more: {
-    borderRadius: 0,
-    minHeight: 54,
-  },
-  moreTablet: {
-    alignSelf: 'center',
+  spotResolve: { position: 'absolute', right: spacing.sm, top: spacing.sm },
+  reason: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.warningSoft,
     borderRadius: radii.chip,
+    marginBottom: spacing.xxs,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xxs + 1,
   },
+  reasonText: { color: colors.warningStrong },
 });
