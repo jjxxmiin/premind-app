@@ -1,18 +1,21 @@
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { useRef, useState } from 'react';
 import {
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
 
-import { AppText } from '@/components/ui';
+import { AppText, IconButton } from '@/components/ui';
 import { pageNumberOf } from '@/lib/format';
 import { useT } from '@/lib/i18n';
+import { useLayout } from '@/lib/layout';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 import type { TranscriptSegment } from '@/types';
 
@@ -41,6 +44,11 @@ export interface DocumentPagesProps {
  * full-height A4 would push everything below it off the screen.
  */
 const PAGE_ASPECT = 0.78;
+/**
+ * The tallest a page card gets. In the wide desktop column 0.78 of the width
+ * is a 600pt block of mostly blank page that pushes the tabs below the fold.
+ */
+const MAX_PAGE_HEIGHT = 460;
 /** How much of the neighbouring page peeks in, hinting that it scrolls. */
 const PEEK = 32;
 /** The page-number pill: `sizes.badge` tall, then the gap under it. */
@@ -67,6 +75,8 @@ export function DocumentPages({
   const t = useT();
   const [width, setWidth] = useState(0);
   const [current, setCurrent] = useState(0);
+  const trackRef = useRef<ScrollView>(null);
+  const { isTablet } = useLayout();
 
   const handleLayout = (event: LayoutChangeEvent) => {
     setWidth(event.nativeEvent.layout.width);
@@ -74,7 +84,7 @@ export function DocumentPages({
 
   const pageWidth = width > 0 ? width - PEEK : 0;
   const step = pageWidth + spacing.md;
-  const pageHeight = pageWidth * PAGE_ASPECT;
+  const pageHeight = Math.min(pageWidth * PAGE_ASPECT, MAX_PAGE_HEIGHT);
   /**
    * How many lines of page text fit, for the decks with no image. Clipping by
    * height alone cuts the last line through the middle of its glyphs, which
@@ -94,6 +104,17 @@ export function DocumentPages({
     setCurrent(Math.max(0, Math.min(segments.length - 1, index)));
   };
 
+  /**
+   * A mouse has no sideways swipe, so the web build on a tablet-or-wider
+   * window gets arrows next to the page count. A phone keeps the swipe alone.
+   */
+  const showArrows = Platform.OS === 'web' && isTablet && segments.length > 1;
+  const goTo = (index: number) => {
+    const next = Math.max(0, Math.min(segments.length - 1, index));
+    setCurrent(next);
+    trackRef.current?.scrollTo({ x: next * step, animated: true });
+  };
+
   if (segments.length === 0) return null;
 
   return (
@@ -102,14 +123,37 @@ export function DocumentPages({
         <AppText accessibilityRole="header" variant="heading">
           {t('문서 보기')}
         </AppText>
-        <AppText
-          accessibilityLiveRegion="polite"
-          testID="document-page-position"
-          tone="muted"
-          variant="meta"
-        >
-          {t('{i} / {n}쪽', { i: current + 1, n: segments.length })}
-        </AppText>
+        <View style={styles.headTrailing}>
+          <AppText
+            accessibilityLiveRegion="polite"
+            style={styles.position}
+            testID="document-page-position"
+            tone="muted"
+            variant="meta"
+          >
+            {t('{i} / {n}쪽', { i: current + 1, n: segments.length })}
+          </AppText>
+          {showArrows ? (
+            <>
+              <IconButton
+                disabled={current === 0}
+                icon={ChevronLeft}
+                label={t('이전 쪽')}
+                onPress={() => goTo(current - 1)}
+                size="small"
+                variant="soft"
+              />
+              <IconButton
+                disabled={current >= segments.length - 1}
+                icon={ChevronRight}
+                label={t('다음 쪽')}
+                onPress={() => goTo(current + 1)}
+                size="small"
+                variant="soft"
+              />
+            </>
+          ) : null}
+        </View>
       </View>
 
       {pageWidth > 0 ? (
@@ -118,6 +162,7 @@ export function DocumentPages({
           decelerationRate="fast"
           horizontal
           onScroll={handleScroll}
+          ref={trackRef}
           scrollEventThrottle={16}
           showsHorizontalScrollIndicator={false}
           snapToAlignment="start"
@@ -134,10 +179,11 @@ export function DocumentPages({
                 accessibilityRole="button"
                 key={segment.id}
                 onPress={() => onOpenPage(page)}
-                style={({ pressed }) => [
+                style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
                   styles.page,
                   image ? styles.pageImageCard : styles.pageTextCard,
                   { width: pageWidth, height: pageHeight },
+                  hovered ? styles.pageHovered : null,
                   pressed ? styles.pressed : null,
                 ]}
               >
@@ -193,10 +239,12 @@ export function DocumentPages({
 const styles = StyleSheet.create({
   block: { gap: spacing.md },
   head: {
-    alignItems: 'baseline',
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  headTrailing: { alignItems: 'center', flexDirection: 'row', gap: spacing.xs },
+  position: { fontVariant: ['tabular-nums'], marginRight: spacing.xs },
   track: { gap: spacing.md },
   page: {
     backgroundColor: colors.surface,
@@ -222,6 +270,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.sm,
   },
+  pageHovered: { borderColor: colors.borderStrong },
   pageText: { flexShrink: 1 },
   pressed: { opacity: 0.7 },
 });

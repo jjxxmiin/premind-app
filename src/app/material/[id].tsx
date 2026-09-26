@@ -84,6 +84,7 @@ import {
   type SentenceSource,
 } from '@/lib/highlights';
 import { confusionQuestion } from '@/features/chat/confusion-question';
+import { useLayout } from '@/lib/layout';
 import { goBackOrReplace, type QuizOrigin } from '@/lib/navigation';
 import { ApiError, apiClient } from '@/services/api/client';
 import {
@@ -250,6 +251,13 @@ export default function MaterialDetailScreen() {
     updateStudyNote,
   } = useAppStore();
   const { height: windowHeight } = useWindowDimensions();
+  /**
+   * A laptop or desktop window reads this screen in two columns: the player
+   * and its tabs on the left, and what to do with the material (문제 풀기,
+   * 물어보기, 꼭 기억할 내용) in a side column that stays put while the left
+   * one scrolls. Anything narrower keeps the single column and the bottom bar.
+   */
+  const wide = useLayout().breakpoint === 'expanded';
   const material = materials.find((item) => item.id === params.id);
   const requestedTab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
   const requestedPosition = Number(
@@ -734,8 +742,54 @@ export default function MaterialDetailScreen() {
   const concepts = material.note?.concepts ?? [];
   const keyPoints = material.note?.keyPoints ?? [];
 
+  /* Looks like a quiet input, acts like a button: it opens the chat screen
+     with the keyboard up rather than taking text here. */
+  const askPill = (
+    <Pressable
+      accessibilityHint={t('질문 화면을 열어요.')}
+      accessibilityLabel={t('이 자료에 물어보기')}
+      accessibilityRole="button"
+      onPress={openChat}
+      style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
+        styles.askPill,
+        wide ? styles.askPillWide : null,
+        hovered ? styles.askPillHovered : null,
+        pressed ? styles.askPillPressed : null,
+      ]}
+      testID="ask-pill"
+    >
+      <MessageCircle
+        {...decorative}
+        color={colors.textMuted}
+        size={iconSizes.section}
+        strokeWidth={2}
+      />
+      <AppText numberOfLines={1} style={styles.flex} tone="faint" variant="body">
+        {t('이 자료에 물어보기')}
+      </AppText>
+    </Pressable>
+  );
+
+  const quizButton = material.quiz.length ? (
+    <Button
+      fullWidth={wide}
+      onPress={() =>
+        router.push({
+          pathname: '/quiz/[id]',
+          params: { id: material.id, from: 'material' satisfies QuizOrigin },
+        })
+      }
+      size="large"
+      style={styles.quizButton}
+      variant="primary"
+    >
+      {t('문제 풀기')}
+    </Button>
+  ) : null;
+
   return (
-    <Screen padded={false}>
+    <Screen fullBleed={wide} padded={false}>
+      <View style={wide ? styles.wideFrame : styles.fill}>
       <AppHeader
         onBack={() => goBackOrReplace('/(tabs)/library')}
         right={
@@ -755,8 +809,9 @@ export default function MaterialDetailScreen() {
         title={material.title}
       />
 
+      <View style={wide ? styles.columns : styles.fill}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, wide ? styles.contentWide : null]}
         keyboardShouldPersistTaps="handled"
         onLayout={(event: LayoutChangeEvent) => {
           viewportHeight.current = event.nativeEvent.layout.height;
@@ -858,6 +913,7 @@ export default function MaterialDetailScreen() {
             onSummaryViewChange={setSummaryView}
             painted={painted}
             positionMs={timelinePositionMs}
+            split={wide}
             summaryView={summaryView}
           />
         ) : null}
@@ -1122,45 +1178,40 @@ export default function MaterialDetailScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
-        {/* Looks like a quiet input, acts like a button: it opens the chat
-            screen with the keyboard up rather than taking text here. */}
-        <Pressable
-          accessibilityHint={t('질문 화면을 열어요.')}
-          accessibilityLabel={t('이 자료에 물어보기')}
-          accessibilityRole="button"
-          onPress={openChat}
-          style={({ pressed }) => [
-            styles.askPill,
-            pressed ? styles.askPillPressed : null,
-          ]}
-          testID="ask-pill"
+      {wide ? (
+        <ScrollView
+          contentContainerStyle={styles.sideContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          style={styles.side}
+          testID="material-side"
         >
-          <MessageCircle
-            {...decorative}
-            color={colors.textMuted}
-            size={iconSizes.section}
-            strokeWidth={2}
-          />
-          <AppText numberOfLines={1} style={styles.flex} tone="faint" variant="body">
-            {t('이 자료에 물어보기')}
-          </AppText>
-        </Pressable>
-        {material.quiz.length ? (
-          <Button
-            onPress={() =>
-              router.push({
-                pathname: '/quiz/[id]',
-                params: { id: material.id, from: 'material' satisfies QuizOrigin },
-              })
-            }
-            size="large"
-            style={styles.quizButton}
-            variant="primary"
-          >
-            {t('문제 풀기')}
-          </Button>
-        ) : null}
+          <Card style={styles.sideActions}>
+            {quizButton}
+            {askPill}
+          </Card>
+          {keyPoints.length ? (
+            <Card>
+              <KeyPointChecklist
+                checkedPoints={notebook.checkedPoints}
+                keyPoints={keyPoints}
+                onChange={(checkedPoints) =>
+                  updateStudyNote(material.id, { checkedPoints })
+                }
+              />
+            </Card>
+          ) : null}
+          <LensEntry material={material} />
+        </ScrollView>
+      ) : null}
+      </View>
+
+      {wide ? null : (
+        <View style={styles.bottomBar}>
+          {askPill}
+          {quizButton}
+        </View>
+      )}
       </View>
 
       {notice ? (
@@ -1230,6 +1281,7 @@ function SummaryPanel({
   onSummaryViewChange,
   painted,
   positionMs,
+  split,
   summaryView,
 }: {
   attempts: readonly QuizAttempt[];
@@ -1249,6 +1301,12 @@ function SummaryPanel({
   /** Every stroke of this 마인드팩, in reading order. */
   painted: readonly SentenceSource[];
   positionMs: number;
+  /**
+   * The screen is in two columns and the side one already holds 꼭 기억할
+   * 내용 and the 평가 entry, so this panel leaves them out. The numbers stay
+   * here: three tiles need more width than the side column has.
+   */
+  split: boolean;
   summaryView: SummaryView;
 }) {
   const t = useT();
@@ -1263,6 +1321,7 @@ function SummaryPanel({
   const showViewSwitch = outline.length > 0;
   const view: SummaryView = showViewSwitch ? summaryView : 'glance';
   const page = material.source.kind === 'document';
+  const inlineKeyPoints = split ? [] : keyPoints;
 
   /**
    * How to read 요약, as chips rather than a segmented control.
@@ -1331,7 +1390,7 @@ function SummaryPanel({
   return (
     <View style={styles.panel}>
       {controls}
-      {summary || keyPoints.length ? (
+      {summary || inlineKeyPoints.length ? (
         <Card style={styles.summaryCard}>
           <View style={styles.summaryHead}>
             <StatusBadge
@@ -1370,11 +1429,11 @@ function SummaryPanel({
               />
             </View>
           ) : null}
-          {keyPoints.length ? (
+          {inlineKeyPoints.length ? (
             <View style={summary ? styles.summaryBlockDivided : null}>
               <KeyPointChecklist
                 checkedPoints={checkedPoints}
-                keyPoints={keyPoints}
+                keyPoints={inlineKeyPoints}
                 onChange={onCheckedPointsChange}
               />
             </View>
@@ -1427,10 +1486,10 @@ function SummaryPanel({
               accessibilityRole="button"
               key={marker.id}
               onPress={() => jumpTo(marker.timestampMs)}
-              style={({ pressed }) => [
+              style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
                 styles.listRow,
                 index < material.markers.length - 1 ? styles.rowDivider : null,
-                pressed ? styles.rowPressed : null,
+                hovered || pressed ? styles.rowPressed : null,
               ]}
             >
               <TimeChip timestampMs={marker.timestampMs} />
@@ -1462,38 +1521,44 @@ function SummaryPanel({
         />
       )}
 
-      {material.lensReport ? (
-        <Card padding={false}>
-          <ListRow
-            divider={false}
-            leadingIcon={BrainCircuit}
-            onPress={() =>
-              router.push({
-                pathname: '/report/[id]',
-                params: { id: material.id },
-              })
-            }
-            subtitle={t('근거와 먼저 고칠 것을 봐요')}
-            title={t('평가 결과 보기')}
-          />
-        </Card>
-      ) : (
-        <Card style={styles.tipCard} variant="soft">
-          <BrainCircuit
-            {...decorative}
-            color={colors.textMuted}
-            size={iconSizes.section}
-            strokeWidth={1.9}
-          />
-          <View style={styles.flex}>
-            <AppText variant="itemTitle">{t('아직 평가가 없어요')}</AppText>
-            <AppText tone="muted" variant="meta">
-              {t('말하기 탭의 발표에서 이 자료를 고르면 근거와 함께 평가해 줘요.')}
-            </AppText>
-          </View>
-        </Card>
-      )}
+      {split ? null : <LensEntry material={material} />}
     </View>
+  );
+}
+
+/** Where this material's 발표 평가 is, or how to get one. */
+function LensEntry({ material }: { material: StudyMaterial }) {
+  const t = useT();
+  return material.lensReport ? (
+    <Card padding={false}>
+      <ListRow
+        divider={false}
+        leadingIcon={BrainCircuit}
+        onPress={() =>
+          router.push({
+            pathname: '/report/[id]',
+            params: { id: material.id },
+          })
+        }
+        subtitle={t('근거와 먼저 고칠 것을 봐요')}
+        title={t('평가 결과 보기')}
+      />
+    </Card>
+  ) : (
+    <Card style={styles.tipCard} variant="soft">
+      <BrainCircuit
+        {...decorative}
+        color={colors.textMuted}
+        size={iconSizes.section}
+        strokeWidth={1.9}
+      />
+      <View style={styles.flex}>
+        <AppText variant="itemTitle">{t('아직 평가가 없어요')}</AppText>
+        <AppText tone="muted" variant="meta">
+          {t('말하기 탭의 발표에서 이 자료를 고르면 근거와 함께 평가해 줘요.')}
+        </AppText>
+      </View>
+    </Card>
   );
 }
 
@@ -1509,6 +1574,28 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl + spacing.xl,
   },
   block: { paddingHorizontal: spacing.gutter },
+  fill: { flex: 1, minHeight: 0 },
+  /** Two columns get a wider frame than the 960 reading column, centred. */
+  wideFrame: {
+    alignSelf: 'center',
+    flex: 1,
+    maxWidth: 1200,
+    minHeight: 0,
+    width: '100%',
+  },
+  columns: { flex: 1, flexDirection: 'row', minHeight: 0 },
+  /** No bottom bar to clear in two columns. */
+  contentWide: { paddingBottom: spacing.xxl },
+  /** The side column scrolls on its own, so the left one can run long. */
+  side: { flexGrow: 0, flexShrink: 0, width: 360 },
+  sideContent: {
+    gap: spacing.md,
+    paddingBottom: spacing.xxl,
+    paddingLeft: spacing.xs,
+    paddingRight: spacing.gutter,
+    paddingTop: spacing.sm,
+  },
+  sideActions: { gap: spacing.md },
   /** Header → player 8. Player → tabs 24, split 16 here and 8 on the tab row. */
   documentCard: {
     alignItems: 'center',
@@ -1670,6 +1757,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md + spacing.xs,
   },
   askPillPressed: { backgroundColor: colors.backgroundMuted },
+  askPillHovered: { backgroundColor: colors.backgroundMuted },
+  /** Stacked under the quiz button in the side column, not sharing a row. */
+  askPillWide: { alignSelf: 'stretch', flex: 0 },
   /** Matches the pill's 48pt so the two controls share one baseline. */
   quizButton: { flexShrink: 0, minHeight: sizes.input },
   notReady: { flex: 1, justifyContent: 'center' },

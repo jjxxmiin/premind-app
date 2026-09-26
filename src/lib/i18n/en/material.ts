@@ -99,6 +99,8 @@ export const EN_MATERIAL: EnDict = {
   '문서 보기': 'Document',
   '{i} / {n}쪽': '{i} of {n} pages',
   '이 쪽을 크게 봐요.': 'Opens this page full screen.',
+  '이전 쪽': 'Previous page',
+  '다음 쪽': 'Next page',
   '이 안내를 닫아요.': 'Dismisses this tip.',
   '안내 닫기': 'Dismiss tip',
   '칠한 문장 {n}개예요. 누르면 그 부분을 들어요.': { one: '{n} highlighted sentence. Tap to hear that part.', other: '{n} highlighted sentences. Tap one to hear that part.' },
