@@ -171,7 +171,7 @@ export const EN_ACCOUNT: EnDict = {
   '다른 기기에서 산 구독을 가져와요': 'Bring over a subscription bought on another device',
   '구매 복원': 'Restore purchase',
   '돌아가기': 'Go back',
-  '웹에서 구독하기': 'Subscribe on the web',
+  '스탠다드 구독하기': 'Subscribe to Standard',
   '나중에 할게요': 'Maybe later',
   '지금은 구독 상품을 불러올 수 없어요. 스토어에 상품이 준비되면 바로 구독할 수 있어요.':
     "We can't load subscription products right now. You can subscribe as soon as they're ready in the store.",

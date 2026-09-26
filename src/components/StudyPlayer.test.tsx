@@ -154,4 +154,24 @@ describe('StudyPlayer native authenticated fallback', () => {
     });
     await waitFor(() => expect(mockSeekTo).toHaveBeenCalledTimes(2));
   });
+
+  it('plays the server copy when this device has no local original', async () => {
+    const player = await render(
+      <StudyPlayer
+        durationMs={120_000}
+        fallbackSource={{
+          uri: 'https://api.premind.test/recordings/recording-2/media',
+          headers: { Authorization: 'Bearer valid' },
+        }}
+        kind="audio"
+        title="다른 기기에서 만든 강의"
+        uri=""
+      />,
+    );
+
+    expect(player.queryByText('원본을 불러오고 있어요')).toBeNull();
+    expect(
+      mockPlayers.has('https://api.premind.test/recordings/recording-2/media|Bearer valid'),
+    ).toBe(true);
+  });
 });

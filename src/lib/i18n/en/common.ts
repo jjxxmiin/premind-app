@@ -5,6 +5,9 @@ import type { EnDict } from '../core';
  * 여러 화면이 같은 뜻으로 쓰는 짧은 말만 둔다(이 사전이 다른 영역 사전보다 우선한다).
  */
 export const EN_COMMON: EnDict = {
+  // 없는 주소(src/app/+not-found.tsx)
+  '페이지를 찾을 수 없어요': "We couldn't find this page",
+  '주소가 바뀌었거나 없는 페이지예요': 'The address has changed or the page does not exist',
   // 탭(src/app/(tabs)/_layout.tsx)
   홈: 'Home',
   '홈, 내 자료': 'Home, your materials',

@@ -586,7 +586,7 @@ export default function SubscriptionScreen() {
                 size="large"
                 variant="primary"
               >
-                {t('웹에서 구독하기')}
+                {t('스탠다드 구독하기')}
               </Button>
               <Button
                 fullWidth
