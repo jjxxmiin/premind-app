@@ -1,7 +1,7 @@
 import { Flag, Timer, VolumeX, type LucideIcon } from 'lucide-react-native';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { AppText, Card } from '@/components/ui';
+import { AppText } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
@@ -22,56 +22,50 @@ export interface LensTipsCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-/** Three short rules for a recording that scores fairly. Hidden after a few reports. */
+/**
+ * Three short rules for a recording that scores fairly, as three small tiles
+ * side by side (2026-09-26: a list of rows read like a settings page).
+ * Hidden after a few reports.
+ */
 export function LensTipsCard({ style }: LensTipsCardProps) {
   const t = useT();
   return (
-    <Card
+    <View
       accessibilityLabel={`${t('이렇게 써요')}. ${TIPS.map((tip) => t(tip.text)).join(', ')}`}
       accessible
-      padding={false}
-      style={style}
+      style={[styles.row, style]}
     >
-      {TIPS.map(({ icon: Icon, id, text }, index) => (
-        <View
-          key={id}
-          style={[styles.row, index < TIPS.length - 1 ? styles.rowDivider : null]}
-        >
+      {TIPS.map(({ icon: Icon, id, text }) => (
+        <View key={id} style={styles.tile}>
           <View {...decorative} style={styles.iconWell}>
-            <Icon color={colors.textSoft} size={iconSizes.inline} strokeWidth={2} />
+            <Icon color={colors.brand} size={iconSizes.section} strokeWidth={2} />
           </View>
-          <AppText style={styles.text} variant="body">
-            {t(text)}
-          </AppText>
+          <AppText variant="label">{t(text)}</AppText>
         </View>
       ))}
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
-    alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.md,
-    minHeight: 54,
-    paddingHorizontal: spacing.gutter,
-    paddingVertical: spacing.sm,
+    gap: spacing.sm,
   },
-  rowDivider: {
-    borderBottomColor: colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  tile: {
+    backgroundColor: colors.backgroundSoft,
+    borderRadius: radii.hero,
+    flex: 1,
+    gap: spacing.sm,
+    minWidth: 0,
+    padding: spacing.md,
   },
   iconWell: {
     alignItems: 'center',
-    backgroundColor: colors.backgroundSoft,
+    backgroundColor: colors.surface,
     borderRadius: radii.full,
-    height: 32,
+    height: 36,
     justifyContent: 'center',
-    width: 32,
-  },
-  text: {
-    flex: 1,
-    minWidth: 0,
+    width: 36,
   },
 });

@@ -59,3 +59,4 @@ export {
   type MomentMark,
   type RubricComparisonRow,
 } from './lens-charts';
+export * from './LensReportTile';

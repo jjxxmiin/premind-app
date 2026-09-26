@@ -1,14 +1,14 @@
 import { router } from 'expo-router';
-import { BarChart3, Bell, Check, Link2, Mic, Play } from 'lucide-react-native';
+import { Bell, Check, FolderOpen, Link2, Mic, Play } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
+import { Carousel } from '@/components/app';
 import {
   LatestReportCard,
-  LensEvaluatingRow,
-  LensIntroCard,
-  LensReportRow,
+  LensEvaluatingTile,
+  LensReportTile,
   LensTipsCard,
   ScoreTrend,
   lensFailure,
@@ -17,6 +17,8 @@ import {
 } from '@/components/lens';
 import { MediaArtwork } from '@/components/MediaArtwork';
 import { SpeakColumns, SpeakFrame } from '@/components/speak/SpeakColumns';
+import { RoundAction } from '@/components/speak/RoundAction';
+import { SpeakHero, SpeakSectionTitle, SpeakTitle } from '@/components/speak/SpeakKit';
 import {
   AnimatedReveal,
   AppText,
@@ -27,7 +29,6 @@ import {
   EmptyState,
   IconButton,
   Screen,
-  SectionHeader,
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatMaterialLength, formatRelativeDate } from '@/lib/format';
@@ -37,12 +38,17 @@ import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
 
-/** 말하기 탭의 발표 쪽. `switcher` 는 발표, 면접을 고르는 줄(머리 바로 아래). */
+/**
+ * 말하기 탭의 발표 쪽(2026-09-26 앱다운 재설계). 큰 제목 → 알약 고르기 → 머리 카드 안의 큰 둥근
+ * 녹음 버튼(스픽: 목소리가 먼저) → 최근 평가 한 장 → 지난 평가는 옆으로 넘기기 → 팁 세 타일.
+ * `switcher` 는 발표, 면접을 고르는 알약.
+ */
 export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
   const t = useT();
   const { evaluatingMaterialIds, materials, projects, requestLens } = useAppStore();
   const { breakpoint, gutter } = useLayout();
   const wide = breakpoint === 'expanded';
+  const compact = breakpoint === 'compact';
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [failure, setFailure] = useState<LensFailure | null>(null);
@@ -52,7 +58,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
     t('폴더 없음');
 
   const isEvaluating = (id: string) => evaluatingMaterialIds.includes(id);
-  const { candidates, history, latest, rows, showRows, showTips } = lensHome(
+  const { candidates, history, latest, rows, showTips } = lensHome(
     materials,
     evaluatingMaterialIds,
   );
@@ -75,26 +81,56 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
       .catch((error: unknown) => setFailure(lensFailure(error)));
   };
 
-  const actionButtons = (
-    <View style={styles.actions}>
-      <Button
-        fullWidth
-        leftIcon={<BarChart3 color={colors.textInverse} size={iconSizes.inline} />}
-        onPress={openPicker}
-        size="large"
-        variant="primary"
-      >
-        {t('새 평가 시작')}
-      </Button>
-      <Button
-        fullWidth
-        leftIcon={<Mic color={colors.text} size={iconSizes.inline} />}
-        onPress={openRecorder}
-        variant="outline"
-      >
-        {t('발표 녹음하기')}
-      </Button>
+  // 머리 카드: 할 일 하나(녹음)를 큰 둥근 버튼으로, 가진 자료로 평가는 조용한 보조 버튼(시트).
+  const heroCopy = (
+    <View style={[styles.heroCopy, compact ? styles.heroCopyCentered : null]}>
+      <AppText align={compact ? 'center' : 'left'} variant="heroTitle">
+        {t(latest ? '한 번 더 말해 볼까요?' : '발표를 들려주세요')}
+      </AppText>
+      {latest ? null : (
+        <AppText align={compact ? 'center' : 'left'} tone="soft" variant="body">
+          {t('발표나 스피치를 대본으로 채점해요. 녹음, 올린 영상, 유튜브 링크 다 돼요.')}
+        </AppText>
+      )}
     </View>
+  );
+  const pickButton = (
+    <Button
+      leftIcon={<FolderOpen color={colors.text} size={iconSizes.inline} />}
+      onPress={openPicker}
+      style={compact ? styles.pickCompact : styles.pick}
+      variant="ghost"
+    >
+      {t('가진 자료로 평가')}
+    </Button>
+  );
+  const record = (
+    <RoundAction
+      accessibilityHint={t('녹음 화면을 열어요')}
+      icon={Mic}
+      label={t('발표 녹음하기')}
+      onPress={openRecorder}
+      testID="speak-record"
+    />
+  );
+  const hero = (
+    <SpeakHero>
+      {compact ? (
+        <>
+          {heroCopy}
+          {record}
+          {pickButton}
+        </>
+      ) : (
+        <View style={styles.heroRow}>
+          <View style={styles.heroLeft}>
+            {heroCopy}
+            {pickButton}
+          </View>
+          {record}
+        </View>
+      )}
+    </SpeakHero>
   );
 
   const latestCard = latest?.lensReport ? (
@@ -105,59 +141,43 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
       title={latest.title}
       updatedAt={latest.updatedAt}
     />
-  ) : (
-    <LensIntroCard onPick={openPicker} onRecord={openRecorder} />
-  );
+  ) : null;
 
   const trend = history.length >= 2 ? <ScoreTrend entries={history} /> : null;
 
-  const pastRows = showRows ? (
+  // 지난 평가: 위 카드에 크게 보인 최근 평가는 빼고, 쓰는 중인 것부터.
+  const past = rows.filter((material) => isEvaluating(material.id) || material.id !== latest?.id);
+  const pastRow = past.length > 0 ? (
     <View style={styles.section}>
-      <SectionHeader title={t('지난 평가')} />
-      <Card padding={false}>
-        {rows.map((material, index) =>
+      <SpeakSectionTitle title={t('지난 평가')} />
+      <Carousel accessibilityLabel={t('지난 평가')} itemWidth={compact ? 220 : 240}>
+        {past.map((material) =>
           isEvaluating(material.id) ? (
-            <LensEvaluatingRow
-              key={material.id}
-              last={index === rows.length - 1}
-              material={material}
-              projectTitle={projectTitle(material)}
-            />
+            <LensEvaluatingTile key={material.id} material={material} projectTitle={projectTitle(material)} />
           ) : (
-            <LensReportRow
-              featured={material.id === latest?.id}
+            <LensReportTile
               key={material.id}
-              last={index === rows.length - 1}
               material={material}
               onPress={() => openReport(material)}
               projectTitle={projectTitle(material)}
             />
           ),
         )}
-      </Card>
+      </Carousel>
     </View>
   ) : null;
 
   const tips = showTips ? (
     <View style={styles.section}>
-      <SectionHeader
-        description={t('점수가 제대로 나오는 녹음이에요.')}
-        title={t('이렇게 써요')}
-      />
+      <SpeakSectionTitle title={t('이렇게 써요')} />
       <LensTipsCard />
     </View>
   ) : null;
 
-  const heading = (
-    <View style={styles.heading}>
-      <AppText accessibilityRole="header" variant="pageTitle">
-        {t('발표 평가')}
-      </AppText>
-      {latest ? (
-        <AppText tone="muted" variant="body">
-          {t('발표나 스피치를 대본으로 채점해요. 녹음, 올린 영상, 유튜브 링크 다 돼요.')}
-        </AppText>
-      ) : null}
+  const top = (
+    <View style={styles.top}>
+      <SpeakTitle description={t('내가 말한 것을 돌려받아요')} title={t('말하기')} />
+      {switcher}
     </View>
   );
 
@@ -182,54 +202,32 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
         />
 
         <View style={[styles.content, { paddingHorizontal: gutter }]}>
-          {switcher}
+          <AnimatedReveal>{top}</AnimatedReveal>
           {wide ? (
-            <>
-              <AnimatedReveal>{heading}</AnimatedReveal>
-              <SpeakColumns
-                main={
-                  <>
-                    <AnimatedReveal delay={80}>{latestCard}</AnimatedReveal>
-                    {trend ? <AnimatedReveal delay={140}>{trend}</AnimatedReveal> : null}
-                    {pastRows ? <AnimatedReveal delay={200}>{pastRows}</AnimatedReveal> : null}
-                  </>
-                }
-                side={
-                  <>
-                    {latest?.lensReport ? (
-                      <AnimatedReveal delay={80}>
-                        <Card style={styles.sideCard}>
-                          <View style={styles.sideHead}>
-                            <AppText variant="heading">{t('새로 평가받기')}</AppText>
-                            <AppText tone="muted" variant="meta">
-                              {t('가진 자료를 고르거나 지금 녹음해요.')}
-                            </AppText>
-                          </View>
-                          {actionButtons}
-                        </Card>
-                      </AnimatedReveal>
-                    ) : null}
-                    {tips ? <AnimatedReveal delay={140}>{tips}</AnimatedReveal> : null}
-                  </>
-                }
-                sideWidth={340}
-              />
-            </>
+            <SpeakColumns
+              main={
+                <>
+                  <AnimatedReveal delay={60}>{hero}</AnimatedReveal>
+                  {latestCard ? <AnimatedReveal delay={120}>{latestCard}</AnimatedReveal> : null}
+                  {pastRow ? <AnimatedReveal delay={180}>{pastRow}</AnimatedReveal> : null}
+                </>
+              }
+              side={
+                <>
+                  {trend ? <AnimatedReveal delay={120}>{trend}</AnimatedReveal> : null}
+                  {tips ? <AnimatedReveal delay={180}>{tips}</AnimatedReveal> : null}
+                </>
+              }
+              sideWidth={340}
+            />
           ) : (
             <>
-              <AnimatedReveal>{heading}</AnimatedReveal>
-              <AnimatedReveal delay={80}>
-                {latest?.lensReport ? (
-                  <View style={styles.section}>
-                    {latestCard}
-                    {actionButtons}
-                  </View>
-                ) : (
-                  latestCard
-                )}
-              </AnimatedReveal>
-              {trend ? <AnimatedReveal delay={140}>{trend}</AnimatedReveal> : null}
-              {pastRows ? <AnimatedReveal delay={200}>{pastRows}</AnimatedReveal> : null}
+              <AnimatedReveal delay={60}>{hero}</AnimatedReveal>
+              {latestCard ? (
+                <AnimatedReveal delay={120}>{latestCard}</AnimatedReveal>
+              ) : null}
+              {pastRow ? <AnimatedReveal delay={180}>{pastRow}</AnimatedReveal> : null}
+              {trend ? <AnimatedReveal delay={220}>{trend}</AnimatedReveal> : null}
               {tips ? <AnimatedReveal delay={260}>{tips}</AnimatedReveal> : null}
             </>
           )}
@@ -382,22 +380,38 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.xl,
     paddingBottom: spacing.xxl,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.xs,
   },
-  heading: {
-    gap: spacing.xs,
+  top: {
+    gap: spacing.lg,
   },
   section: {
     gap: spacing.md,
   },
-  actions: {
+  heroCopy: {
     gap: spacing.sm,
   },
-  sideCard: {
-    gap: spacing.lg,
+  heroCopyCentered: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.xs,
   },
-  sideHead: {
-    gap: spacing.xs,
+  heroRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xl,
+  },
+  heroLeft: {
+    flex: 1,
+    gap: spacing.lg,
+    minWidth: 0,
+  },
+  pick: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.surface,
+  },
+  pickCompact: {
+    alignSelf: 'center',
+    backgroundColor: colors.surface,
   },
   flex: {
     flex: 1,

@@ -4,13 +4,14 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
+import { BOTTOM_ACTION_SPACE, BottomAction, Carousel } from '@/components/app';
 import { RecordedVideo } from '@/components/interview/RecordedVideo';
 import { ShareWithOrg } from '@/components/interview/ShareWithOrg';
 import { SpeakFrame } from '@/components/speak/SpeakColumns';
+import { InsightChip, SpeakHero, Surface } from '@/components/speak/SpeakKit';
 import {
   AppText,
   Button,
-  Card,
   Chip,
   Dialog,
   EmptyState,
@@ -161,57 +162,94 @@ export default function InterviewReportScreen() {
     }
   };
 
-  const questionList = (
-    <Card padding={false}>
-      {questions.map((question, index) => {
-        const latest = latestAttempt(byQuestion.get(question.id));
-        const status = reportQuestionStatus(latest);
-        const on = question.id === selectedQuestion?.id;
-        return (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected: on }}
-            key={question.id}
-            onPress={() => {
-              setSelectedQuestionId(question.id);
-              setSelectedAttemptId(null);
-            }}
-            style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [styles.qRow, index < questions.length - 1 ? styles.divider : null, hovered && !on ? styles.qRowHover : null, on ? styles.qRowOn : null, pressed ? styles.pressed : null]}
-          >
-            <AppText style={styles.qNumber} tabular tone={on ? 'brand' : 'muted'} variant="bodyStrong">
+  const questionItems = questions.map((question, index) => {
+    const latest = latestAttempt(byQuestion.get(question.id));
+    const status = reportQuestionStatus(latest);
+    const on = question.id === selectedQuestion?.id;
+    const statusText = !latest ? t('아직 답하지 않았어요') : status ? t(status.label) : latest.analysis?.evaluation.status === 'ready' ? t('피드백 있음') : formatAnswerDuration(latest.durationMs, locale);
+    return { question, index, on, statusText };
+  });
+  const selectQuestion = (id: string) => {
+    setSelectedQuestionId(id);
+    setSelectedAttemptId(null);
+  };
+
+  // 폰: 질문을 옆으로 넘기는 카드 줄(고른 카드는 주황 면). 넓은 화면: 왼쪽 목록.
+  const questionList = wide ? (
+    <Surface padding={0} style={styles.clip} tone="soft">
+      {questionItems.map(({ question, index, on, statusText }) => (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ selected: on }}
+          key={question.id}
+          onPress={() => selectQuestion(question.id)}
+          style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [styles.qRow, index < questions.length - 1 ? styles.divider : null, hovered && !on ? styles.qRowHover : null, on ? styles.qRowOn : null, pressed ? styles.pressed : null]}
+        >
+          <AppText style={styles.qNumber} tabular tone={on ? 'brand' : 'muted'} variant="bodyStrong">
+            {index + 1}
+          </AppText>
+          <View style={styles.flex}>
+            <AppText numberOfLines={2} variant="body">
+              {t(question.text)}
+            </AppText>
+            <AppText tone="muted" variant="meta">
+              {statusText}
+            </AppText>
+          </View>
+        </Pressable>
+      ))}
+    </Surface>
+  ) : (
+    <Carousel accessibilityLabel={t('질문별로 돌아보기')} itemWidth={236}>
+      {questionItems.map(({ question, index, on, statusText }) => (
+        <Pressable
+          accessibilityLabel={`${index + 1}. ${t(question.text)}. ${statusText}`}
+          accessibilityRole="button"
+          accessibilityState={{ selected: on }}
+          key={question.id}
+          onPress={() => selectQuestion(question.id)}
+          style={({ pressed }) => [styles.qCard, on ? styles.qCardOn : null, pressed ? styles.qCardPressed : null]}
+        >
+          <View style={[styles.qBadge, on ? styles.qBadgeOn : null]}>
+            <AppText tabular tone={on ? 'inverse' : 'soft'} variant="label">
               {index + 1}
             </AppText>
-            <View style={styles.flex}>
-              <AppText numberOfLines={2} variant="body">
-                {t(question.text)}
-              </AppText>
-              <AppText tone="muted" variant="meta">
-                {!latest ? t('아직 답하지 않았어요') : status ? t(status.label) : latest.analysis?.evaluation.status === 'ready' ? t('피드백 있음') : formatAnswerDuration(latest.durationMs, locale)}
-              </AppText>
-            </View>
-          </Pressable>
-        );
-      })}
-    </Card>
+          </View>
+          <AppText numberOfLines={3} style={styles.grow} variant="bodyStrong">
+            {t(question.text)}
+          </AppText>
+          <AppText numberOfLines={1} tone={on ? 'brand' : 'muted'} variant="meta">
+            {statusText}
+          </AppText>
+        </Pressable>
+      ))}
+    </Carousel>
   );
 
+  // 이번 연습에서 다룬 요점(질문이 바란 내용 중 말한 것) 수. 채점이 아니라 사실(Interview Warmup 결).
+  const coveredPoints = questions.reduce((sum, question) => {
+    const evaluation = latestAttempt(byQuestion.get(question.id))?.analysis?.evaluation;
+    return sum + (evaluation?.status === 'ready' && evaluation.result ? evaluation.result.coverage.filter((item) => item.status === 'met').length : 0);
+  }, 0);
+
   const header = (
-    <Card style={styles.summary}>
+    <SpeakHero style={styles.summary}>
       <View style={styles.badges}>
-        <StatusBadge label={t(source.kindLabel)} tone="neutral" />
+        <StatusBadge label={t(source.kindLabel)} style={styles.onBrand} tone="neutral" />
         <StatusBadge label={t(modeLabel(session))} tone={session.feedbackMode === 'ai' ? 'brand' : 'neutral'} />
         {remote ? <StatusBadge label={t('다른 기기의 기록')} tone="info" /> : null}
       </View>
-      <AppText variant="pageTitle">{t(source.title)}</AppText>
-      <AppText tone="muted" variant="meta">
-        {[
-          formatDate(session.completedAt ?? session.createdAt, locale),
-          t('답변한 질문 {done} / {total}개', { done: answeredCount, total: questions.length }),
-          t('총 말한 시간 {time}', { time: formatAnswerDuration(totalSpeakingMs(session), locale) }),
-        ]
-          .filter(Boolean)
-          .join(' / ')}
-      </AppText>
+      <View style={styles.titleBlock}>
+        <AppText variant="heroTitle">{t(source.title)}</AppText>
+        <AppText tone="muted" variant="meta">
+          {formatDate(session.completedAt ?? session.createdAt, locale)}
+        </AppText>
+      </View>
+      <View accessibilityLabel={t('이번 연습 돌아보기')} style={styles.insights}>
+        <InsightChip label={t('답변한 질문 {done} / {total}개', { done: answeredCount, total: questions.length })} tone="brand" />
+        <InsightChip label={t('총 말한 시간 {time}', { time: formatAnswerDuration(totalSpeakingMs(session), locale) })} tone="brand" />
+        {coveredPoints > 0 ? <InsightChip label={t('다룬 요점 {n}개', { n: coveredPoints })} tone="brand" /> : null}
+      </View>
       {grounded ? (
         <View style={styles.reflect}>
           <AppText tone="brand" variant="badge">
@@ -220,14 +258,14 @@ export default function InterviewReportScreen() {
           <AppText variant="bodyStrong">{clean(grounded.summary)}</AppText>
         </View>
       ) : null}
-      <AppText tone="faint" variant="badge">
+      <AppText tone="muted" variant="badge">
         {t(
           ai
             ? 'AI가 만든 전사문과 피드백이에요. 사실과 다를 수 있으니 참고로만 봐 주세요. 합격 가능성이나 성격은 판단하지 않아요.'
             : '이 화면은 답변 시간과 메모를 정리하며, 답변 내용이나 합격 가능성을 평가하지 않아요.',
         )}
       </AppText>
-    </Card>
+    </SpeakHero>
   );
 
   const detail = selectedQuestion ? (
@@ -253,6 +291,20 @@ export default function InterviewReportScreen() {
     />
   ) : null;
 
+  const againButton = (
+    <Button
+      fullWidth={breakpoint === 'compact'}
+      leftIcon={<RotateCcw color={colors.textInverse} size={iconSizes.inline} />}
+      onPress={() => router.push({ pathname: '/interview/prepare', params: { again: session.id } })}
+      size={breakpoint === 'compact' ? 'large' : 'medium'}
+      style={breakpoint === 'compact' ? null : styles.action}
+      variant="primary"
+    >
+      {t('전체 다시 연습')}
+    </Button>
+  );
+  const docked = !remote && breakpoint === 'compact';
+
   return (
     <Screen fullBleed padded={false}>
       <SpeakFrame>
@@ -260,7 +312,7 @@ export default function InterviewReportScreen() {
       </SpeakFrame>
       <ScrollView style={styles.scroll}>
         <SpeakFrame>
-        <View style={[styles.content, { paddingHorizontal: gutter }]}>
+        <View style={[styles.content, { paddingHorizontal: gutter }, docked ? styles.dockSpace : null]}>
         {header}
         {wide ? (
           <View style={styles.columns}>
@@ -281,15 +333,7 @@ export default function InterviewReportScreen() {
         )}
 
         <View style={[styles.actions, breakpoint !== 'compact' ? styles.actionsRow : null]}>
-          {!remote ? (
-            <Button variant="primary"
-              leftIcon={<RotateCcw color={colors.textInverse} size={iconSizes.inline} />}
-              onPress={() => router.push({ pathname: '/interview/prepare', params: { again: session.id } })}
-              style={styles.action}
-            >
-              {t('전체 다시 연습')}
-            </Button>
-          ) : null}
+          {!remote && breakpoint !== 'compact' ? againButton : null}
           {canShare && user ? <ShareWithOrg onMessage={toast.show} orgName={user.orgName ?? t('기관')} session={session} source={source} /> : null}
           <Button onPress={() => router.push('/interview/history')} style={styles.action} variant="outline">
             {t('연습 기록으로')}
@@ -303,6 +347,7 @@ export default function InterviewReportScreen() {
         </View>
         </SpeakFrame>
       </ScrollView>
+      {docked ? <BottomAction>{againButton}</BottomAction> : null}
       <Toast message={toast.message} />
       <Dialog
         cancel={{ label: t('취소'), onPress: () => setDeleteOpen(false) }}
@@ -389,7 +434,7 @@ function QuestionDetail({
 
   return (
     <View style={styles.section}>
-      <Card style={styles.detailCard}>
+      <Surface style={styles.detailCard} tone="raised">
         <View style={styles.badges}>
           <AppText tone="muted" variant="badge">
             {question.kind === 'follow_up' ? t('꼬리질문') : t('{n}번 질문', { n: questionNumber })}
@@ -526,25 +571,36 @@ function QuestionDetail({
                     />
                   ) : null}
                   <StatusBadge label={t(FIT_COPY[result.fit])} tone={result.fit === 'direct' ? 'positive' : result.fit === 'partial' ? 'warning' : 'neutral'} />
-                  <AppText tone="brand" variant="badge">
-                    {t('다음엔 이렇게 해보세요')}
-                  </AppText>
-                  <AppText variant="bodyStrong">{clean(conciseReportText(result.nextFocus))}</AppText>
+                  <View style={styles.focus}>
+                    <AppText tone="brand" variant="badge">
+                      {t('다음엔 이렇게 해보세요')}
+                    </AppText>
+                    <AppText variant="bodyStrong">{clean(conciseReportText(result.nextFocus))}</AppText>
+                  </View>
                   {result.coverage.length > 0 ? (
                     <View style={styles.block}>
                       <AppText variant="itemTitle">{t('질문이 바란 내용')}</AppText>
-                      {result.coverage.map((item) => (
-                        <View key={item.point} style={styles.coverageRow}>
-                          <StatusBadge label={t(COVERAGE_COPY[item.status])} tone={item.status === 'met' ? 'positive' : item.status === 'partial' ? 'warning' : 'neutral'} />
-                          <AppText style={styles.flex} variant="body">
-                            {clean(item.point)}
-                          </AppText>
-                        </View>
-                      ))}
+                      <View style={styles.coverageChips}>
+                        {result.coverage.map((item) => (
+                          <View
+                            accessibilityLabel={`${clean(item.point)}, ${t(COVERAGE_COPY[item.status])}`}
+                            accessible
+                            key={item.point}
+                            style={[styles.coverageChip, item.status === 'met' ? styles.coverageMet : item.status === 'partial' ? styles.coveragePartial : null]}
+                          >
+                            <AppText tone={item.status === 'met' ? 'positive' : item.status === 'partial' ? 'warning' : 'muted'} variant="badge">
+                              {t(COVERAGE_COPY[item.status])}
+                            </AppText>
+                            <AppText style={styles.shrink} variant="label">
+                              {clean(item.point)}
+                            </AppText>
+                          </View>
+                        ))}
+                      </View>
                     </View>
                   ) : null}
                   {result.strengths.length > 0 ? (
-                    <View style={styles.block}>
+                    <View style={[styles.block, styles.panel, styles.panelPositive]}>
                       <AppText tone="positive" variant="itemTitle">
                         {t('잘한 점')}
                       </AppText>
@@ -557,7 +613,7 @@ function QuestionDetail({
                     </View>
                   ) : null}
                   {result.missingPoints.length > 0 ? (
-                    <View style={styles.block}>
+                    <View style={[styles.block, styles.panel, styles.panelSoft]}>
                       <AppText tone="warning" variant="itemTitle">
                         {t('빠진 내용')}
                       </AppText>
@@ -567,7 +623,7 @@ function QuestionDetail({
                     </View>
                   ) : null}
                   {result.suggestedStructure.length > 0 ? (
-                    <View style={styles.block}>
+                    <View style={[styles.block, styles.panel, styles.panelBrand]}>
                       <AppText tone="brand" variant="itemTitle">
                         {t('이렇게 구성해 보세요')}
                       </AppText>
@@ -615,10 +671,10 @@ function QuestionDetail({
             ) : null}
           </>
         )}
-      </Card>
+      </Surface>
 
       {compare ? (
-        <Card style={styles.detailCard}>
+        <Surface style={styles.detailCard} tone="soft">
           <View style={styles.rowBetween}>
             <AppText variant="itemTitle">{t('처음 답변과 비교')}</AppText>
             {compare.missingDelta !== null && compare.missingDelta > 0 ? (
@@ -648,11 +704,11 @@ function QuestionDetail({
             ))}
           </View>
           {compare.last.nextFocus ? <AppText tone="muted" variant="meta">{t('다음 연습: {text}', { text: clean(compare.last.nextFocus) })}</AppText> : null}
-        </Card>
+        </Surface>
       ) : null}
 
       {editable ? (
-        <Card style={styles.detailCard}>
+        <Surface style={styles.detailCard} tone="soft">
           <TextArea
             hint={t('다음에 해보고 싶은 것을 적어보세요. 비워둬도 괜찮아요.')}
             label={t('다음 연습 메모')}
@@ -670,14 +726,14 @@ function QuestionDetail({
               {t('이 질문 다시 연습하기')}
             </Button>
           ) : null}
-        </Card>
+        </Surface>
       ) : note ? (
-        <Card style={styles.detailCard} variant="soft">
+        <Surface style={styles.detailCard} tone="soft">
           <AppText tone="muted" variant="badge">
             {t('다음 연습 메모')}
           </AppText>
           <AppText variant="body">{note}</AppText>
-        </Card>
+        </Surface>
       ) : null}
     </View>
   );
@@ -699,9 +755,30 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { gap: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
   section: { gap: spacing.md },
-  summary: { gap: spacing.sm },
+  summary: { gap: spacing.md },
+  titleBlock: { gap: spacing.xxs },
+  insights: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  onBrand: { backgroundColor: colors.surface },
+  clip: { overflow: 'hidden' },
+  grow: { flexGrow: 1 },
+  shrink: { flexShrink: 1, minWidth: 0 },
+  dockSpace: { paddingBottom: BOTTOM_ACTION_SPACE + spacing.md },
+  qCard: { backgroundColor: colors.backgroundSoft, borderRadius: radii.hero, cursor: 'pointer', flex: 1, gap: spacing.sm, minHeight: 148, padding: spacing.lg },
+  qCardOn: { backgroundColor: colors.brandSoft },
+  qCardPressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
+  qBadge: { alignItems: 'center', backgroundColor: colors.surface, borderRadius: radii.full, height: 28, justifyContent: 'center', width: 28 },
+  qBadgeOn: { backgroundColor: colors.brand },
+  focus: { backgroundColor: colors.brandSoft, borderRadius: radii.tile, gap: spacing.xs, padding: spacing.md },
+  coverageChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  coverageChip: { alignItems: 'center', backgroundColor: colors.backgroundSoft, borderRadius: radii.chip, flexDirection: 'row', gap: spacing.sm, maxWidth: '100%', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  coverageMet: { backgroundColor: colors.positiveSoft },
+  coveragePartial: { backgroundColor: colors.warningSoft },
+  panel: { borderRadius: radii.tile, padding: spacing.md },
+  panelPositive: { backgroundColor: colors.positiveSoft },
+  panelSoft: { backgroundColor: colors.backgroundSoft },
+  panelBrand: { backgroundColor: colors.brandSubtle },
   badges: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  reflect: { backgroundColor: colors.brandSubtle, borderRadius: radii.tile, gap: spacing.xs, marginTop: spacing.xs, padding: spacing.md },
+  reflect: { backgroundColor: colors.surface, borderRadius: radii.tile, gap: spacing.xs, padding: spacing.md },
   columns: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.xl },
   listColumn: {
     flexShrink: 0,
@@ -724,7 +801,6 @@ const styles = StyleSheet.create({
   rowBetween: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, justifyContent: 'space-between' },
   inlineActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   mark: { backgroundColor: colors.brandSoft },
-  coverageRow: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.sm },
   compare: { gap: spacing.md },
   compareSide: { backgroundColor: colors.backgroundSoft, borderRadius: radii.tile, gap: spacing.xs, padding: spacing.md },
   notice: { alignItems: 'flex-start', backgroundColor: colors.warningSoft, borderRadius: radii.tile, flexDirection: 'row', gap: spacing.sm, padding: spacing.md },

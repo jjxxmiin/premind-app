@@ -34,7 +34,7 @@ const TICK_FONT_SIZE = 11;
 const INSET = NEEDLE_HALF + 1;
 
 /** The middle band is the good one; the ends earn a warning tone. */
-function bandTone(metric: SpeechMetric): AppTextTone {
+export function bandTone(metric: SpeechMetric): AppTextTone {
   if (metric.key === 'pauses') return metric.level === 'high' ? 'warning' : 'positive';
   if (metric.key === 'fillers') return metric.level === 'high' ? 'warning' : 'positive';
   return metric.level === 'mid' ? 'positive' : 'warning';
