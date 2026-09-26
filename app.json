@@ -2,7 +2,7 @@
   "expo": {
     "name": "PREMIND",
     "slug": "premind",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "default",
     "icon": "./assets/brand/app-icon.png",
     "scheme": "premind",
@@ -23,7 +23,7 @@
         "foregroundImage": "./assets/brand/adaptive-foreground.png"
       },
       "predictiveBackGestureEnabled": true,
-      "versionCode": 3,
+      "versionCode": 4,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
