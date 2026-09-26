@@ -23,6 +23,7 @@ import type {
   UploadSessionState,
   UserProfile,
 } from '../../types';
+import { ageConfirmationField } from '@/features/auth/age-confirmation';
 
 const INTERACTIVE_TIMEOUT_MS = 15_000;
 /** One chunk is at most a few MB, but a lecture-hall network is not fast. */
@@ -593,6 +594,7 @@ export class PremindApiClient {
         email: email.trim().toLowerCase(),
         name: name.trim(),
         password,
+        ...ageConfirmationField(),
       }),
     });
     return toSession(this.tokenPair(pair), mode);
@@ -653,8 +655,8 @@ export class PremindApiClient {
         method: 'POST',
         headers: this.jsonHeaders(),
         body: JSON.stringify(proof
-          ? { code: token, state: proof.state, code_verifier: proof.codeVerifier, device_name: options.deviceName }
-          : { token, device_name: options.deviceName }),
+          ? { code: token, state: proof.state, code_verifier: proof.codeVerifier, device_name: options.deviceName, ...ageConfirmationField() }
+          : { token, device_name: options.deviceName, ...ageConfirmationField() }),
       },
     );
     return toSession(this.tokenPair(pair), options.mode ?? 'teacher');

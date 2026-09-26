@@ -30,6 +30,7 @@ import { useAppStore } from '@/state/app-store';
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
 import { peekReturnTo, returnsToInterview } from '@/lib/return-to';
 import { useT } from '@/lib/i18n';
+import { setAgeConfirmed } from '@/features/auth/age-confirmation';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const TERMS_URL = 'https://premind.co.kr/terms';
@@ -71,6 +72,11 @@ export default function SignupScreen() {
   // 이용약관 제5조, 개인정보처리방침 12: 만 14세 이상만 가입해요(2026-09-26 법무 검토).
   // 간편 가입(카카오, 구글)도 이 확인을 거쳐야 버튼이 켜져요.
   const [agedFourteen, setAgedFourteen] = useState(false);
+  // 가입 요청(이메일, 간편 가입)이 학생 서버에 age_over_14 로 보낸다. 화면을 떠나면 끈다.
+  useEffect(() => {
+    setAgeConfirmed(agedFourteen);
+    return () => setAgeConfirmed(false);
+  }, [agedFourteen]);
   // A field's error appears once the user has left it (or tried to submit),
   // never while they are still halfway through typing it.
   const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
