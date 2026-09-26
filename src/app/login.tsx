@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   StyleSheet,
@@ -254,10 +255,16 @@ export default function LoginScreen() {
                   }}
                 />
                 <View style={styles.linkDivider} />
+                {/* There is no self-serve reset yet, so this opens a mail to
+                    support instead of sitting there as a link that does nothing. */}
                 <TextLink
-                  disabled
+                  disabled={isBusy}
                   label={t('비밀번호 찾기')}
-                  onPress={() => undefined}
+                  onPress={() => {
+                    void Linking.openURL(
+                      `mailto:support@camorix.com?subject=${encodeURIComponent(t('비밀번호 찾기'))}`,
+                    );
+                  }}
                 />
               </View>
             </AnimatedReveal>

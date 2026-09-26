@@ -110,7 +110,12 @@ export function StudyPlayer(props: StudyPlayerProps) {
 
 function StudyPlayerState(props: StudyPlayerProps) {
   const t = useT();
-  const [usingFallback, setUsingFallback] = useState(false);
+  // A material first seen on another device has no local original (`uri` is
+  // empty): only the server copy exists, so start on it. Without this the
+  // player waited forever for a local file that was never going to appear.
+  const [usingFallback, setUsingFallback] = useState(
+    () => !props.uri && Boolean(props.fallbackSource?.uri),
+  );
   const [nativeFallbackSource, setNativeFallbackSource] =
     useState<StudyPlayerFallbackSource | null>(null);
   const [nativeRefreshPending, setNativeRefreshPending] = useState(false);

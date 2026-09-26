@@ -35,7 +35,7 @@ const PIN_Y = 13;
 const PIN_RADIUS = 3.5;
 const DOT_RADIUS = 3.5;
 const TICK_LABEL_Y = 54;
-const TICK_FONT_SIZE = 11;
+const TICK_FONT_SIZE = 12;
 const TICK_EVERY_MS = 10 * 60_000;
 /** A tick label this close to the end label would collide with it. */
 const TICK_CLEARANCE = 30;
