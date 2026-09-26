@@ -5,16 +5,11 @@ export const EN_STUDY: EnDict = {
   // ── 이해도 탭 (app/(tabs)/mastery.tsx, components/mastery) ──
   알림: 'Notifications',
   이해도: 'Mastery',
-  '푼 문제와 확인한 내용으로 자료마다 계산해요':
-    'Worked out for each material from the questions you answered and the points you checked',
   '마인드팩 만들기': 'Make a Mind Pack',
   '문제를 풀고 꼭 기억할 내용을 확인하면 여기에 자료별 이해도가 채워져요':
     'Answer questions and check the key points, and your Mastery for each material shows up here',
   '아직 이해도를 볼 자료가 없어요': 'No materials to show Mastery for yet',
-  '누르면 그 대목으로 가요. 알게 됐으면 지워 주세요.':
-    'Tap to jump to that part. Clear it once you get it.',
   '헷갈린다고 표시한 곳': 'Spots you marked as confusing',
-  '표시한 곳 {total}개 중 최근 {shown}개예요': 'Showing the latest {shown} of {total} marked spots',
   '자료를 누르면 취약 개념과 무엇부터 볼지 알려 줘요.':
     'Tap a material to see your weak concepts and what to review first.',
   '자료별 이해도': 'Mastery by material',
@@ -37,9 +32,6 @@ export const EN_STUDY: EnDict = {
   'weekday|금': 'Fri',
   'weekday|토': 'Sat',
   'weekday|일': 'Sun',
-  '{day} 문제 {n}개': { one: '{day} {n} question', other: '{day} {n} questions' },
-  '{day} 없음': '{day} none',
-  '최근 7일 활동. {spoken}. {caption}': 'Last 7 days of activity. {spoken}. {caption}',
   '이번 주는 아직 안 풀었어요': "You haven't answered any questions this week",
   '이번 주 문제 {n}개, 정답률 {percent}%': {
     one: '{n} question this week, {percent}% correct',
@@ -47,6 +39,11 @@ export const EN_STUDY: EnDict = {
   },
 
   // MasteryHero
+  '현재 이해도': 'Mastery now',
+  '이번 주 {n}문제, 연속 {days}일': {
+    one: '{n} question this week, {days}-day streak',
+    other: '{n} questions this week, {days}-day streak',
+  },
   '이해도 시작 전': 'Mastery not started',
   '전체 이해도 {score}%, {verdict}': 'Overall Mastery {score}%, {verdict}',
   '가장 최근 자료의 문제를 열어요': 'Opens the questions for your latest material',
@@ -136,7 +133,6 @@ export const EN_STUDY: EnDict = {
   '아직 안 풀었어요': 'Not answered yet',
   '{total}개 중 {correct}개 맞힘, {percent}%': '{correct} of {total} right, {percent}%',
   '핵심 내용 확인 {weight}%': 'Key points checked {weight}%',
-  '핵심 내용이 없어요': 'No key points',
   '{total}개 중 {checked}개 확인, {percent}%': '{checked} of {total} checked, {percent}%',
   '마지막 답이 틀린 개념이에요. 시간을 누르면 그 부분부터 들어요.':
     'Concepts whose last answer was wrong. Tap the time to listen from that part.',
@@ -144,11 +140,9 @@ export const EN_STUDY: EnDict = {
   없어요: 'None',
   '푼 문제는 모두 맞혔어요.': 'You got every question you answered right.',
   '문제를 풀면 헷갈린 개념이 보여요.': 'Answer questions to see which concepts you mixed up.',
-  '{total}개 중 {checked}개를 확인했어요.': "You've checked {checked} of {total}.",
   '핵심 내용': 'Key points',
   확인함: 'Checked',
   '아직 확인 안 함': 'Not checked yet',
-  '날짜별로 맞힌 비율이에요.': 'The share you got right, by day.',
   '정답률 추이': 'Accuracy trend',
   '정답률 추이, {n}일. {values}': {
     one: 'Accuracy trend, {n} day. {values}',
@@ -161,8 +155,6 @@ export const EN_STUDY: EnDict = {
   '문제도 다 맞히고 핵심 내용도 다 확인했어요.':
     'You got every question right and checked every key point.',
   기타: 'Other',
-  '{total}개 중 {correct}개': '{correct} of {total}',
-  '물어본 것': 'What was asked',
   '그 시점부터 대본과 함께 재생해요.': 'Plays from that moment with the transcript.',
 
   // 문제 (app/quiz/[id].tsx)
@@ -189,8 +181,6 @@ export const EN_STUDY: EnDict = {
   '다시 볼 문제': 'To review',
   '설명이 나온 시점부터 재생해요.': 'Plays from where it was explained.',
   '모든 문제를 맞혔어요 🎉': 'You got every question right 🎉',
-  '이번엔 마인드맵의 개념을 내 말로 설명해 보세요.':
-    'Next, try explaining the concepts in the mind map in your own words.',
   '다시 풀기': 'Try again',
   '{total}문제 중 {n}번째': 'Question {n} of {total}',
   '{total}문제 중 {n}번째, 맞힌 문제 {correct}개':
@@ -256,29 +246,15 @@ export const EN_STUDY: EnDict = {
   '아직 대본을 만드는 중이에요': 'Still making the transcript',
 
   // 앱다운 이해도 (2026-09-26): 머리 카드, 넘기는 카드, 상세, 결과
-  '이번 주': 'This week',
-  '연속 {n}일 공부했어요': { one: 'Studied {n} day in a row', other: 'Studied {n} days in a row' },
-  '연속 {n}일': { one: '{n}-day streak', other: '{n}-day streak' },
   '이번 주 {n}문제': { one: '{n} question this week', other: '{n} questions this week' },
-  '전체 이해도': 'Overall Mastery',
   '오늘 복습 시작': "Start today's review",
   '첫 문제 풀기': 'Answer your first question',
-  '{title}부터 시작해요': 'Starts with {title}',
-  '옆으로 넘겨 보세요. 누르면 무엇부터 볼지 알려 줘요.':
-    'Swipe to see more. Tap one to see what to review first.',
   '지금 복습할 자료': 'Review now',
   '시작할 자료': 'Start here',
   '헷갈린 곳': 'Confusing spots',
   '나머지 자료': 'Other materials',
   '이해도 {score}%, {verdict}': 'Mastery {score}%, {verdict}',
-  '헷갈린 개념: {terms}': 'Mixed-up concepts: {terms}',
-  '{total}개 중 {correct}개 맞힘': '{correct} of {total} right',
   '문제 정답률': 'Quiz accuracy',
-  '{total}개 중 {checked}개 확인': '{checked} of {total} checked',
-  '이해도는 정답률 {quiz}%, 핵심 내용 확인 {check}%로 계산해요':
-    'Mastery counts quiz accuracy {quiz}% and key points checked {check}%',
-  '마지막 답이 틀린 개념이에요. 누르면 그 부분부터 들어요.':
-    'Concepts whose last answer was wrong. Tap to replay from that part.',
   '다시 볼 곳': 'Worth another look',
   '잘했어요! 틀린 {n}문제만 다시 보면 돼요': {
     one: 'Nice work! Just review the {n} you missed',
@@ -286,5 +262,4 @@ export const EN_STUDY: EnDict = {
   },
   '괜찮아요, 틀린 곳을 다시 들으면 금방 늘어요':
     "That's okay. Replaying the parts you missed helps fast",
-  '맞힌 문제': 'Correct',
 };

@@ -22,6 +22,7 @@ import {
   Button,
   Card,
   ErrorState,
+  IconButton,
   Screen,
   SegmentedProgress,
   StatusBadge,
@@ -35,7 +36,7 @@ import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { goBackOrReplace, quizReturnHref } from '@/lib/navigation';
 import { useAppStore } from '@/state/app-store';
-import { colors, fontFamilies, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
+import { colors, fontFamilies, iconSizes, radii, spacing } from '@/theme/tokens';
 
 const REPORT_REASONS = [
   { id: 'not-in-material', label: '자료에 없는 내용이에요' },
@@ -248,8 +249,12 @@ export default function QuizScreen() {
           : t('괜찮아요, 틀린 곳을 다시 들으면 금방 늘어요');
 
     return (
-      <Screen maxWidth={640} padded={false}>
-        <AppHeader onBack={leaveQuiz} title={t.ctx('quiz', '결과')} />
+      <Screen background="soft" maxWidth={640} padded={false}>
+        <AppHeader
+          onBack={leaveQuiz}
+          right={<IconButton icon={RefreshCw} label={t('다시 풀기')} onPress={restart} />}
+          title={t.ctx('quiz', '결과')}
+        />
         <ScrollView
           contentContainerStyle={[
             styles.content,
@@ -258,17 +263,15 @@ export default function QuizScreen() {
           showsVerticalScrollIndicator={false}
           style={styles.scroll}
         >
-          {/* The score large on the brand face (Toss), with one line of
-              encouragement and the run's shape kept from the question screen. */}
+          {/* The score large on a white card (Toss), with one line of
+              encouragement and the run's shape kept from the question screen.
+              The strip is the count of right and wrong; no tiles repeat it. */}
           <AnimatedReveal distance={16}>
             <View
               accessibilityLabel={`${t('점수')} ${percentage}${t.ctx('score-unit', '점')}. ${cheer}`}
               accessible
               style={styles.resultHero}
             >
-              <AppText tone="soft" variant="label">
-                {t('점수')}
-              </AppText>
               <View style={styles.scoreLine}>
                 <AppText style={styles.bigScore} tabular>
                   {String(percentage)}
@@ -288,11 +291,6 @@ export default function QuizScreen() {
               />
             </View>
           </AnimatedReveal>
-
-          <View style={styles.resultTiles}>
-            <ResultTile label={t('맞힌 문제')} tone="positive" value={correctCount} />
-            <ResultTile label={t('다시 볼 문제')} tone="negative" value={wrongCount} />
-          </View>
 
           {missed.length ? (
             <View style={styles.section}>
@@ -315,17 +313,15 @@ export default function QuizScreen() {
                     }
                     style={styles.missed}
                   >
-                    <View style={styles.flex}>
-                      <AppText numberOfLines={3} variant="itemTitle">
-                        {item.prompt}
-                      </AppText>
-                      <AppText numberOfLines={1} tone="muted" variant="meta">
-                        {item.concept}
-                      </AppText>
-                    </View>
+                    <AppText numberOfLines={1} variant="itemTitle">
+                      {item.prompt}
+                    </AppText>
+                    <AppText numberOfLines={1} tone="muted" variant="meta">
+                      {item.concept}
+                    </AppText>
                     <View style={styles.missedAt}>
                       <Headphones {...decorative} color={colors.brand} size={iconSizes.dense} />
-                      <AppText tabular variant="badge">
+                      <AppText style={styles.missedAtText} tabular variant="badge">
                         {formatSourcePosition(item.sourceStartMs, isDocument)}
                       </AppText>
                     </View>
@@ -333,44 +329,14 @@ export default function QuizScreen() {
                 ))}
               </View>
             </View>
-          ) : (
-            <View style={styles.perfectCard}>
-              <View style={styles.perfectIcon}>
-                <Check
-                  {...decorative}
-                  color={colors.positive}
-                  size={iconSizes.section}
-                  strokeWidth={2.4}
-                />
-              </View>
-              <AppText style={styles.flex} tone="soft" variant="body">
-                {t('이번엔 마인드맵의 개념을 내 말로 설명해 보세요.')}
-              </AppText>
-            </View>
-          )}
+          ) : null}
         </ScrollView>
-        {/* Under the thumb (Toss): 다시 풀기 small on the left, 돌아가기 the
-            main one on the right. A wider window keeps them in the flow. */}
+        {/* Under the thumb (Toss): one full-width 돌아가기. 다시 풀기 is the
+            header's icon. */}
         <BottomAction>
-          <View style={styles.resultActions}>
-            <Button
-              leftIcon={<RefreshCw color={colors.text} size={iconSizes.inline} />}
-              onPress={restart}
-              size="large"
-              style={styles.flex}
-              variant="secondary"
-            >
-              {t('다시 풀기')}
-            </Button>
-            <Button
-              onPress={leaveQuiz}
-              size="large"
-              style={styles.flex}
-              variant="primary"
-            >
-              {t('돌아가기')}
-            </Button>
-          </View>
+          <Button fullWidth onPress={leaveQuiz} size="large" variant="primary">
+            {t('돌아가기')}
+          </Button>
         </BottomAction>
         <Toast bottom={TOAST_ABOVE_RESULT_BAR} message={toast.message} />
       </Screen>
@@ -617,31 +583,6 @@ export default function QuizScreen() {
   );
 }
 
-function ResultTile({
-  label,
-  tone,
-  value,
-}: {
-  label: string;
-  tone: 'positive' | 'negative';
-  value: number;
-}) {
-  return (
-    <View
-      accessibilityLabel={`${label} ${value}`}
-      accessible
-      style={[styles.resultTile, tone === 'positive' ? styles.tilePositive : styles.tileNegative]}
-    >
-      <AppText style={styles.tileNumber} tabular tone={tone}>
-        {String(value)}
-      </AppText>
-      <AppText tone="soft" variant="label">
-        {label}
-      </AppText>
-    </View>
-  );
-}
-
 /** The arrow cursor over a choice that can no longer be picked. */
 function webDefaultCursor(): ViewStyle {
   return Platform.OS === 'web' ? ({ cursor: 'default' } as unknown as ViewStyle) : {};
@@ -743,7 +684,7 @@ const styles = StyleSheet.create({
   section: { gap: spacing.md },
   resultHero: {
     alignItems: 'center',
-    backgroundColor: colors.brandSoft,
+    backgroundColor: colors.surface,
     borderRadius: radii.hero,
     gap: spacing.sm,
     padding: spacing.xl,
@@ -764,55 +705,23 @@ const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 30,
   },
-  resultTiles: { flexDirection: 'row', gap: spacing.sm },
-  resultTile: {
-    borderRadius: radii.card,
-    flex: 1,
-    gap: spacing.xxs,
-    padding: spacing.lg,
-  },
-  tilePositive: { backgroundColor: colors.positiveSoft },
-  tileNegative: { backgroundColor: colors.negativeSoft },
-  tileNumber: {
-    fontFamily: fontFamilies.extraBold,
-    fontSize: 32,
-    letterSpacing: -1,
-    lineHeight: 38,
-  },
+
+
   missedList: { gap: spacing.sm },
+  /** A review card (Santa 복습): the question, its concept, and where to listen. */
   missed: {
-    alignItems: 'center',
-    backgroundColor: colors.backgroundSoft,
+    backgroundColor: colors.surface,
     borderRadius: radii.card,
-    flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.xs,
     padding: spacing.lg,
   },
   missedAt: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radii.chip,
+    alignSelf: 'flex-end',
     flexDirection: 'row',
-    flexShrink: 0,
     gap: spacing.xs,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs + 1,
   },
-  resultActions: { flexDirection: 'row', gap: spacing.sm },
-  perfectCard: {
-    alignItems: 'center',
-    backgroundColor: colors.positiveSoft,
-    borderRadius: radii.card,
-    flexDirection: 'row',
-    gap: spacing.md,
-    padding: spacing.lg,
-  },
-  perfectIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radii.full,
-    height: sizes.iconButton,
-    justifyContent: 'center',
-    width: sizes.iconButton,
-  },
+  missedAtText: { color: colors.brandStrong },
+
+
 });

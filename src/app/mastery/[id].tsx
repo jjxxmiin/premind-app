@@ -27,9 +27,6 @@ import { formatRelativeDate, formatSourcePosition } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import {
-  CHECKLIST_WEIGHT,
-  QUIZ_WEIGHT,
-  masteryHeadline,
   masteryVerdict,
   summarizeMastery,
   toPercent,
@@ -37,21 +34,21 @@ import {
 } from '@/lib/mastery';
 import { goBackOrReplace, type QuizOrigin } from '@/lib/navigation';
 import { useAppStore } from '@/state/app-store';
-import { colors, fontFamilies, iconSizes, radii, shadows, sizes, spacing } from '@/theme/tokens';
+import { colors, fontFamilies, iconSizes, radii, spacing } from '@/theme/tokens';
 
 /**
- * 이해도 for one material, laid out as an app screen (2026-09-26): the title
- * large, a brand hero with the ring, the verdict word and the concepts that
- * went wrong as chips, two metric tiles for what the ring is made of, then
- * 다시 볼 곳 with a way back into the recording, the checklist and the daily
- * accuracy line. On a phone the one button is docked under the thumb. Everything is computed on the
+ * 이해도 for one material, laid out as an app screen (2026-09-26, decluttered
+ * the same day): grey page, white cards. The title large, a hero with the ring
+ * and the verdict word, what the ring is made of in two quiet rows, then
+ * 다시 볼 곳 as review cards that play from the spot, the checklist and the
+ * daily accuracy line. On a phone the one button is docked under the thumb. Everything is computed on the
  * device from the learner's own answers and ticks.
  */
 export default function MasteryScreen() {
   const t = useT();
   const locale = t.locale;
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { materials, projects, quizAttempts, studyNotes } = useAppStore();
+  const { materials, quizAttempts, studyNotes } = useAppStore();
   const { breakpoint, gutter } = useLayout();
   /** Desktop: the score and the one button pinned left, the detail on the right. */
   const wide = breakpoint === 'expanded';
@@ -79,8 +76,6 @@ export default function MasteryScreen() {
     );
   }
 
-  const projectTitle =
-    projects.find((project) => project.id === material.projectId)?.title ?? t('폴더 없음');
   const keyPoints = material.note?.keyPoints ?? [];
   const checked = new Set(studyNotes[material.id]?.checkedPoints ?? []);
   const hasQuiz = material.quiz.length > 0;
@@ -136,99 +131,49 @@ export default function MasteryScreen() {
   const first = summary.trend[0];
   const latest = summary.trend[summary.trend.length - 1];
   const verdict = masteryVerdict(summary.score, locale);
-  const chips = summary.weakConcepts.map((concept) =>
-    concept.concept === '기타' ? t('기타') : concept.concept,
-  );
 
   const heading = (
-    <View style={styles.heading}>
-      <AppText accessibilityRole="header" numberOfLines={3} variant="display">
-        {material.title}
-      </AppText>
-      <AppText numberOfLines={1} tone="muted" variant="body">
-        {projectTitle}
-      </AppText>
-    </View>
+    <AppText accessibilityRole="header" numberOfLines={3} variant="display">
+      {material.title}
+    </AppText>
   );
 
   /**
-   * The head card (Apple Fitness, Toss): the ring with the number in it, the
-   * verdict word large beside it, the plain sentence, and the concepts that
-   * went wrong as chips. Brand face, no border.
+   * The head card: the ring with the number in it and the verdict word beside
+   * it. Two levels, nothing else; the concepts that went wrong are the list
+   * right under it, so they are not chips here as well.
    */
   const hero = (
-    <View style={styles.hero}>
-      <View
-        accessibilityLabel={t('이해도 {score}%, {verdict}', { score: summary.score, verdict })}
-        accessible
-        style={styles.heroTop}
-      >
-        <ProgressRing diameter={RING} stroke={RING_STROKE} value={summary.score}>
-          <AppText style={styles.ringNumber} tabular>
-            {`${summary.score}%`}
-          </AppText>
-        </ProgressRing>
-        <View style={styles.heroCopy}>
-          <AppText tone="soft" variant="label">
-            {t('이해도')}
-          </AppText>
-          <AppText variant="heroTitle">{t(verdict)}</AppText>
-        </View>
+    <View
+      accessibilityLabel={t('이해도 {score}%, {verdict}', { score: summary.score, verdict })}
+      accessible
+      style={[styles.hero, styles.heroTop]}
+    >
+      <ProgressRing diameter={RING} stroke={RING_STROKE} value={summary.score}>
+        <AppText style={styles.ringNumber} tabular>
+          {`${summary.score}%`}
+        </AppText>
+      </ProgressRing>
+      <View style={styles.heroCopy}>
+        <AppText tone="soft" variant="label">
+          {t('이해도')}
+        </AppText>
+        <AppText variant="heroTitle">{t(verdict)}</AppText>
       </View>
-      <AppText variant="body">{masteryHeadline(summary, locale)}</AppText>
-      {chips.length > 0 ? (
-        <View
-          accessibilityLabel={t('헷갈린 개념: {terms}', { terms: chips.join(', ') })}
-          accessible
-          style={styles.chips}
-        >
-          {chips.map((chip) => (
-            <View key={chip} style={styles.chip}>
-              <AppText numberOfLines={1} style={styles.chipText} variant="badge">
-                {chip}
-              </AppText>
-            </View>
-          ))}
-        </View>
-      ) : null}
     </View>
   );
 
-  /** What the ring is made of, as two tiles (Yoodli): a big number, what it is, the count. */
+  /** What the ring is made of: two quiet rows, label and number. */
   const tiles = (
-    <View style={styles.tilesWrap}>
-      <View style={styles.tiles}>
-        <MetricTile
-          detail={
-            summary.accuracy === null
-              ? t('아직 안 풀었어요')
-              : t('{total}개 중 {correct}개 맞힘', {
-                  total: summary.answeredCount,
-                  correct: summary.correctCount,
-                })
-          }
-          label={t('문제 정답률')}
-          value={summary.accuracy === null ? '-' : `${toPercent(summary.accuracy)}%`}
-        />
-        <MetricTile
-          detail={
-            summary.checklistRatio === null
-              ? t('핵심 내용이 없어요')
-              : t('{total}개 중 {checked}개 확인', {
-                  total: summary.keyPointCount,
-                  checked: summary.checkedCount,
-                })
-          }
-          label={t('핵심 내용 확인')}
-          value={summary.checklistRatio === null ? '-' : `${toPercent(summary.checklistRatio)}%`}
-        />
-      </View>
-      <AppText tone="faint" variant="meta">
-        {t('이해도는 정답률 {quiz}%, 핵심 내용 확인 {check}%로 계산해요', {
-          quiz: Math.round(QUIZ_WEIGHT * 100),
-          check: Math.round(CHECKLIST_WEIGHT * 100),
-        })}
-      </AppText>
+    <View style={[styles.softCard, styles.parts]}>
+      <PartRow
+        label={t('문제 정답률')}
+        value={summary.accuracy === null ? '-' : `${toPercent(summary.accuracy)}%`}
+      />
+      <PartRow
+        label={t('핵심 내용 확인')}
+        value={summary.checklistRatio === null ? '-' : `${toPercent(summary.checklistRatio)}%`}
+      />
     </View>
   );
   const primaryButton = (
@@ -252,10 +197,7 @@ export default function MasteryScreen() {
   const details = (
     <>
       <View style={styles.section}>
-        <SectionHeader
-          description={t('마지막 답이 틀린 개념이에요. 누르면 그 부분부터 들어요.')}
-          title={t('다시 볼 곳')}
-        />
+        <SectionHeader title={t('다시 볼 곳')} />
         {summary.weakConcepts.length > 0 ? (
           <View style={styles.cardList}>
             {summary.weakConcepts.map((concept) => (
@@ -282,10 +224,6 @@ export default function MasteryScreen() {
         <View style={styles.section}>
           <SectionHeader
             actionLabel={t('요약 보기')}
-            description={t('{total}개 중 {checked}개를 확인했어요.', {
-              total: keyPoints.length,
-              checked: summary.checkedCount,
-            })}
             onAction={openSummary}
             title={t('핵심 내용')}
           />
@@ -321,10 +259,7 @@ export default function MasteryScreen() {
         </View>
       ) : null}
       <View style={styles.section}>
-        <SectionHeader
-          description={t('날짜별로 맞힌 비율이에요.')}
-          title={t('정답률 추이')}
-        />
+        <SectionHeader title={t('정답률 추이')} />
         <View style={[styles.softCard, styles.trendCard]}>
           {summary.trend.length >= 2 && first && latest ? (
             <View
@@ -375,7 +310,7 @@ export default function MasteryScreen() {
 
   if (wide) {
     return (
-      <Screen padded={false}>
+      <Screen background="soft" padded={false}>
         <AppHeader onBack={back} title={t('이해도')} />
         <ScrollView
           contentContainerStyle={styles.scroll}
@@ -400,7 +335,7 @@ export default function MasteryScreen() {
 
   const compact = breakpoint === 'compact';
   return (
-    <Screen padded={false}>
+    <Screen background="soft" padded={false}>
       <AppHeader onBack={back} title={t('이해도')} />
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -427,23 +362,24 @@ export default function MasteryScreen() {
   );
 }
 
-function MetricTile({ detail, label, value }: { detail: string; label: string; value: string }) {
+function PartRow({ label, value }: { label: string; value: string }) {
   return (
-    <View accessibilityLabel={`${label} ${value}. ${detail}`} accessible style={styles.tile}>
-      <AppText tone="muted" variant="label">
+    <View accessibilityLabel={`${label} ${value}`} accessible style={styles.partRow}>
+      <AppText style={styles.flex} tone="soft" variant="body">
         {label}
       </AppText>
-      <AppText style={styles.tileValue} tabular>
+      <AppText tabular variant="bodyStrong">
         {value}
-      </AppText>
-      <AppText tone="muted" variant="meta">
-        {detail}
       </AppText>
     </View>
   );
 }
 
-/** One weak concept: the term, what the missed question asked, and a way back in. */
+/**
+ * One weak concept as a review card (Santa 복습): the term, what the missed
+ * question asked in one line, and at the foot the way back in. The whole card
+ * is the button.
+ */
 function ConceptCard({
   concept,
   onListen,
@@ -456,40 +392,33 @@ function ConceptCard({
 }) {
   const t = useT();
   const time = formatSourcePosition(concept.sourceStartMs, page);
+  const term = concept.concept === '기타' ? t('기타') : concept.concept;
+  const listen = t('{at}부터 다시 듣기', { at: time });
   return (
-    <View style={[styles.softCard, styles.conceptCard]}>
-      <View style={styles.conceptHead}>
-        <AppText style={styles.flex} variant="itemTitle">
-          {/* '기타' is the name the app gives a question with no concept. */}
-          {concept.concept === '기타' ? t('기타') : concept.concept}
-        </AppText>
-        <StatusBadge
-          label={t('{total}개 중 {correct}개', {
-            total: concept.questionCount,
-            correct: concept.correctCount,
-          })}
-          tone="warning"
-        />
-      </View>
+    <PressFace
+      accessibilityHint={t('그 시점부터 대본과 함께 재생해요.')}
+      accessibilityLabel={`${term}. ${concept.missedQuestion?.prompt ?? ''} ${listen}`}
+      accessibilityRole="button"
+      haptic={false}
+      onPress={onListen}
+      style={[styles.softCard, styles.conceptCard]}
+    >
+      {/* '기타' is the name the app gives a question with no concept. */}
+      <AppText numberOfLines={1} variant="itemTitle">
+        {term}
+      </AppText>
       {concept.missedQuestion ? (
-        <View style={styles.conceptQuestion}>
-          <AppText tone="muted" variant="badge">
-            {t('물어본 것')}
-          </AppText>
-          <AppText variant="body">{concept.missedQuestion.prompt}</AppText>
-        </View>
+        <AppText numberOfLines={1} tone="muted" variant="meta">
+          {concept.missedQuestion.prompt}
+        </AppText>
       ) : null}
-      <PressFace
-        accessibilityHint={t('그 시점부터 대본과 함께 재생해요.')}
-        accessibilityRole="button"
-        onPress={onListen}
-        pressScale={0.96}
-        style={styles.listen}
-      >
-        <PlayCircle {...decorative} color={colors.brand} size={iconSizes.section} />
-        <AppText variant="label">{t('{at}부터 다시 듣기', { at: time })}</AppText>
-      </PressFace>
-    </View>
+      <View style={styles.listen}>
+        <PlayCircle {...decorative} color={colors.brand} size={iconSizes.dense} />
+        <AppText style={styles.listenText} variant="badge">
+          {listen}
+        </AppText>
+      </View>
+    </PressFace>
   );
 }
 
@@ -512,7 +441,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
     paddingHorizontal: spacing.gutter,
   },
-  heading: { gap: spacing.xs },
   wideContent: {
     alignItems: 'flex-start',
     flexDirection: 'row',
@@ -526,9 +454,8 @@ const styles = StyleSheet.create({
   section: { gap: spacing.md },
   cardList: { gap: spacing.sm },
   hero: {
-    backgroundColor: colors.brandSoft,
+    backgroundColor: colors.surface,
     borderRadius: radii.hero,
-    gap: spacing.lg,
     padding: spacing.xl,
   },
   heroTop: { alignItems: 'center', flexDirection: 'row', gap: spacing.xl },
@@ -540,35 +467,9 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     lineHeight: 38,
   },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  chip: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.chip,
-    maxWidth: '100%',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 1,
-  },
-  chipText: { color: colors.warningStrong },
-  tilesWrap: { gap: spacing.sm },
-  tiles: { flexDirection: 'row', gap: spacing.sm },
-  tile: {
-    backgroundColor: colors.backgroundSoft,
-    borderRadius: radii.card,
-    flex: 1,
-    gap: spacing.xxs,
-    minWidth: 0,
-    padding: spacing.lg,
-  },
-  tileValue: {
-    color: colors.text,
-    fontFamily: fontFamilies.extraBold,
-    fontSize: 28,
-    letterSpacing: -0.8,
-    lineHeight: 34,
-    marginTop: spacing.xs,
-  },
+  /** White on the grey page, no rule: every card below the hero. */
   softCard: {
-    backgroundColor: colors.backgroundSoft,
+    backgroundColor: colors.surface,
     borderRadius: radii.card,
     padding: spacing.lg,
   },
@@ -576,30 +477,17 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: spacing.sm,
   },
-  conceptCard: { gap: spacing.md },
-  conceptHead: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  conceptQuestion: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.input,
-    gap: spacing.xs,
-    padding: spacing.md,
-  },
+  parts: { gap: spacing.md },
+  partRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
+  conceptCard: { gap: spacing.xs },
   listen: {
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
-    borderRadius: radii.chip,
+    alignSelf: 'flex-end',
     flexDirection: 'row',
-    gap: spacing.sm,
-    minHeight: sizes.minimumTouchTarget,
-    paddingLeft: spacing.md,
-    paddingRight: spacing.lg,
-    ...shadows.subtle,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
+  listenText: { color: colors.brandStrong },
   points: { gap: spacing.md },
   pointRow: {
     alignItems: 'flex-start',

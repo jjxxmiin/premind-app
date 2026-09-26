@@ -21,8 +21,9 @@ const BAR = 8;
 
 /**
  * One material in the list under the carousel: the title with its number on
- * the right, a thick progress bar, and the one-line meaning. The row is its
- * own filled face (no border, no rule between rows), and the whole of it opens
+ * the right and a thick progress bar under it. The one-line meaning stays in
+ * the spoken label; on screen the bar already says it. The row is its
+ * own white face on the grey page (no border, no rule between rows), and the whole of it opens
  * what comes next.
  */
 export function MaterialMasteryRow({ material, onPress, summary }: MaterialMasteryRowProps) {
@@ -65,9 +66,6 @@ export function MaterialMasteryRow({ material, onPress, summary }: MaterialMaste
           <View style={[styles.fill, { width: `${summary.score ?? 0}%` }]} />
         ) : null}
       </View>
-      <AppText numberOfLines={1} tone="muted" variant="meta">
-        {line}
-      </AppText>
     </PressFace>
   );
 }
@@ -79,7 +77,7 @@ export function MaterialMasteryTile(props: Omit<MaterialMasteryRowProps, 'divide
 
 const styles = StyleSheet.create({
   row: {
-    backgroundColor: colors.backgroundSoft,
+    backgroundColor: colors.surface,
     borderRadius: radii.card,
     flex: 1,
     gap: spacing.sm,

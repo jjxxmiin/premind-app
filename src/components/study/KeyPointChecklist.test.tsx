@@ -36,7 +36,7 @@ describe('KeyPointChecklist', () => {
   it('renders one checkbox row per key point with the progress line', async () => {
     await render(<Harness />);
     expect(screen.getAllByRole('checkbox')).toHaveLength(3);
-    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('3개 중 0개 확인');
+    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('0/3');
     for (const point of keyPoints) {
       expect(screen.getByRole('checkbox', { name: point })).not.toBeChecked();
     }
@@ -49,23 +49,23 @@ describe('KeyPointChecklist', () => {
     await fireEvent.press(screen.getByRole('checkbox', { name: keyPoints[1] }));
     expect(onChange).toHaveBeenLastCalledWith([keyPoints[1]]);
     expect(screen.getByRole('checkbox', { name: keyPoints[1] })).toBeChecked();
-    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('3개 중 1개 확인');
+    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('1/3');
 
     await fireEvent.press(screen.getByRole('checkbox', { name: keyPoints[0] }));
     expect(onChange).toHaveBeenLastCalledWith([keyPoints[1], keyPoints[0]]);
-    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('3개 중 2개 확인');
+    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('2/3');
 
     await fireEvent.press(screen.getByRole('checkbox', { name: keyPoints[1] }));
     expect(onChange).toHaveBeenLastCalledWith([keyPoints[0]]);
     expect(screen.getByRole('checkbox', { name: keyPoints[1] })).not.toBeChecked();
-    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('3개 중 1개 확인');
+    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('1/3');
   });
 
   it('starts from the stored checks and reports when everything is done', async () => {
     await render(<Harness initial={[keyPoints[0]!, keyPoints[2]!]} />);
-    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('3개 중 2개 확인');
+    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('2/3');
 
     await fireEvent.press(screen.getByRole('checkbox', { name: keyPoints[1] }));
-    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('3개 중 3개 확인');
+    expect(screen.getByTestId('key-point-progress')).toHaveTextContent('3/3');
   });
 });

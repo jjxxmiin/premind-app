@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View, type GestureResponderEvent } from 'react-n
 
 import { AppText, Button, Card, Chip, IconButton, type PressState } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
-import { formatMaterialLength, formatRelativeDate } from '@/lib/format';
+import { formatRelativeDate } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
@@ -17,14 +17,10 @@ import type { SubjectTab } from './SubjectTabs';
  */
 export function HomeDesktopHeader({
   name,
-  materialCount,
-  readyCount,
   onSearch,
   onNotifications,
 }: {
   name: string;
-  materialCount: number;
-  readyCount: number;
   onSearch: () => void;
   onNotifications: () => void;
 }) {
@@ -34,11 +30,6 @@ export function HomeDesktopHeader({
       <View style={styles.headerCopy}>
         <AppText accessibilityRole="header" numberOfLines={1} variant="pageTitle">
           {t('안녕하세요, {name}님', { name })}
-        </AppText>
-        <AppText numberOfLines={1} tone="muted" variant="meta">
-          {materialCount
-            ? t('자료 {n}개 중 {ready}개의 마인드팩이 준비돼 있어요', { n: materialCount, ready: readyCount })
-            : t('자료를 추가하면 마인드팩을 만들어 드려요')}
         </AppText>
       </View>
       <View style={styles.headerActions}>
@@ -64,84 +55,50 @@ export function HomeDesktopHeader({
 }
 
 /**
- * 이어서 보기 and the library at a glance, side by side. The continue card is
- * the one thing on the screen most likely to be wanted next; the numbers
- * beside it answer "how much is ready" without opening anything.
+ * 이어서 보기: the one thing on the screen most likely to be wanted next.
+ * The count tiles that stood beside it (전체, 완료, 진행 중) went in the
+ * 2026-09-26 declutter; the grid under it already shows the library.
  */
 export function HomeDesktopOverview({
   continueMaterial,
   continueFolder,
-  total,
-  ready,
-  processing,
   onOpen,
 }: {
-  continueMaterial: StudyMaterial | undefined;
+  continueMaterial: StudyMaterial;
   continueFolder: string;
-  total: number;
-  ready: number;
-  processing: number;
   onOpen: (material: StudyMaterial) => void;
 }) {
   const t = useT();
-  const kind = continueMaterial?.source.kind;
+  const kind = continueMaterial.source.kind;
   const Icon = kind === 'video' ? FileVideo2 : kind === 'document' ? FileText : AudioLines;
   return (
     <View style={styles.overview}>
-      {continueMaterial ? (
-        <Card
-          padding={spacing.gutter}
-          style={styles.continueCard}
-        >
-          <View style={styles.continueRow}>
-            <View {...decorative} style={styles.continueIcon}>
-              <Icon color={colors.brand} size={24} strokeWidth={1.8} />
-            </View>
-            <View style={styles.flex}>
-              <AppText numberOfLines={1} variant="heading">
-                {continueMaterial.title}
-              </AppText>
-              <AppText numberOfLines={1} tabular tone="muted" variant="meta">
-                {continueFolder} /{' '}
-                {formatMaterialLength(
-                  continueMaterial.source.kind,
-                  continueMaterial.source.durationMs,
-                  continueMaterial.transcript.length,
-                )}{' '}
-                / {formatRelativeDate(continueMaterial.updatedAt)}
-              </AppText>
-            </View>
-            <Button
-              accessibilityLabel={t('이어서 보기, {title}', { title: continueMaterial.title })}
-              onPress={() => onOpen(continueMaterial)}
-              size="small"
-              variant="primary"
-            >
-              {t('이어서 보기')}
-            </Button>
+      <Card
+        padding={spacing.gutter}
+        style={styles.continueCard}
+      >
+        <View style={styles.continueRow}>
+          <View {...decorative} style={styles.continueIcon}>
+            <Icon color={colors.brand} size={24} strokeWidth={1.8} />
           </View>
-        </Card>
-      ) : null}
-      <Card padding={spacing.gutter} style={styles.statsCard}>
-        <Stat label={t('전체')} value={total} />
-        <View {...decorative} style={styles.statDivider} />
-        <Stat label={t('완료')} value={ready} />
-        <View {...decorative} style={styles.statDivider} />
-        <Stat label={t('진행 중')} value={processing} />
+          <View style={styles.flex}>
+            <AppText numberOfLines={1} variant="heading">
+              {continueMaterial.title}
+            </AppText>
+            <AppText numberOfLines={1} tabular tone="muted" variant="meta">
+              {continueFolder} / {formatRelativeDate(continueMaterial.updatedAt)}
+            </AppText>
+          </View>
+          <Button
+            accessibilityLabel={t('이어서 보기, {title}', { title: continueMaterial.title })}
+            onPress={() => onOpen(continueMaterial)}
+            size="small"
+            variant="primary"
+          >
+            {t('이어서 보기')}
+          </Button>
+        </View>
       </Card>
-    </View>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <View accessibilityLabel={`${label} ${value}`} style={styles.stat}>
-      <AppText tabular variant="metric">
-        {value}
-      </AppText>
-      <AppText numberOfLines={1} tone="muted" variant="meta">
-        {label}
-      </AppText>
     </View>
   );
 }
@@ -167,13 +124,9 @@ export function FolderChips({
     <View style={styles.chips}>
       {tabs.map((tab, index) => (
         <Chip
-          accessibilityLabel={
-            tab.count === undefined
-              ? t('{folder} 자료', { folder: tab.label })
-              : t('{folder} 자료 {n}개', { folder: tab.label, n: tab.count })
-          }
+          accessibilityLabel={t('{folder} 자료', { folder: tab.label })}
           key={tab.key}
-          label={tab.count === undefined ? tab.label : `${tab.label} ${tab.count}`}
+          label={tab.label}
           onPress={() => onSelect(index)}
           selected={index === activeIndex}
           style={styles.chip}
@@ -226,7 +179,7 @@ const styles = StyleSheet.create({
   },
   searchBox: {
     alignItems: 'center',
-    backgroundColor: colors.backgroundSoft,
+    backgroundColor: colors.surface,
     borderColor: colors.border,
     borderRadius: radii.input,
     borderWidth: 1,
@@ -244,8 +197,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
   },
+  // White on the grey page, no rule around it.
   continueCard: {
-    flex: 2,
+    borderColor: colors.surface,
+    flex: 1,
     minWidth: 0,
   },
   continueRow: {
@@ -260,24 +215,6 @@ const styles = StyleSheet.create({
     height: 56,
     justifyContent: 'center',
     width: 56,
-  },
-  statsCard: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    minWidth: 0,
-  },
-  stat: {
-    alignItems: 'center',
-    flex: 1,
-    gap: spacing.xxs,
-    minWidth: 0,
-  },
-  statDivider: {
-    alignSelf: 'stretch',
-    backgroundColor: colors.border,
-    width: 1,
   },
   chips: {
     flexDirection: 'row',

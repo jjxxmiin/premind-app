@@ -56,10 +56,11 @@ const VISIBLE_SPOTS = 4;
 const REVIEW_CARDS = 5;
 
 /**
- * The 이해도 tab, laid out as an app rather than a dashboard (2026-09-26):
- * a large title; one hero with the overall ring, the number in large type,
- * the week as dots and a single "오늘 복습 시작"; the materials to review as a
- * carousel; the passages marked 헷갈려요; and the rest as progress rows.
+ * The 이해도 tab, laid out as an app rather than a dashboard (2026-09-26,
+ * decluttered the same day): grey page, white cards. A large title; one hero
+ * with one ring holding "현재 이해도 35%", the week in a line and a single
+ * full-width "오늘 복습 시작"; the materials to review as a carousel; the
+ * passages marked 헷갈려요 as review cards; and the rest as progress rows.
  * Everything is computed on the device from the learner's own answers and ticks.
  */
 export default function MasteryScreen() {
@@ -72,7 +73,9 @@ export default function MasteryScreen() {
     resolveConfusion,
     studyNotes,
   } = useAppStore();
-  const { columns, gutter, isTablet } = useLayout();
+  const { breakpoint, columns, gutter, isTablet } = useLayout();
+  /** Desktop: the sidebar carries the wordmark, so the bell sits beside the title. */
+  const wide = breakpoint === 'expanded';
   const [expanded, setExpanded] = useState(false);
 
   /** 이해도 per studyable material, scored ones first, newest activity on top. */
@@ -182,11 +185,6 @@ export default function MasteryScreen() {
   const target = review.find((row) => row.material.quiz.length > 0);
   const anyScored = studiedCount > 0;
   const actionLabel = anyScored ? t('오늘 복습 시작') : t('첫 문제 풀기');
-  const actionDetail = target
-    ? t('{title}부터 시작해요', { title: target.material.title })
-    : spots[0]
-      ? t('{title}부터 시작해요', { title: spots[0].materialTitle })
-      : undefined;
   const startToday = () => {
     if (target) openQuiz(target.material.id);
     else if (spots[0]) openSpot(spots[0]);
@@ -198,31 +196,38 @@ export default function MasteryScreen() {
 
   return (
     <Screen
+      background="soft"
       padded={false}
       safeAreaEdges={['top', 'left', 'right']}
       scroll
       scrollViewProps={{ showsVerticalScrollIndicator: false }}
     >
-      <AppHeader
-        brand
-        right={
-          <IconButton
-            icon={Bell}
-            label={t('알림')}
-            onPress={() => router.push('/notifications')}
-          />
-        }
-      />
+      {wide ? null : (
+        <AppHeader
+          brand
+          right={
+            <IconButton
+              icon={Bell}
+              label={t('알림')}
+              onPress={() => router.push('/notifications')}
+            />
+          }
+        />
+      )}
 
-      <View style={[styles.content, { paddingHorizontal: gutter }]}>
+      <View style={[styles.content, { paddingHorizontal: gutter }, wide ? styles.contentWide : null]}>
         <AnimatedReveal>
-          <View style={styles.heading}>
-            <AppText accessibilityRole="header" variant="display">
+          <View style={styles.titleRow}>
+            <AppText accessibilityRole="header" style={styles.title} variant="display">
               {t('이해도')}
             </AppText>
-            <AppText tone="muted" variant="body">
-              {t('푼 문제와 확인한 내용으로 자료마다 계산해요')}
-            </AppText>
+            {wide ? (
+              <IconButton
+                icon={Bell}
+                label={t('알림')}
+                onPress={() => router.push('/notifications')}
+              />
+            ) : null}
           </View>
         </AnimatedReveal>
 
@@ -247,10 +252,9 @@ export default function MasteryScreen() {
           <>
             <AnimatedReveal delay={40}>
               <MasteryHero
-                actionDetail={actionDetail}
                 actionLabel={actionLabel}
-                copy={copy}
                 days={days}
+                next={copy.detail || copy.title}
                 onAction={startToday}
                 score={score}
                 streak={streak}
@@ -261,7 +265,6 @@ export default function MasteryScreen() {
               <AnimatedReveal delay={60}>
                 <View style={styles.section}>
                   <SectionHeader
-                    description={t('옆으로 넘겨 보세요. 누르면 무엇부터 볼지 알려 줘요.')}
                     title={anyScored ? t('지금 복습할 자료') : t('시작할 자료')}
                   />
                   <Carousel
@@ -285,7 +288,6 @@ export default function MasteryScreen() {
               <AnimatedReveal delay={70}>
                 <View style={styles.section}>
                   <SectionHeader
-                    description={t('누르면 그 대목으로 가요. 알게 됐으면 지워 주세요.')}
                     title={t('헷갈린 곳')}
                   />
                   {isTablet ? (
@@ -311,14 +313,6 @@ export default function MasteryScreen() {
                       ))}
                     </View>
                   )}
-                  {spots.length > visibleSpots.length ? (
-                    <AppText tone="muted" variant="meta">
-                      {t('표시한 곳 {total}개 중 최근 {shown}개예요', {
-                        total: spots.length,
-                        shown: visibleSpots.length,
-                      })}
-                    </AppText>
-                  ) : null}
                 </View>
               </AnimatedReveal>
             ) : null}
@@ -373,8 +367,9 @@ export default function MasteryScreen() {
 }
 
 /**
- * One marked passage as its own filled card: tap the body to go there, tap
- * the check to clear it.
+ * One marked passage as a review card (Santa 복습): the passage in one line,
+ * where it is in one line, and at the foot the reason on the left with the
+ * check that clears it on the right. Nothing else.
  *
  * The check is a sibling laid over the card's corner, not a child: a button
  * inside a button is invalid on the web and ambiguous to a screen reader.
@@ -400,16 +395,14 @@ function ConfusionSpotCard({
         onPress={onOpen}
         style={styles.spotBody}
       >
-        <View style={styles.reason}>
-          <AppText numberOfLines={1} style={styles.reasonText} variant="badge">
-            {reason}
-          </AppText>
-        </View>
-        <AppText numberOfLines={2} variant="itemTitle">
+        <AppText numberOfLines={1} variant="itemTitle">
           {spot.passage}
         </AppText>
         <AppText numberOfLines={1} tone="muted" variant="meta">
           {where}
+        </AppText>
+        <AppText numberOfLines={1} style={styles.reasonText} variant="badge">
+          {reason}
         </AppText>
       </PressFace>
       <View style={styles.spotResolve}>
@@ -417,6 +410,7 @@ function ConfusionSpotCard({
           icon={Check}
           label={t('{reason} 표시 지우기', { reason })}
           onPress={onResolve}
+          size="small"
         />
       </View>
     </View>
@@ -430,33 +424,28 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxxl,
     paddingTop: spacing.sm,
   },
-  heading: { gap: spacing.xs },
+  /** No header bar on a desktop: the title starts where the home's greeting does. */
+  contentWide: { paddingTop: spacing.xl },
+  titleRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
+  title: { flex: 1, minWidth: 0 },
   section: { gap: spacing.md },
   stack: { gap: spacing.sm },
   emptyFace: {
-    backgroundColor: colors.backgroundSoft,
+    backgroundColor: colors.surface,
     borderRadius: radii.hero,
     paddingVertical: spacing.lg,
   },
   more: { alignSelf: 'center', borderRadius: radii.chip },
   spot: { flex: 1 },
-  /** Right padding leaves the corner to the check laid over it. */
+  /** Right padding leaves the foot's right end to the check laid over it. */
   spotBody: {
-    backgroundColor: colors.backgroundSoft,
+    backgroundColor: colors.surface,
     borderRadius: radii.card,
     flex: 1,
     gap: spacing.xs,
     padding: spacing.lg,
-    paddingRight: spacing.huge + spacing.sm,
+    paddingRight: spacing.huge,
   },
-  spotResolve: { position: 'absolute', right: spacing.sm, top: spacing.sm },
-  reason: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.warningSoft,
-    borderRadius: radii.chip,
-    marginBottom: spacing.xxs,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xxs + 1,
-  },
-  reasonText: { color: colors.warningStrong },
+  spotResolve: { bottom: spacing.sm, position: 'absolute', right: spacing.sm },
+  reasonText: { color: colors.warningStrong, marginTop: spacing.xs },
 });

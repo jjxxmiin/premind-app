@@ -6,16 +6,14 @@ import {
   BookmarkCheck,
   BookOpen,
   Check,
-  ChevronDown,
-  ChevronRight,
   FolderOpen,
   FileText,
   Link2,
   Mic,
   Pencil,
   Search,
+  SlidersHorizontal,
   Trash2,
-  X,
 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -24,7 +22,6 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Platform,
-  Pressable,
   StyleSheet,
   TextInput,
   View,
@@ -44,7 +41,6 @@ import {
   DEFAULT_FILTERS,
   SORT_LABELS,
   isNarrowed,
-  materialCountLabel,
   matchesStatus,
   sortMaterials,
   type LibraryFilters,
@@ -120,9 +116,7 @@ export default function HomeScreen() {
     savedMaterialIds,
     selectProject,
     session,
-    settings,
     toggleSavedMaterial,
-    updateSettings,
   } = useAppStore();
   const { width: windowWidth } = useWindowDimensions();
   const { breakpoint, columns: layoutColumns, gutter, isTablet } = useLayout();
@@ -288,19 +282,12 @@ export default function HomeScreen() {
   }, [filters.savedOnly, filters.sort, materials, pages, savedMaterialIds]);
 
   /**
-   * The strip, with how much each page holds. The count is the cheapest
-   * possible chart: it turns "인공지능 개론" from a name into a place with a
-   * size, and it is the answer to the question a tap was previously needed
-   * to ask. It follows the 저장함 switch, so it always matches the list under it.
+   * The strip: names only (2026-09-26 declutter). A count on every tab was a
+   * second number on a screen whose job is the list itself.
    */
   const subjectTabs = useMemo<SubjectTab[]>(
-    () =>
-      pages.map((page) => ({
-        key: page.key,
-        label: page.label,
-        count: subjectMaterialsByPage.get(page.key)?.length ?? 0,
-      })),
-    [pages, subjectMaterialsByPage],
+    () => pages.map((page) => ({ key: page.key, label: page.label })),
+    [pages],
   );
 
   const visibleMaterialsByPage = useMemo(() => {
@@ -467,19 +454,9 @@ export default function HomeScreen() {
   // ---- Onboarding --------------------------------------------------------
 
   const hasMaterial = materials.length > 0;
-  const hasReadyMaterial = materials.some((material) => material.status === 'ready');
-  const hasLensReport = materials.some((material) => Boolean(material.lensReport));
-  const checklistDone = [hasMaterial, hasReadyMaterial, hasLensReport].filter(
-    Boolean,
-  ).length;
-  const showChecklist = !settings.homeChecklistDismissed && checklistDone < 3;
 
-  // The desktop overview: the whole library, whatever folder is selected.
+  // The desktop greeting and 이어서 보기: the whole library, whatever folder is selected.
   const displayName = session?.user.name?.trim() || t('PREMIND 사용자');
-  const libraryReadyCount = materials.filter((material) => material.status === 'ready').length;
-  const libraryActiveCount = materials.filter((material) =>
-    ['imported', 'queued', 'transcribing', 'generating'].includes(material.status),
-  ).length;
   const continueMaterial = useMemo(
     () =>
       sortMaterials(
@@ -798,132 +775,53 @@ export default function HomeScreen() {
   );
   const showEmptyAction = filters.status === 'all' && !filters.savedOnly;
 
+  const filterButton = (
+    <IconButton
+      accessibilityHint={t('정렬, 상태, 보기 방식을 바꿔요')}
+      active={narrowed}
+      icon={SlidersHorizontal}
+      label={
+        narrowed
+          ? t('{sort}, 필터 적용됨', { sort: t(SORT_LABELS[filters.sort]) })
+          : t('정렬과 필터')
+      }
+      onPress={() => setFilterSheetVisible(true)}
+    />
+  );
+
   const renderPage = ({ item: page }: { item: SubjectPage }) => {
     const pageMaterials = visibleMaterialsByPage.get(page.key) ?? [];
-    const pageTotal = subjectMaterialsByPage.get(page.key)?.length ?? 0;
-    const isAllPage = page.key === ALL_PAGE_KEY;
-    const checklist =
-      isAllPage && showChecklist ? (
-          <Card
-            accessibilityLabel={t('시작하기 3단계, {done}/3 완료', { done: checklistDone })}
-            padding={false}
-            variant="soft"
-          >
-            <View style={styles.checklistRow}>
-              <Pressable
-                accessibilityHint={t('사용 가이드를 열어요')}
-                accessibilityLabel={t('시작하기 3단계, {done}/3 완료', { done: checklistDone })}
-                accessibilityRole="button"
-                onPress={() => router.push('/guide')}
-                style={({ pressed }) => [
-                  styles.checklistMain,
-                  pressed ? styles.pressed : null,
-                ]}
-              >
-                <View {...decorative} style={styles.checklistCount}>
-                  <AppText tabular tone="brand" variant="badge">
-                    {checklistDone}/3
-                  </AppText>
-                </View>
-                <AppText numberOfLines={1} style={styles.flex} variant="itemTitle">
-                  {t('시작하기 3단계')}
-                </AppText>
-                <ChevronRight
-                  {...decorative}
-                  color={colors.textFaint}
-                  size={iconSizes.section}
-                  strokeWidth={1.8}
-                />
-              </Pressable>
-              <IconButton
-                icon={X}
-                iconSize={iconSizes.inline}
-                label={t('안내 닫기')}
-                onPress={() => updateSettings({ homeChecklistDismissed: true })}
-                size="small"
-              />
-            </View>
-          </Card>
-      ) : null;
-    const toolbar = (
-        <View style={styles.toolbar}>
-          <AppText
-            numberOfLines={1}
-            style={styles.count}
-            tone="muted"
-            variant="meta"
-          >
-            {materialCountLabel(
-              pageTotal,
-              pageMaterials.length,
-              page.savedOnly ? { ...filters, savedOnly: true } : filters,
-              t,
-            )}
-          </AppText>
-          <Pressable
-            accessibilityHint={t('정렬, 상태, 보기 방식을 바꿔요')}
-            accessibilityLabel={
-              narrowed
-                ? t('{sort}, 필터 적용됨', { sort: t(SORT_LABELS[filters.sort]) })
-                : t(SORT_LABELS[filters.sort])
-            }
-            accessibilityRole="button"
-            hitSlop={spacing.sm}
-            onPress={() => setFilterSheetVisible(true)}
-            style={({ pressed }) => [styles.sortControl, pressed ? styles.pressed : null]}
-          >
-            <AppText numberOfLines={1} variant="label">
-              {t(SORT_LABELS[filters.sort])}
-            </AppText>
-            <ChevronDown
-              {...decorative}
-              color={colors.textMuted}
-              size={iconSizes.inline}
-              strokeWidth={2.2}
-            />
-            {narrowed ? <View {...decorative} style={styles.sortDot} /> : null}
-          </Pressable>
-        </View>
-    );
+    // One quiet header (2026-09-26 declutter): no count line, no onboarding
+    // card. Sort and filter live behind the header's icon; the desktop keeps
+    // the folders as chips with the same icon at the end of their row.
     const header = wide ? (
       <View style={styles.wideHeader}>
         <HomeDesktopHeader
-          materialCount={materials.length}
           name={displayName}
           onNotifications={() => router.push('/notifications')}
           onSearch={() => router.push('/search')}
-          readyCount={libraryReadyCount}
         />
-        {hasMaterial ? (
+        {hasMaterial && continueMaterial ? (
           <HomeDesktopOverview
-            continueFolder={
-              continueMaterial
-                ? projectById.get(continueMaterial.projectId)?.title ?? t('폴더 없음')
-                : ''
-            }
+            continueFolder={projectById.get(continueMaterial.projectId)?.title ?? t('폴더 없음')}
             continueMaterial={continueMaterial}
             onOpen={openMaterial}
-            processing={libraryActiveCount}
-            ready={libraryReadyCount}
-            total={materials.length}
           />
         ) : null}
-        {checklist}
         <View style={styles.wideFolders}>
-          <FolderChips
-            activeIndex={safePageIndex}
-            onAddPress={openProjectSheet}
-            onSelect={goToPage}
-            tabs={subjectTabs}
-          />
-          {toolbar}
+          <View style={styles.flex}>
+            <FolderChips
+              activeIndex={safePageIndex}
+              onAddPress={openProjectSheet}
+              onSelect={goToPage}
+              tabs={subjectTabs}
+            />
+          </View>
+          {filterButton}
         </View>
       </View>
     ) : (
-      <>
-        {checklist}
-        {toolbar}
-      </>
+      <View />
     );
     const empty = (
       <EmptyState
@@ -946,7 +844,8 @@ export default function HomeScreen() {
         columns={columns}
         empty={empty}
         evaluatingMaterialIds={evaluatingMaterialIds}
-        grouped={isTablet}
+        // One white card of rows on the grey page, on every width.
+        grouped
         gutter={gutter}
         header={header}
         materials={pageMaterials}
@@ -963,7 +862,7 @@ export default function HomeScreen() {
   return (
     <>
       {wide ? (
-        <Screen padded={false} safeAreaEdges={['top', 'left', 'right']} wide>
+        <Screen background="soft" padded={false} safeAreaEdges={['top', 'left', 'right']} wide>
           <View
             onLayout={(event) => {
               const width = Math.round(event.nativeEvent.layout.width);
@@ -975,11 +874,12 @@ export default function HomeScreen() {
           </View>
         </Screen>
       ) : (
-      <Screen padded={false} safeAreaEdges={['top', 'left', 'right']}>
+      <Screen background="soft" padded={false} safeAreaEdges={['top', 'left', 'right']}>
         <AppHeader
           brand
           right={
             <>
+              {filterButton}
               <IconButton
                 icon={Search}
                 label={t('검색')}
@@ -1397,10 +1297,11 @@ const styles = StyleSheet.create({
   wideHeader: {
     gap: spacing.xl,
   },
-  // Chips wrap on the left; the count and sort control stay on one line
-  // under them, so the grid's first row starts on a fixed edge.
+  // Chips wrap on the left; the filter icon holds the right edge.
   wideFolders: {
-    gap: spacing.sm,
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: spacing.md,
   },
   pagerHost: {
     flex: 1,
@@ -1408,64 +1309,6 @@ const styles = StyleSheet.create({
   },
   pager: {
     flex: 1,
-  },
-  checklistRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    paddingRight: spacing.sm,
-  },
-  checklistMain: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: spacing.md,
-    minHeight: 54,
-    minWidth: 0,
-    paddingLeft: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  checklistCount: {
-    alignItems: 'center',
-    backgroundColor: colors.brandSoft,
-    borderRadius: radii.full,
-    flexShrink: 0,
-    height: spacing.xl,
-    justifyContent: 'center',
-    minWidth: spacing.xxl,
-    paddingHorizontal: spacing.sm,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  // One quiet line: the count on the left, the sort control flush with the
-  // right gutter. No chips; the control is text plus a chevron.
-  toolbar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.md,
-    justifyContent: 'space-between',
-    minHeight: sizes.buttonSmall,
-  },
-  count: {
-    flex: 1,
-    minWidth: 0,
-  },
-  sortControl: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexShrink: 0,
-    gap: spacing.xxs,
-    minHeight: sizes.buttonSmall,
-  },
-  // Marks a narrowed list (status filter or the saved switch).
-  sortDot: {
-    backgroundColor: colors.text,
-    borderRadius: radii.full,
-    height: 6,
-    position: 'absolute',
-    right: 0,
-    top: spacing.xs,
-    width: 6,
   },
   form: {
     gap: spacing.gutter,

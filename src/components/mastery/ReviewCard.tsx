@@ -9,22 +9,18 @@ import type { MaterialMasteryRowProps } from './MaterialMasteryRow';
 import { PressFace } from './PressFace';
 import { ProgressRing } from './ProgressRing';
 
-/** Weak concepts shown on a card: enough to say what, not a list. */
-const CHIPS = 2;
-
 /**
  * One card in 지금 복습할 자료 (the carousel): a small ring with the number in
- * it, the title, and the one or two concepts that went wrong as chips. A
- * material not yet tried shows its waiting questions instead. The whole card
- * opens what comes next, as the row did.
+ * it and the title, then one line: the concept that went wrong as a chip, or,
+ * with none, the plain line ("문제 5개가 기다려요"). The whole card opens what
+ * comes next, as the row did.
  */
 export function ReviewCard({ material, onPress, summary }: Omit<MaterialMasteryRowProps, 'divider'>) {
   const t = useT();
   const line = masteryLine(summary, t.locale);
   const scored = summary.score !== null;
-  const chips = summary.weakConcepts
-    .slice(0, CHIPS)
-    .map((concept) => (concept.concept === '기타' ? t('기타') : concept.concept));
+  const weak = summary.weakConcepts[0]?.concept;
+  const chip = weak === '기타' ? t('기타') : weak;
   const hint = scored
     ? t('이해도와 취약 개념을 열어요')
     : material.quiz.length > 0
@@ -64,27 +60,24 @@ export function ReviewCard({ material, onPress, summary }: Omit<MaterialMasteryR
           {material.title}
         </AppText>
       </View>
-      {chips.length > 0 ? (
-        <View style={styles.chips}>
-          {chips.map((chip) => (
-            <View key={chip} style={styles.chip}>
-              <AppText numberOfLines={1} style={styles.chipText} variant="badge">
-                {chip}
-              </AppText>
-            </View>
-          ))}
+      {chip ? (
+        <View style={styles.chip}>
+          <AppText numberOfLines={1} style={styles.chipText} variant="badge">
+            {chip}
+          </AppText>
         </View>
-      ) : null}
-      <AppText numberOfLines={2} style={styles.line} tone="muted" variant="meta">
-        {line}
-      </AppText>
+      ) : (
+        <AppText numberOfLines={1} tone="muted" variant="meta">
+          {line}
+        </AppText>
+      )}
     </PressFace>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.backgroundSoft,
+    backgroundColor: colors.surface,
     borderRadius: radii.hero,
     flex: 1,
     gap: spacing.md,
@@ -94,8 +87,8 @@ const styles = StyleSheet.create({
   },
   top: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   title: { flex: 1, minWidth: 0 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   chip: {
+    alignSelf: 'flex-start',
     backgroundColor: colors.warningSoft,
     borderRadius: radii.chip,
     maxWidth: '100%',
@@ -103,6 +96,4 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   chipText: { color: colors.warningStrong },
-  /** Pinned to the card's foot so cards of different content line up. */
-  line: { marginTop: 'auto' },
 });

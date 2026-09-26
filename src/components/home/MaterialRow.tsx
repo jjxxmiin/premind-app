@@ -11,7 +11,7 @@ import {
   StatusBadge,
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
-import { formatMaterialLength, formatRelativeDate } from '@/lib/format';
+import { formatRelativeDate } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { colors, radii, sizes, spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
@@ -32,8 +32,8 @@ export interface MaterialRowProps {
 }
 
 /**
- * One material in the library: a 56pt thumbnail, a two-line title, a meta
- * line and the status badges. The menu sits in its own fixed 44pt column so
+ * One material in the library: a 56pt thumbnail, a two-line title, one meta
+ * line (folder / date) and, only while it is not ready, one status badge. The menu sits in its own fixed 44pt column so
  * it can never overlap the copy, however long the title.
  */
 export const MaterialRow = memo(function MaterialRow({
@@ -94,14 +94,7 @@ export const MaterialRow = memo(function MaterialRow({
               {material.title}
             </AppText>
             <AppText numberOfLines={1} tone="muted" variant="meta">
-              {projectTitle} /{' '}
-              {formatMaterialLength(
-                material.source.kind,
-                material.source.durationMs,
-                material.transcript.length,
-              )}{' '}
-              /{' '}
-              {formatRelativeDate(material.updatedAt)}
+              {projectTitle} / {formatRelativeDate(material.updatedAt)}
             </AppText>
             {material.status !== 'ready' || isEvaluating ? (
               <View style={styles.badges}>

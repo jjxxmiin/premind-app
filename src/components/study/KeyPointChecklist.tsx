@@ -38,13 +38,17 @@ export function KeyPointChecklist({
         <AppText accessibilityRole="header" style={styles.title} variant="heading">
           {t('꼭 기억할 내용')}
         </AppText>
+        {/* The count as a fraction (2026-09-26 declutter); the sentence stays
+            for screen readers. */}
         <AppText
+          accessibilityLabel={t('{total}개 중 {n}개 확인', { total: keyPoints.length, n: checkedCount })}
           accessibilityLiveRegion="polite"
+          tabular
           testID="key-point-progress"
           tone={allChecked ? 'positive' : 'muted'}
           variant="meta"
         >
-          {t('{total}개 중 {n}개 확인', { total: keyPoints.length, n: checkedCount })}
+          {`${checkedCount}/${keyPoints.length}`}
         </AppText>
       </View>
       <View>

@@ -27,9 +27,8 @@ export interface MaterialListProps {
   columns: number;
   cardWidth?: number;
   /**
-   * Draw the list view's rows as one bordered group (a card) instead of
-   * edge-to-edge rows. For wide windows, where a bare row would run the
-   * whole width with nothing to hold it.
+   * Draw the list view's rows as one white group (a card) instead of
+   * edge-to-edge rows, for a grey page.
    */
   grouped?: boolean;
   header: ReactElement;
@@ -207,24 +206,19 @@ const styles = StyleSheet.create({
   fullCard: {
     width: '100%',
   },
-  // The list view as one card on wide windows: side borders on every row,
-  // the top and bottom rows close the shape.
+  // The list view as one white card on the grey page: no rule around it,
+  // the top and bottom rows round the shape.
   groupRow: {
     backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
     overflow: 'hidden',
   },
   groupFirst: {
     borderTopLeftRadius: radii.card,
     borderTopRightRadius: radii.card,
-    borderTopWidth: 1,
   },
   groupLast: {
     borderBottomLeftRadius: radii.card,
     borderBottomRightRadius: radii.card,
-    borderBottomWidth: 1,
   },
   gridRow: {
     gap: spacing.md,

@@ -5,5 +5,4 @@ export * from './ProgressRing';
 export * from './ReviewCard';
 export * from './streak';
 export * from './surface';
-export * from './WeekDots';
 export * from './PressFace';

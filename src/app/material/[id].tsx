@@ -6,7 +6,6 @@ import {
   BookmarkCheck,
   BrainCircuit,
   ChevronRight,
-  Clock3,
   FileText,
   Highlighter,
   ListTree,
@@ -43,7 +42,6 @@ import { KeyPointChecklist } from '@/components/study/KeyPointChecklist';
 import { LectureTimeline } from '@/components/study/LectureTimeline';
 import { MindMap } from '@/components/study/MindMap';
 import { PanelFade } from '@/components/study/PanelFade';
-import { StudyStats } from '@/components/study/StudyStats';
 import { SummaryOutline } from '@/components/study/SummaryOutline';
 import { TimeChip } from '@/components/study/TimeChip';
 import {
@@ -104,7 +102,6 @@ import {
 import type {
   ConfusionReason,
   OutlineSection,
-  QuizAttempt,
   StudyMaterial,
   TranscriptSegment,
 } from '@/types';
@@ -241,7 +238,6 @@ export default function MaterialDetailScreen() {
   }>();
   const {
     materials,
-    quizAttempts,
     reportConfusion,
     savedMaterialIds,
     session,
@@ -899,7 +895,6 @@ export default function MaterialDetailScreen() {
         <PanelFade key={tab}>
         {tab === 'summary' ? (
           <SummaryPanel
-            attempts={quizAttempts}
             checkedPoints={notebook.checkedPoints}
             highlights={highlights}
             jumpTo={jumpTo}
@@ -1269,7 +1264,6 @@ function lectureDurationMs(material: StudyMaterial): number {
 }
 
 function SummaryPanel({
-  attempts,
   checkedPoints,
   highlights,
   jumpTo,
@@ -1284,7 +1278,6 @@ function SummaryPanel({
   split,
   summaryView,
 }: {
-  attempts: readonly QuizAttempt[];
   /** The points the learner has checked off, from `studyNotes[materialId]`. */
   checkedPoints: readonly string[];
   /** The sentences the learner painted, from `studyNotes[materialId]`. */
@@ -1385,32 +1378,14 @@ function SummaryPanel({
     );
   }
 
-  // Text first (what the lecture said), then the strokes, then the timeline
-  // and the numbers.
+  // Text first (what the lecture said), then the strokes (once there are
+  // any), then the timeline and the marked moments. The badge, the review
+  // minutes and the three number tiles went in the 2026-09-26 declutter.
   return (
     <View style={styles.panel}>
       {controls}
       {summary || inlineKeyPoints.length ? (
         <Card style={styles.summaryCard}>
-          <View style={styles.summaryHead}>
-            <StatusBadge
-              label={note?.teacherVerified ? t('검수됨') : t('AI 요약')}
-              tone={note?.teacherVerified ? 'positive' : 'neutral'}
-            />
-            {note?.estimatedReviewMinutes ? (
-              <View style={styles.reviewTime}>
-                <Clock3
-                  {...decorative}
-                  color={colors.textMuted}
-                  size={iconSizes.dense}
-                  strokeWidth={2}
-                />
-                <AppText tone="muted" variant="meta">
-                  {t('복습 {n}분', { n: note.estimatedReviewMinutes })}
-                </AppText>
-              </View>
-            ) : null}
-          </View>
           {summary ? (
             <View style={styles.summaryBlock}>
               {/* With the switch above, its 한눈에 보기 segment is the title. */}
@@ -1463,20 +1438,8 @@ function SummaryPanel({
           positionMs={positionMs}
         />
       ) : null}
-      {note ? (
-        <StudyStats
-          attempts={attempts}
-          concepts={concepts}
-          materialId={material.id}
-          quiz={material.quiz}
-          reviewMinutes={note.estimatedReviewMinutes}
-        />
-      ) : null}
 
-      <SectionHeader
-        description={t('내가 표시한 곳과 AI가 찾은 강조 구간이에요')}
-        title={t('중요한 순간')}
-      />
+      <SectionHeader title={t('중요한 순간')} />
       {material.markers.length ? (
         <Card padding={false}>
           {material.markers.map((marker, index) => (
@@ -1496,11 +1459,8 @@ function SummaryPanel({
               <View style={styles.flex}>
                 <AppText variant="itemTitle">{marker.label}</AppText>
                 <AppText tone="muted" variant="meta">
-                  {marker.source === 'teacher'
-                    ? t('내가 표시')
-                    : `${t('AI 감지')}${marker.confidence ? t(', 신뢰도 {p}%', { p: Math.round(marker.confidence * 100) }) : ''}`}
+                  {marker.source === 'teacher' ? t('내가 표시') : t('AI 감지')}
                 </AppText>
-                {marker.reason ? <AppText tone="muted" variant="meta">{marker.reason}</AppText> : null}
               </View>
               <View style={styles.trailing}>
                 <ChevronRight
@@ -1637,13 +1597,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   summaryCard: { gap: spacing.md },
-  summaryHead: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-    justifyContent: 'space-between',
-  },
-  reviewTime: { alignItems: 'center', flexDirection: 'row', gap: spacing.xs },
   summaryBlock: { gap: spacing.sm },
   summaryBlockDivided: {
     borderTopColor: colors.border,

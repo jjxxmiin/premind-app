@@ -32,9 +32,6 @@ export const EN_HOME: EnDict = {
   '자료 메뉴에서 저장하면 여기에 모여요.': 'Save materials from their menu and they show up here.',
   '녹음하거나 파일을 올리면 대본, 요약, 마인드맵, 문제가 여기에 모여요':
     'Record or upload a file, and its transcript, summary, mind map and quiz show up here',
-  '시작하기 3단계, {done}/3 완료': 'Get started in 3 steps, {done}/3 done',
-  '사용 가이드를 열어요': 'Opens the guide',
-  '시작하기 3단계': 'Get started in 3 steps',
   '안내 닫기': 'Dismiss',
   '정렬, 상태, 보기 방식을 바꿔요': 'Change the sort, status and view',
   '{sort}, 필터 적용됨': '{sort}, filtered',
@@ -217,8 +214,6 @@ export const EN_HOME: EnDict = {
 
   // ── 데스크톱 홈(src/components/home/HomeDesktop.tsx) ─────────────────────
   '안녕하세요, {name}님': 'Hi, {name}',
-  '자료 {n}개 중 {ready}개의 마인드팩이 준비돼 있어요': 'Mind Packs ready: {ready} of {n}',
-  '자료를 추가하면 마인드팩을 만들어 드려요': "Add a material and we'll make a Mind Pack from it",
   '이어서 보기': 'Continue',
   '이어서 보기, {title}': 'Continue, {title}',
 };

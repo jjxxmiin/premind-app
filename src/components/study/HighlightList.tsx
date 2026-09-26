@@ -25,8 +25,8 @@ export interface HighlightListProps {
  * moment it was said.
  *
  * This is what makes painting worth doing: the strokes come back as one short
- * revision list, each row playable and each row wipeable. It is also where a
- * learner who has painted nothing finds out that a tap paints.
+ * revision list, each row playable and each row wipeable. With nothing
+ * painted it renders nothing.
  */
 export function HighlightList({
   painted,
@@ -36,83 +36,65 @@ export function HighlightList({
   testID,
 }: HighlightListProps) {
   const t = useT();
+  // Nothing painted, nothing shown (2026-09-26 declutter): the how-to card
+  // that sat here was a tip on a screen that already had too many words.
+  if (painted.length === 0) return null;
   return (
     <View style={styles.block} testID={testID}>
-      <SectionHeader
-        description={
-          painted.length
-            ? t('칠한 문장 {n}개예요. 누르면 그 부분을 들어요.', { n: painted.length })
-            : undefined
-        }
-        title={t('형광펜')}
-      />
-      {painted.length === 0 ? (
-        <Card style={styles.empty} variant="soft">
-          <Highlighter
-            {...decorative}
-            color={colors.textMuted}
-            size={iconSizes.section}
-            strokeWidth={1.9}
-          />
-          <AppText style={styles.emptyCopy} tone="muted" variant="meta">
-            {t('문장을 눌러 칠하면 여기에 모여요. 암기 카드로도 나와요.')}
-          </AppText>
-        </Card>
-      ) : (
-        <Card padding={false}>
-          {painted.map((item, index) => (
-            <View
-              key={`${index}-${item.sentence}`}
-              style={[
-                styles.row,
-                index < painted.length - 1 ? styles.divider : null,
+      <SectionHeader title={t('형광펜')} />
+      <Card padding={false}>
+        {painted.map((item, index) => (
+          <View
+            key={`${index}-${item.sentence}`}
+            style={[
+              styles.row,
+              index < painted.length - 1 ? styles.divider : null,
+            ]}
+          >
+            {/* Two controls side by side rather than one inside the other:
+                a button nested in a button is invalid on the web build. */}
+            <Pressable
+              accessibilityHint={
+                item.startMs === null
+                  ? undefined
+                  : page
+                    ? t('그 쪽으로 이동해요.')
+                    : t('그 시점부터 재생해요.')
+              }
+              accessibilityLabel={item.sentence}
+              accessibilityRole={item.startMs === null ? 'text' : 'button'}
+              disabled={item.startMs === null}
+              onPress={() => item.startMs !== null && onSeek(item.startMs)}
+              style={({ pressed }) => [
+                styles.body,
+                pressed ? styles.pressed : null,
               ]}
             >
-              {/* Two controls side by side rather than one inside the other:
-                  a button nested in a button is invalid on the web build. */}
-              <Pressable
-                accessibilityHint={
-                  item.startMs === null
-                    ? undefined
-                    : page
-                      ? t('그 쪽으로 이동해요.')
-                      : t('그 시점부터 재생해요.')
-                }
-                accessibilityLabel={item.sentence}
-                accessibilityRole={item.startMs === null ? 'text' : 'button'}
-                disabled={item.startMs === null}
-                onPress={() => item.startMs !== null && onSeek(item.startMs)}
-                style={({ pressed }) => [
-                  styles.body,
-                  pressed ? styles.pressed : null,
-                ]}
-              >
-                <View style={styles.mark}>
-                  <Highlighter
-                    {...decorative}
-                    color={colors.brand}
-                    size={iconSizes.dense}
-                    strokeWidth={2}
-                  />
-                  {item.startMs === null ? null : (
-                    <AppText tabular tone="brand" variant="meta">
-                      {formatSourcePosition(item.startMs, page)}
-                    </AppText>
-                  )}
-                </View>
-                <AppText style={styles.sentence} variant="body">
-                  {item.sentence}
-                </AppText>
-              </Pressable>
-              <IconButton
-                icon={X}
-                label={t('형광펜 지우기')}
-                onPress={() => onClear(item.sentence)}
-              />
-            </View>
-          ))}
-        </Card>
-      )}
+              <View style={styles.mark}>
+                <Highlighter
+                  {...decorative}
+                  color={colors.brand}
+                  size={iconSizes.dense}
+                  strokeWidth={2}
+                />
+                {item.startMs === null ? null : (
+                  <AppText tabular tone="brand" variant="meta">
+                    {formatSourcePosition(item.startMs, page)}
+                  </AppText>
+                )}
+              </View>
+              <AppText style={styles.sentence} variant="body">
+                {item.sentence}
+              </AppText>
+            </Pressable>
+            <IconButton
+              icon={X}
+              label={t('형광펜 지우기')}
+              onPress={() => onClear(item.sentence)}
+            />
+          </View>
+        ))}
+      </Card>
     </View>
   );
 }
@@ -148,8 +130,6 @@ const styles = StyleSheet.create({
   },
   sentence: { minWidth: 0 },
   /** Nothing painted yet: one quiet line saying what the pen is for. */
-  empty: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
-  emptyCopy: { flex: 1, minWidth: 0 },
   divider: {
     borderBottomColor: colors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,

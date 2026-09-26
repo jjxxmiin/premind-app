@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'rea
 
 import { AppText, IconButton, ProgressBar, StatusBadge } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
-import { formatMaterialLength, formatRelativeDate } from '@/lib/format';
+import { formatRelativeDate } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { colors, illustration, radii, shadows, spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
@@ -32,7 +32,7 @@ const KIND_WASH = {
 /**
  * One material in the card grid (tablet and desktop). A short cover — the
  * YouTube frame when there is one, otherwise the kind glyph on a tinted
- * wash — then the title and two meta lines. The grid row stretches every
+ * wash — then the title and one meta line (folder / date). The grid row stretches every
  * card to the tallest one, so the covers line up whatever the title length.
  *
  * The menu is its own button beside the card's main press target rather than
@@ -101,12 +101,7 @@ export const MaterialCard = memo(function MaterialCard({
             {material.title}
           </AppText>
           <AppText numberOfLines={1} tone="muted" variant="meta">
-            {projectTitle}
-          </AppText>
-          <AppText numberOfLines={1} tabular tone="faint" variant="meta">
-            {formatMaterialLength(kind, material.source.durationMs, material.transcript.length)}
-            {' / '}
-            {formatRelativeDate(material.updatedAt)}
+            {projectTitle} / {formatRelativeDate(material.updatedAt)}
           </AppText>
           {isRunning ? (
             <View style={styles.progress}>
@@ -132,7 +127,7 @@ const COVER_HEIGHT = 112;
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderColor: colors.border,
+    borderColor: colors.surface,
     borderRadius: radii.card,
     borderWidth: 1,
     overflow: 'hidden',

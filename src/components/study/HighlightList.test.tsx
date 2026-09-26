@@ -19,12 +19,12 @@ const painted = [
 ];
 
 describe('HighlightList', () => {
-  it('lists every stroke with its moment and says how many there are', async () => {
+  it('lists every stroke with its moment', async () => {
     await render(
       <HighlightList onClear={jest.fn()} onSeek={jest.fn()} painted={painted} />,
     );
 
-    expect(screen.getByText('칠한 문장 2개예요. 누르면 그 부분을 들어요.')).toBeTruthy();
+    expect(screen.getByText('형광펜')).toBeTruthy();
     expect(screen.getByText(painted[0]!.sentence)).toBeTruthy();
     expect(screen.getByText('06:42')).toBeTruthy();
   });
@@ -51,12 +51,10 @@ describe('HighlightList', () => {
     expect(onClear).toHaveBeenCalledWith(painted[0]!.sentence);
   });
 
-  it('teaches the gesture while there is nothing painted yet', async () => {
+  it('shows nothing while there is nothing painted yet', async () => {
     await render(<HighlightList onClear={jest.fn()} onSeek={jest.fn()} painted={[]} />);
 
-    expect(
-      screen.getByText('문장을 눌러 칠하면 여기에 모여요. 암기 카드로도 나와요.'),
-    ).toBeTruthy();
+    expect(screen.queryByText('형광펜')).toBeNull();
     expect(screen.queryAllByRole('button', { name: '형광펜 지우기' })).toHaveLength(0);
   });
 });
