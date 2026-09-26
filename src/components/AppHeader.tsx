@@ -132,7 +132,8 @@ export function AppHeader({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    backgroundColor: colors.background,
+    // 화면 바탕을 따른다(회색 바탕 + 흰 카드 화면에서 머리가 흰 띠로 떠 보이던 것, 2026-09-26).
+    backgroundColor: 'transparent',
     flexDirection: 'row',
     minHeight: sizes.mobileHeader,
     paddingHorizontal: spacing.sm,
