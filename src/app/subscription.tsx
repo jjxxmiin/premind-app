@@ -8,6 +8,7 @@ import {
   Minus,
   RotateCcw,
   ShieldCheck,
+  XCircle,
 } from 'lucide-react-native';
 import { useEffect, useReducer, useState } from 'react';
 import { Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
@@ -17,6 +18,7 @@ import {
   AppText,
   Button,
   Card,
+  Dialog,
   ListRow,
   ProgressBar,
   Screen,
@@ -39,6 +41,12 @@ import {
   purchaseReducer,
 } from '@/features/billing/purchase-machine';
 import { syncStorePurchase } from '@/features/billing/sync-subscription';
+import {
+  cancelWebSubscription,
+  fetchWebSubscription,
+  resumeWebSubscription,
+  type WebSubscription,
+} from '@/features/billing/web-subscription';
 import { usePlanStatus } from '@/features/billing/use-plan-status';
 import { decorative } from '@/lib/a11y';
 import { goBackOrReplace } from '@/lib/navigation';
@@ -258,6 +266,41 @@ export default function SubscriptionScreen() {
   const planLine = formatRenewalDate(renewsAtIso)
     ? t('지금 요금제 {planName} / 다음 갱신일 {renewsText}', { planName, renewsText })
     : t('지금 요금제 {planName}', { planName });
+  // 웹(Polar)에서 결제한 구독은 여기서 바로 해지 예약, 해지 취소(2026-09-26). 스토어 구독은 스토어에서.
+  const [webSub, setWebSub] = useState<WebSubscription | null>(null);
+  const [cancelAsk, setCancelAsk] = useState(false);
+  const [webBusy, setWebBusy] = useState(false);
+  useEffect(() => {
+    if (planStatus.plan !== 'standard') return;
+    let alive = true;
+    void fetchWebSubscription().then((sub) => {
+      if (alive) setWebSub(sub);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [planStatus.plan]);
+  const webManaged = webSub?.source === 'web';
+  const webEnd = formatRenewalDate(webSub?.renewsAt ?? renewsAtIso, locale) ?? '';
+  const changeWebCancel = async (cancel: boolean) => {
+    setWebBusy(true);
+    try {
+      const next = await (cancel ? cancelWebSubscription() : resumeWebSubscription());
+      setWebSub(next);
+      setCancelAsk(false);
+      toast.show(
+        cancel
+          ? t('해지를 예약했어요. {date}까지는 스탠다드를 그대로 써요.', { date: webEnd })
+          : t('해지를 취소했어요. 스탠다드가 계속돼요.'),
+      );
+      await planStatus.refresh();
+    } catch (error: unknown) {
+      setCancelAsk(false);
+      toast.show(t(error instanceof Error && error.message ? error.message : '구독을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.'));
+    } finally {
+      setWebBusy(false);
+    }
+  };
   const minutesText = (used: number, limit: number) =>
     t('{used}분 / {limit}분', { used, limit });
   // Play requires the manage link to point at the exact product, so a known
@@ -456,7 +499,9 @@ export default function SubscriptionScreen() {
             </AppText>
             <AppText tone="muted" variant="body">
               {canBuyHere
-                ? surface === 'web'
+                ? webManaged
+                  ? t('웹에서 결제한 구독이에요. 해지해도 이번 기간이 끝날 때까지 스탠다드를 써요.')
+                  : surface === 'web'
                   ? t('결제와 해지는 PREMIND 웹에서 진행돼요.')
                   : t('결제와 해지는 {store} 구독에서 관리돼요.', {
                       store: surface === 'appstore' ? 'App Store' : 'Google Play',
@@ -476,6 +521,27 @@ export default function SubscriptionScreen() {
                   : 'Google Play에서 해지하거나 결제 수단을 바꿔요',
               )}
               title={t('구독 관리')}
+            />
+          ) : null}
+          {webManaged && !webSub?.cancelAtPeriodEnd ? (
+            <ListRow
+              compact
+              disabled={webBusy}
+              leadingIcon={XCircle}
+              onPress={() => setCancelAsk(true)}
+              showChevron
+              subtitle={t('{date}까지 쓰고 그 뒤로 결제되지 않아요', { date: webEnd })}
+              title={t('구독 해지')}
+            />
+          ) : null}
+          {webManaged && webSub?.cancelAtPeriodEnd ? (
+            <ListRow
+              compact
+              disabled={webBusy}
+              leadingIcon={RotateCcw}
+              onPress={() => void changeWebCancel(false)}
+              subtitle={t('{date}에 해지돼요. 누르면 계속 써요', { date: webEnd })}
+              title={t('해지 취소')}
             />
           ) : null}
           {/* Not shown to a non-subscriber: the bottom bar already carries
@@ -642,6 +708,14 @@ export default function SubscriptionScreen() {
         </View>
       </View>
 
+      <Dialog
+        cancel={{ label: t('계속 쓰기'), onPress: () => setCancelAsk(false), variant: 'secondary' }}
+        confirm={{ label: t('해지하기'), loading: webBusy, onPress: () => void changeWebCancel(true), variant: 'danger' }}
+        description={t('{date}까지는 스탠다드를 그대로 쓰고, 그 뒤로는 결제되지 않아요. 언제든 해지를 취소할 수 있어요.', { date: webEnd })}
+        onRequestClose={() => setCancelAsk(false)}
+        title={t('구독을 해지할까요?')}
+        visible={cancelAsk}
+      />
       <Toast bottom={TOAST_ABOVE_BAR} message={toast.message} />
     </Screen>
   );

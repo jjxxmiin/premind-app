@@ -86,7 +86,11 @@ export default function InterviewPrepareScreen() {
   const [expanding, setExpanding] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<InterviewFeedbackMode>(params.mode === 'ai' ? 'ai' : 'basic');
+  // 고른 방식. 고르기 전(null)에는 AI 를 쓸 수 있는 계정이면 AI 피드백 연습이 먼저 골라져 있다
+  // (2026-09-26: 스탠다드 결제 뒤에도 늘 기본 연습이 골라져 있어 AI 없이 시작되던 것).
+  const [chosenMode, setMode] = useState<InterviewFeedbackMode | null>(
+    params.mode === 'ai' ? 'ai' : params.mode === 'basic' ? 'basic' : null,
+  );
   const [video, setVideo] = useState(false);
   const [starting, setStarting] = useState(false);
   const againLoaded = useRef(false);
@@ -120,6 +124,7 @@ export default function InterviewPrepareScreen() {
   const filled = questions.filter((question) => question.question.trim().length > 0);
   const pack = getCompanyPack(packId);
   const aiProblem = aiAllowanceProblem(allowance, locale);
+  const mode: InterviewFeedbackMode = chosenMode ?? (allowance && !demo && !aiProblem ? 'ai' : 'basic');
   const server = interviewServerAvailable();
   const canRecordVideo = Platform.OS === 'web';
 

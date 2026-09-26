@@ -2,6 +2,23 @@ import type { EnDict } from '../core';
 
 /** 영어 사전 — account 영역. 키는 화면의 한국어 문장 그대로. */
 export const EN_ACCOUNT: EnDict = {
+  // ── 2026-09-26 웹 구독 해지 ──
+  '구독 해지': 'Cancel subscription',
+  '{date}까지 쓰고 그 뒤로 결제되지 않아요': "Use it until {date}. You won't be charged after that",
+  '해지 취소': 'Keep subscription',
+  '{date}에 해지돼요. 누르면 계속 써요': 'Ends on {date}. Tap to keep it',
+  '계속 쓰기': 'Keep it',
+  '해지하기': 'Cancel',
+  '{date}까지는 스탠다드를 그대로 쓰고, 그 뒤로는 결제되지 않아요. 언제든 해지를 취소할 수 있어요.':
+    "You keep Standard until {date}, and you won't be charged after that. You can undo this any time before then.",
+  '구독을 해지할까요?': 'Cancel your subscription?',
+  '해지를 예약했어요. {date}까지는 스탠다드를 그대로 써요.': 'Cancellation scheduled. You keep Standard until {date}.',
+  '해지를 취소했어요. 스탠다드가 계속돼요.': 'Cancellation undone. Standard continues.',
+  '구독을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.': "We couldn't change your subscription. Please try again in a moment.",
+  '웹에서 결제한 구독이에요. 해지해도 이번 기간이 끝날 때까지 스탠다드를 써요.':
+    'You subscribed on the web. If you cancel, you keep Standard until the end of this period.',
+  '웹에서 결제한 스탠다드 구독이 없어요.': "There's no Standard subscription paid on the web.",
+  '지금은 구독을 바꿀 수 없어요. 잠시 후 다시 시도해 주세요.': "You can't change your subscription right now. Please try again in a moment.",
   // ── MY (profile) ──────────────────────────────────────────────────────────
   'PREMIND 사용자': 'PREMIND user',
   알림: 'Notifications',
