@@ -31,6 +31,7 @@ import {
 } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
+import { DeskCard } from '@/components/recording/DeskCard';
 import {
   AnimatedReveal,
   AppText,
@@ -73,6 +74,7 @@ import {
 import { decorative } from '@/lib/a11y';
 import { createId, formatDuration } from '@/lib/format';
 import { enShortDate, getLocale, useT } from '@/lib/i18n';
+import { useLayout } from '@/lib/layout';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, motion, radii, sizes, spacing } from '@/theme/tokens';
@@ -298,6 +300,7 @@ function recordingPresentation(input: {
 
 export default function RecordScreen() {
   const t = useT();
+  const { isTablet } = useLayout();
   const navigation = useNavigation();
   const params = useLocalSearchParams<{
     projectId?: string | string[];
@@ -1174,12 +1177,16 @@ export default function RecordScreen() {
     const permissionDenied = recorderPhase === 'permission-denied';
     return (
       <Screen
+        maxWidth={640}
         padded={false}
         safeAreaEdges={['top', 'left', 'right', 'bottom']}
       >
         <AppHeader onBack={requestBack} title={t.ctx('record', '녹음')} />
         <ScrollView
-          contentContainerStyle={styles.setupContent}
+          contentContainerStyle={[
+            styles.setupContent,
+            isTablet ? styles.setupContentWide : null,
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           style={styles.scroller}
@@ -1282,35 +1289,46 @@ export default function RecordScreen() {
             </View>
           ) : null}
 
-          <View style={styles.readyGroup}>
+          <DeskCard style={isTablet ? null : styles.readyGroup}>
             <AnimatedReveal style={styles.readyBlock}>
-              <Pressable
-                accessibilityHint={t('녹음을 시작해요')}
-                accessibilityLabel={t('녹음 시작')}
-                accessibilityRole="button"
-                accessibilityState={{ busy: isStarting, disabled: isStarting }}
-                disabled={isStarting}
-                onPress={() => void startRecording()}
-                style={({ pressed }) => [
-                  styles.readyButton,
-                  pressed ? styles.readyButtonPressed : null,
-                ]}
-                testID="record-start"
-              >
-                {isStarting ? (
-                  <ActivityIndicator color={colors.textInverse} size="large" />
-                ) : (
-                  <Mic
-                    {...decorative}
-                    color={colors.textInverse}
-                    size={40}
-                    strokeWidth={2}
-                  />
-                )}
-              </Pressable>
+              <View style={styles.readyHalo}>
+                <Pressable
+                  accessibilityHint={t('녹음을 시작해요')}
+                  accessibilityLabel={t('녹음 시작')}
+                  accessibilityRole="button"
+                  accessibilityState={{ busy: isStarting, disabled: isStarting }}
+                  disabled={isStarting}
+                  onPress={() => void startRecording()}
+                  style={({
+                    hovered,
+                    pressed,
+                  }: {
+                    hovered?: boolean;
+                    pressed: boolean;
+                  }) => [
+                    styles.readyButton,
+                    hovered ? styles.readyButtonHovered : null,
+                    pressed ? styles.readyButtonPressed : null,
+                  ]}
+                  testID="record-start"
+                >
+                  {isStarting ? (
+                    <ActivityIndicator color={colors.textInverse} size="large" />
+                  ) : (
+                    <Mic
+                      {...decorative}
+                      color={colors.textInverse}
+                      size={40}
+                      strokeWidth={2}
+                    />
+                  )}
+                </Pressable>
+              </View>
               <View style={styles.readyCopy}>
                 <AppText align="center" variant="heading">
-                  {t('탭하면 바로 시작돼요')}
+                  {Platform.OS === 'web'
+                    ? t('누르면 바로 시작돼요')
+                    : t('탭하면 바로 시작돼요')}
                 </AppText>
                 <AppText align="center" tone="muted" variant="meta">
                   {t('원본은 기기에 먼저 저장돼요')}
@@ -1330,7 +1348,9 @@ export default function RecordScreen() {
                 titleFocused={titleFocused}
               />
             </AnimatedReveal>
-          </View>
+
+            {isTablet ? <SetupReassurance /> : null}
+          </DeskCard>
 
           {permissionDenied ? (
             <Card style={styles.permissionCard}>
@@ -1368,14 +1388,7 @@ export default function RecordScreen() {
             </View>
           ) : null}
 
-          <View style={styles.reassuranceRow}>
-            <Lock {...decorative} color={colors.textFaint} size={iconSizes.inline} strokeWidth={1.9} />
-            <AppText style={styles.flex} tone="muted" variant="meta">
-              {Platform.OS === 'web'
-                ? t('녹음 중에도 원본을 브라우저에 저장해 두어 새로고침해도 이어갈 수 있어요.')
-                : t('화면이 잠겨도 녹음은 계속돼요. 원본은 기기에 남아요.')}
-            </AppText>
-          </View>
+          {isTablet ? null : <SetupReassurance />}
         </ScrollView>
       </Screen>
     );
@@ -1413,6 +1426,7 @@ export default function RecordScreen() {
       <StatusBar style="light" />
       <Screen
         background="stage"
+        maxWidth={640}
         padded={false}
         safeAreaEdges={['top', 'left', 'right', 'bottom']}
       >
@@ -1444,6 +1458,7 @@ export default function RecordScreen() {
                   time: formatDuration(displayDurationMillis / 1_000),
                 })}
                 align="center"
+                style={[styles.timer, isTablet ? styles.timerWide : null]}
                 tabular
                 tone="inverse"
                 variant="display"
@@ -1539,7 +1554,12 @@ export default function RecordScreen() {
           ) : null}
         </ScrollView>
 
-        <View style={styles.stageBottomBar}>
+        <View
+          style={[
+            styles.stageBottomBar,
+            isTablet ? styles.stageBottomBarWide : null,
+          ]}
+        >
           <AnimatedReveal delay={80} style={styles.controlReveal}>
             {isSaving ? (
               <Button
@@ -1668,6 +1688,21 @@ export default function RecordScreen() {
   );
 }
 
+/** The one "your recording is safe" line under the ready screen. */
+function SetupReassurance() {
+  const t = useT();
+  return (
+    <View style={styles.reassuranceRow}>
+      <Lock {...decorative} color={colors.textFaint} size={iconSizes.inline} strokeWidth={1.9} />
+      <AppText style={styles.flex} tone="muted" variant="meta">
+        {Platform.OS === 'web'
+          ? t('녹음 중에도 원본을 브라우저에 저장해 두어 새로고침해도 이어갈 수 있어요.')
+          : t('화면이 잠겨도 녹음은 계속돼요. 원본은 기기에 남아요.')}
+      </AppText>
+    </View>
+  );
+}
+
 function recoveryStatusTone(
   status: RecordingSessionSnapshot['status'],
 ): StatusTone {
@@ -1744,7 +1779,7 @@ function SetupOptions({
           divider={false}
           onPress={() => setSubjectSheetVisible(true)}
           testID="record-subject-row"
-          title={t('폴더')}
+          title={t.ctx('record', '폴더')}
           trailing={<OptionValue value={visibleSubject} />}
         />
       </Card>
@@ -1954,24 +1989,33 @@ function RecordingAction({
         pressed ? styles.actionPressed : null,
       ]}
     >
-      <View
-        style={[
-          styles.actionCircle,
-          prominent ? styles.actionCircleProminent : null,
-          accent ? styles.actionCircleAccent : null,
-        ]}
-      >
-        <Icon
-          {...decorative}
-          color={accent ? colors.textInverse : colors.stageText}
-          fill={accent ? colors.textInverse : 'transparent'}
-          size={prominent ? 30 : 24}
-          strokeWidth={2}
-        />
-      </View>
-      <AppText style={styles.stageMuted} variant="badge">
-        {label}
-      </AppText>
+      {({ hovered }: { hovered?: boolean; pressed: boolean }) => (
+        <>
+          <View
+            style={[
+              styles.actionCircle,
+              hovered ? styles.actionCircleHovered : null,
+              prominent ? styles.actionCircleProminent : null,
+              accent ? styles.actionCircleAccent : null,
+              accent && hovered ? styles.actionCircleAccentHovered : null,
+            ]}
+          >
+            <Icon
+              {...decorative}
+              color={accent ? colors.textInverse : colors.stageText}
+              fill={accent ? colors.textInverse : 'transparent'}
+              size={prominent ? 30 : 24}
+              strokeWidth={2}
+            />
+          </View>
+          <AppText
+            style={hovered ? styles.stageLabelHovered : styles.stageMuted}
+            variant="badge"
+          >
+            {label}
+          </AppText>
+        </>
+      )}
     </Pressable>
   );
 }
@@ -2008,11 +2052,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.gutter,
     paddingTop: spacing.sm,
   },
+  setupContentWide: {
+    justifyContent: 'center',
+    paddingTop: spacing.xl,
+  },
   readyGroup: {
     flexGrow: 1,
     gap: spacing.xxl,
     justifyContent: 'center',
     paddingVertical: spacing.xl,
+  },
+  readyHalo: {
+    alignItems: 'center',
+    backgroundColor: colors.brandSubtle,
+    borderColor: colors.brandSoft,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    height: spacing.massive + spacing.huge + spacing.md,
+    justifyContent: 'center',
+    width: spacing.massive + spacing.huge + spacing.md,
   },
   readyBlock: {
     alignItems: 'center',
@@ -2025,6 +2083,10 @@ const styles = StyleSheet.create({
     height: spacing.massive + spacing.xxl,
     justifyContent: 'center',
     width: spacing.massive + spacing.xxl,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' as const } : null),
+  },
+  readyButtonHovered: {
+    backgroundColor: colors.brandStrong,
   },
   readyButtonPressed: {
     backgroundColor: colors.brandPressed,
@@ -2146,6 +2208,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
+  timer: {
+    fontSize: 52,
+    letterSpacing: -1,
+    lineHeight: 60,
+  },
+  timerWide: {
+    fontSize: 64,
+    lineHeight: 72,
+  },
   stageMuted: {
     color: colors.stageMuted,
   },
@@ -2219,6 +2290,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.gutter,
   },
+  stageBottomBarWide: {
+    borderTopWidth: 0,
+    paddingBottom: spacing.xxl,
+  },
   recordingActions: {
     alignItems: 'flex-end',
     flexDirection: 'row',
@@ -2239,6 +2314,17 @@ const styles = StyleSheet.create({
     height: 56,
     justifyContent: 'center',
     width: 56,
+  },
+  actionCircleHovered: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderColor: 'rgba(255,255,255,0.28)',
+  },
+  actionCircleAccentHovered: {
+    backgroundColor: colors.brandStrong,
+    borderColor: colors.brandStrong,
+  },
+  stageLabelHovered: {
+    color: colors.stageText,
   },
   actionCircleProminent: {
     height: 76,

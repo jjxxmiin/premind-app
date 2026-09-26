@@ -12,6 +12,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
 import { MediaArtwork } from '@/components/MediaArtwork';
+import { DeskCard } from '@/components/recording/DeskCard';
 import {
   AnimatedReveal,
   AppText,
@@ -27,6 +28,7 @@ import {
 import { decorative } from '@/lib/a11y';
 import { formatBytes } from '@/lib/format';
 import { useT } from '@/lib/i18n';
+import { useLayout } from '@/lib/layout';
 import { goBackOrReplace } from '@/lib/navigation';
 import { youtubeThumbnailUrl } from '@/lib/youtube';
 import { useAppStore } from '@/state/app-store';
@@ -65,6 +67,7 @@ function isConnectionError(message: string | null): boolean {
 
 export default function ProcessingScreen() {
   const t = useT();
+  const { isTablet } = useLayout();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { materials, processMaterial, processingMaterialIds, session } = useAppStore();
   const material = materials.find((item) => item.id === id);
@@ -215,215 +218,224 @@ export default function ProcessingScreen() {
           heading: t('마인드팩을 만들고 있어요'),
         };
 
+  // Pinned to the bottom edge on a phone, where the thumb is; the last thing in
+  // the card from a tablet up, where a bar across the window would float.
+  const primaryAction = isReady ? (
+    <Button fullWidth onPress={() => router.replace({ pathname: '/material/[id]', params: { id: material.id } })} size="large" variant="primary">
+      {t('마인드팩 열기')}
+    </Button>
+  ) : (
+    <Button fullWidth onPress={() => router.dismissTo('/(tabs)')} size="large" variant="secondary">
+      {t('홈으로')}
+    </Button>
+  );
+
   return (
-    <Screen maxWidth={560} padded={false} >
+    <Screen maxWidth={640} padded={false} >
       <AppHeader
         onBack={() => router.dismissTo('/(tabs)/library')}
         title={isReady ? t('준비 완료') : t('만드는 중')}
       />
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          isTablet ? styles.contentWide : null,
+        ]}
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
       >
-        <AnimatedReveal>
-          <View style={styles.heading}>
-            <StatusBadge
-              label={presentation.badge}
-              showDot
-              tone={presentation.badgeTone}
-            />
-            <AppText accessibilityLiveRegion="polite" variant="pageTitle">
-              {presentation.heading}
-            </AppText>
-            <AppText tone="muted" variant="body">
-              {presentation.description}
-            </AppText>
-          </View>
-        </AnimatedReveal>
-
-        {isDemo ? (
-          <AnimatedReveal delay={45}>
-            <Card style={styles.noticeCard} variant="soft">
-              <FlaskConical
-                {...decorative}
-                color={colors.textMuted}
-                size={iconSizes.section}
-                strokeWidth={1.9}
-              />
-              <View style={styles.flex}>
-                <AppText variant="itemTitle">{t('데모로 둘러보는 중이에요')}</AppText>
-                <AppText tone="muted" variant="meta">
-                  {isLink
-                    ? t('대본, 요약, 마인드맵, 문제는 예시예요.')
-                    : t('파일은 기기에 남지만 대본, 요약, 마인드맵, 문제는 예시예요.')}
-                </AppText>
-              </View>
-            </Card>
-          </AnimatedReveal>
-        ) : null}
-
-        <AnimatedReveal delay={90}>
-          <Card padding={false}>
-            <View style={styles.fileRow}>
-              {youtubeId ? (
-                <Image
-                  accessibilityLabel={t('유튜브 영상 썸네일')}
-                  contentFit="cover"
-                  source={{ uri: youtubeThumbnailUrl(youtubeId) }}
-                  style={styles.thumbnail}
-                />
-              ) : (
-                <MediaArtwork compact kind={material.source.kind} status={material.status} />
-              )}
-              <View style={styles.flex}>
-                <AppText numberOfLines={1} variant="itemTitle">
-                  {material.title}
-                </AppText>
-                <AppText numberOfLines={1} tone="muted" variant="meta">
-                  {isLink
-                    ? t('유튜브 링크')
-                    : `${material.source.fileName}, ${formatBytes(material.source.sizeBytes)}`}
-                </AppText>
-              </View>
+        <DeskCard>
+          <AnimatedReveal>
+            <View style={styles.heading}>
               <StatusBadge
-                label={isLink ? t('유튜브') : t('원본 저장')}
-                tone={isLink ? 'neutral' : 'positive'}
+                label={presentation.badge}
+                showDot
+                tone={presentation.badgeTone}
               />
-            </View>
-          </Card>
-        </AnimatedReveal>
-
-        {isLink && !isBlocked ? (
-          <AnimatedReveal delay={110}>
-            <Card style={styles.noticeCard} variant="soft">
-              <Link2
-                {...decorative}
-                color={colors.textMuted}
-                size={iconSizes.section}
-                strokeWidth={1.9}
-              />
-              <AppText style={styles.flex} tone="muted" variant="meta">
-                {t('영상은 내려받지 않고 유튜브에서 바로 재생해요.')}
+              <AppText accessibilityLiveRegion="polite" variant="pageTitle">
+                {presentation.heading}
               </AppText>
-            </Card>
+              <AppText tone="muted" variant="body">
+                {presentation.description}
+              </AppText>
+            </View>
           </AnimatedReveal>
-        ) : null}
 
-        {isBlocked ? (
-          <ErrorState
-            compact
-            description={t(failureMessage ?? '')}
-            onRetry={planLimited ? () => router.push('/subscription') : retry}
-            retryLabel={t(planLimited ? '구독 보기' : connectionBlocked ? '다시 시도' : '다시 만들기')}
-            retryDisabled={!planLimited && isRetrying}
-            retryLoading={!planLimited && isRetrying}
-            retryVariant="primary"
-            title={t(
-              planLimited
-                ? '이번 달 분량을 다 썼어요'
-                : connectionBlocked
-                  ? '연결을 확인해 주세요'
-                  : '이어갈 수 있어요',
-            )}
-          />
-        ) : (
-          <AnimatedReveal delay={135}>
-            <Card style={styles.stepsCard} variant="soft">
-              <PipelineSteps
-                active={isActive}
-                label={t('마인드팩 만드는 단계')}
-                progress={material.progress ?? 0}
-                stageIndex={stageIndex}
-                steps={pipelineSteps}
-              />
-
-              <ProgressBar
-                label={t(material.progressLabel)}
-                showValue
-                tone="ink"
-                value={progressValue}
-              />
-
-              <View style={styles.caption}>
-                <Clock3
+          {isDemo ? (
+            <AnimatedReveal delay={45}>
+              <Card style={styles.noticeCard} variant="soft">
+                <FlaskConical
                   {...decorative}
                   color={colors.textMuted}
-                  size={iconSizes.dense}
-                  strokeWidth={2}
+                  size={iconSizes.section}
+                  strokeWidth={1.9}
+                />
+                <View style={styles.flex}>
+                  <AppText variant="itemTitle">{t('데모로 둘러보는 중이에요')}</AppText>
+                  <AppText tone="muted" variant="meta">
+                    {isLink
+                      ? t('대본, 요약, 마인드맵, 문제는 예시예요.')
+                      : t('파일은 기기에 남지만 대본, 요약, 마인드맵, 문제는 예시예요.')}
+                  </AppText>
+                </View>
+              </Card>
+            </AnimatedReveal>
+          ) : null}
+
+          <AnimatedReveal delay={90}>
+            <Card padding={false}>
+              <View style={styles.fileRow}>
+                {youtubeId ? (
+                  <Image
+                    accessibilityLabel={t('유튜브 영상 썸네일')}
+                    contentFit="cover"
+                    source={{ uri: youtubeThumbnailUrl(youtubeId) }}
+                    style={styles.thumbnail}
+                  />
+                ) : (
+                  <MediaArtwork compact kind={material.source.kind} status={material.status} />
+                )}
+                <View style={styles.flex}>
+                  <AppText numberOfLines={1} variant="itemTitle">
+                    {material.title}
+                  </AppText>
+                  <AppText numberOfLines={1} tone="muted" variant="meta">
+                    {isLink
+                      ? t('유튜브 링크')
+                      : `${material.source.fileName}, ${formatBytes(material.source.sizeBytes)}`}
+                  </AppText>
+                </View>
+                <StatusBadge
+                  label={isLink ? t('유튜브') : t('원본 저장')}
+                  tone={isLink ? 'neutral' : 'positive'}
+                />
+              </View>
+            </Card>
+          </AnimatedReveal>
+
+          {isLink && !isBlocked ? (
+            <AnimatedReveal delay={110}>
+              <Card style={styles.noticeCard} variant="soft">
+                <Link2
+                  {...decorative}
+                  color={colors.textMuted}
+                  size={iconSizes.section}
+                  strokeWidth={1.9}
                 />
                 <AppText style={styles.flex} tone="muted" variant="meta">
-                  {isReady
-                    ? t('모든 단계가 끝났어요. 바로 열 수 있어요.')
-                    : t('이 화면을 나가도 앱이 열려 있으면 계속 만들어요.')}
+                  {t('영상은 내려받지 않고 유튜브에서 바로 재생해요.')}
                 </AppText>
-              </View>
-            </Card>
-          </AnimatedReveal>
-        )}
+              </Card>
+            </AnimatedReveal>
+          ) : null}
 
-        {isActive ? (
-          <AnimatedReveal delay={180}>
-            <Card style={styles.previewCard}>
-              <View style={styles.previewHead}>
-                <AppText variant="itemTitle">{t('요약')}</AppText>
-                <StatusBadge label={t.ctx('processing', '준비 중')} tone="neutral" />
-              </View>
-              <SkeletonLines lines={5} />
-            </Card>
-          </AnimatedReveal>
-        ) : null}
-
-        {isBlocked ? (
-          <Card style={styles.noticeCard} variant="soft">
-            {isLink ? (
-              <Link2
-                {...decorative}
-                color={colors.textMuted}
-                size={iconSizes.section}
-                strokeWidth={1.9}
-              />
-            ) : connectionBlocked ? (
-              <WifiOff
-                {...decorative}
-                color={colors.warningStrong}
-                size={iconSizes.section}
-                strokeWidth={1.9}
-              />
-            ) : (
-              <ShieldCheck
-                {...decorative}
-                color={colors.positiveStrong}
-                size={iconSizes.section}
-                strokeWidth={1.9}
-              />
-            )}
-            <AppText style={styles.flex} tone="muted" variant="meta">
-              {t(
-                isLink
-                  ? '다시 시도하면 같은 링크로 이어서 만들어요.'
+          {isBlocked ? (
+            <ErrorState
+              compact
+              description={t(failureMessage ?? '')}
+              onRetry={planLimited ? () => router.push('/subscription') : retry}
+              retryLabel={t(planLimited ? '구독 보기' : connectionBlocked ? '다시 시도' : '다시 만들기')}
+              retryDisabled={!planLimited && isRetrying}
+              retryLoading={!planLimited && isRetrying}
+              retryVariant="primary"
+              title={t(
+                planLimited
+                  ? '이번 달 분량을 다 썼어요'
                   : connectionBlocked
-                    ? material.serverRecordingId
-                      ? '원본은 이미 올라갔어요. 연결되면 이어서 확인해요.'
-                      : '끊긴 지점부터 이어서 올려요. 자료가 중복되지 않아요.'
-                    : '다시 시도해도 기기의 원본은 지워지지 않아요.',
+                    ? '연결을 확인해 주세요'
+                    : '이어갈 수 있어요',
               )}
-            </AppText>
-          </Card>
-        ) : null}
+            />
+          ) : (
+            <AnimatedReveal delay={135}>
+              <Card style={styles.stepsCard}>
+                <PipelineSteps
+                  active={isActive}
+                  label={t('마인드팩 만드는 단계')}
+                  progress={material.progress ?? 0}
+                  stageIndex={stageIndex}
+                  steps={pipelineSteps}
+                />
+
+                <ProgressBar
+                  label={t(material.progressLabel)}
+                  showValue
+                  tone="ink"
+                  value={progressValue}
+                />
+
+                <View style={styles.caption}>
+                  <Clock3
+                    {...decorative}
+                    color={colors.textMuted}
+                    size={iconSizes.dense}
+                    strokeWidth={2}
+                  />
+                  <AppText style={styles.flex} tone="muted" variant="meta">
+                    {isReady
+                      ? t('모든 단계가 끝났어요. 바로 열 수 있어요.')
+                      : t('이 화면을 나가도 앱이 열려 있으면 계속 만들어요.')}
+                  </AppText>
+                </View>
+              </Card>
+            </AnimatedReveal>
+          )}
+
+          {isActive ? (
+            <AnimatedReveal delay={180}>
+              <Card style={styles.previewCard}>
+                <View style={styles.previewHead}>
+                  <AppText variant="itemTitle">{t('요약')}</AppText>
+                  <StatusBadge label={t.ctx('processing', '준비 중')} tone="neutral" />
+                </View>
+                <SkeletonLines lines={5} />
+              </Card>
+            </AnimatedReveal>
+          ) : null}
+
+          {isBlocked ? (
+            <Card style={styles.noticeCard} variant="soft">
+              {isLink ? (
+                <Link2
+                  {...decorative}
+                  color={colors.textMuted}
+                  size={iconSizes.section}
+                  strokeWidth={1.9}
+                />
+              ) : connectionBlocked ? (
+                <WifiOff
+                  {...decorative}
+                  color={colors.warningStrong}
+                  size={iconSizes.section}
+                  strokeWidth={1.9}
+                />
+              ) : (
+                <ShieldCheck
+                  {...decorative}
+                  color={colors.positiveStrong}
+                  size={iconSizes.section}
+                  strokeWidth={1.9}
+                />
+              )}
+              <AppText style={styles.flex} tone="muted" variant="meta">
+                {t(
+                  isLink
+                    ? '다시 시도하면 같은 링크로 이어서 만들어요.'
+                    : connectionBlocked
+                      ? material.serverRecordingId
+                        ? '원본은 이미 올라갔어요. 연결되면 이어서 확인해요.'
+                        : '끊긴 지점부터 이어서 올려요. 자료가 중복되지 않아요.'
+                      : '다시 시도해도 기기의 원본은 지워지지 않아요.',
+                )}
+              </AppText>
+            </Card>
+          ) : null}
+
+          {isTablet ? primaryAction : null}
+        </DeskCard>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
-        {isReady ? (
-          <Button fullWidth onPress={() => router.replace({ pathname: '/material/[id]', params: { id: material.id } })} size="large" variant="primary">
-            {t('마인드팩 열기')}
-          </Button>
-        ) : (
-          <Button fullWidth onPress={() => router.dismissTo('/(tabs)')} size="large" variant="secondary">
-            {t('홈으로')}
-          </Button>
-        )}
-      </View>
+      {isTablet ? null : <View style={styles.bottomBar}>{primaryAction}</View>}
     </Screen>
   );
 }
@@ -431,10 +443,12 @@ export default function ProcessingScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: {
-    gap: spacing.xl,
     paddingBottom: spacing.xxl,
     paddingHorizontal: spacing.gutter,
     paddingTop: spacing.sm,
+  },
+  contentWide: {
+    paddingTop: spacing.xl,
   },
   heading: { gap: spacing.sm },
   flex: { flex: 1, minWidth: 0 },

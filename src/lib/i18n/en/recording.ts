@@ -9,10 +9,12 @@ import type { EnDict } from '../core';
 export const EN_RECORDING: EnDict = {
   // ── 녹음 화면 (app/record.tsx) ────────────────────────────────────────────
   'record|녹음': 'Record',
+  'record|폴더': 'Folder',
   '강의 녹음': 'Lecture recording',
   '녹음 시작': 'Start recording',
   '녹음을 시작해요': 'Starts recording',
   '탭하면 바로 시작돼요': 'Tap to start right away',
+  '누르면 바로 시작돼요': 'Press to start right away',
   '원본은 기기에 먼저 저장돼요': 'The original is saved on your device first',
   '원본을 고르면 이어서 마인드팩을 만들어요.': 'Pick an original to go on and make its Mind Pack.',
   '이어갈 녹음 {n}개': { one: '{n} recording to continue', other: '{n} recordings to continue' },
@@ -218,6 +220,9 @@ export const EN_RECORDING: EnDict = {
   '원본은 기기에 먼저 저장돼요. 중간에 멈춰도 원본은 남아 있어요.':
     'The original is saved on your device first. If anything stops midway, the original is kept.',
   '파일 선택': 'Choose file',
+  '파일을 골라 올려요': 'Choose a file to upload',
+  '여기를 눌러 파일을 골라요': 'Click here to choose a file',
+  '영상, 음성, 문서 파일 한 개, 최대 4GB': 'One video, audio, or document file, up to 4 GB',
   '자료를 담을 폴더가 필요해요': 'You need a folder for your materials',
   '그대로 올리기': 'Upload anyway',
   '폴더를 먼저 골라 주세요.': 'Please choose a folder first.',

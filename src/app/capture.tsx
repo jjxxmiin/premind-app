@@ -7,11 +7,20 @@ import {
   FileVideo2,
   FolderOpen,
   ShieldCheck,
+  Upload,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
+import { DeskCard } from '@/components/recording/DeskCard';
 import { readWebMediaDurationMs } from '@/features/files/web-media-store';
 import {
   AppText,
@@ -39,10 +48,18 @@ import {
 import { preservePickedStudySource } from '@/features/import/preserve-study-source';
 import { decorative } from '@/lib/a11y';
 import { useT } from '@/lib/i18n';
+import { useLayout } from '@/lib/layout';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 import type { Project } from '@/types';
+
+/** The three kinds of file this screen takes, in the order the picker lists them. */
+const FORMATS = [
+  { icon: FileVideo2, name: '영상', extensions: 'MP4, MOV, WEBM, MKV, AVI 등' },
+  { icon: AudioLines, name: '음성', extensions: 'M4A, MP3, WAV, AAC, OGG 등' },
+  { icon: FileText, name: '문서', extensions: 'PDF, PPTX' },
+] as const;
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -58,6 +75,7 @@ interface PreservedSource {
 
 export default function CaptureScreen() {
   const t = useT();
+  const { isTablet } = useLayout();
   const params = useLocalSearchParams<{
     mode?: string | string[];
     projectId?: string | string[];
@@ -198,7 +216,7 @@ export default function CaptureScreen() {
 
   return (
     <Screen
-      maxWidth={640}
+      maxWidth={isTablet ? 720 : 640}
       padded={false}
       safeAreaEdges={['top', 'left', 'right', 'bottom']}
     >
@@ -208,131 +226,187 @@ export default function CaptureScreen() {
       />
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          isTablet ? styles.contentWide : null,
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         style={styles.scroller}
       >
-        <AnimatedReveal delay={30}>
-          <View style={styles.intro}>
-            <AppText variant="pageTitle">{t('영상, 음성, 문서를 골라요')}</AppText>
-            <AppText tone="muted" variant="meta">
-              {t('원본은 기기에 먼저 저장돼요')}
-            </AppText>
-          </View>
-        </AnimatedReveal>
+        <DeskCard>
+          <AnimatedReveal delay={30}>
+            <View style={styles.intro}>
+              <AppText variant="pageTitle">{t('영상, 음성, 문서를 골라요')}</AppText>
+              <AppText tone="muted" variant="meta">
+                {t('원본은 기기에 먼저 저장돼요')}
+              </AppText>
+            </View>
+          </AnimatedReveal>
 
-        <AnimatedReveal delay={90}>
-          <Card padding={false}>
-            <ListRow
-              accessibilityHint={t('폴더를 골라요')}
-              accessibilityLabel={t('폴더, {folder}', {
-                folder: selectedProject?.title ?? t('폴더 없음'),
-              })}
-              compact
-              disabled={isPicking}
-              divider={false}
-              onPress={() => setSubjectSheetVisible(true)}
-              testID="capture-subject-row"
-              title={t('폴더')}
-              trailing={
-                <View style={styles.optionValue}>
-                  <AppText numberOfLines={1} tone="muted" variant="body">
-                    {selectedProject?.title ?? t('폴더 없음')}
+          <AnimatedReveal delay={90}>
+            <Card padding={false}>
+              <ListRow
+                accessibilityHint={t('폴더를 골라요')}
+                accessibilityLabel={t('폴더, {folder}', {
+                  folder: selectedProject?.title ?? t('폴더 없음'),
+                })}
+                compact
+                disabled={isPicking}
+                divider={false}
+                onPress={() => setSubjectSheetVisible(true)}
+                testID="capture-subject-row"
+                title={t.ctx('record', '폴더')}
+                trailing={
+                  <View style={styles.optionValue}>
+                    <AppText numberOfLines={1} tone="muted" variant="body">
+                      {selectedProject?.title ?? t('폴더 없음')}
+                    </AppText>
+                  </View>
+                }
+              />
+            </Card>
+          </AnimatedReveal>
+
+          {isTablet ? (
+            <AnimatedReveal delay={120}>
+              <Pressable
+                accessibilityHint={t('파일을 골라 올려요')}
+                accessibilityLabel={t('파일 선택')}
+                accessibilityRole="button"
+                accessibilityState={{ busy: isPicking, disabled: isPicking }}
+                disabled={isPicking}
+                onPress={() => void pickFile()}
+                style={({
+                  hovered,
+                  pressed,
+                }: {
+                  hovered?: boolean;
+                  pressed: boolean;
+                }) => [
+                  styles.dropZone,
+                  hovered ? styles.dropZoneHovered : null,
+                  pressed ? styles.dropZonePressed : null,
+                  isPicking ? styles.dropZoneBusy : null,
+                ]}
+                testID="capture-drop-zone"
+              >
+                <View {...decorative} style={styles.dropIcon}>
+                  <Upload color={colors.brand} size={iconSizes.state} strokeWidth={1.9} />
+                </View>
+                <View style={styles.dropCopy}>
+                  <AppText align="center" variant="itemTitle">
+                    {t('여기를 눌러 파일을 골라요')}
+                  </AppText>
+                  <AppText align="center" tone="muted" variant="meta">
+                    {t('영상, 음성, 문서 파일 한 개, 최대 4GB')}
                   </AppText>
                 </View>
-              }
+                {/* Drawn like the primary button, but the whole zone is the
+                    button: a real one inside would be a button in a button to
+                    a screen reader. */}
+                <View {...decorative} style={styles.dropAction}>
+                  {isPicking ? (
+                    <ActivityIndicator color={colors.textInverse} size="small" />
+                  ) : (
+                    <AppText tone="inverse" variant="bodyStrong">
+                      {t('파일 선택')}
+                    </AppText>
+                  )}
+                </View>
+              </Pressable>
+            </AnimatedReveal>
+          ) : null}
+
+          {errorMessage ? (
+            <ErrorState
+              compact
+              description={t(errorMessage)}
+              onRetry={() => void pickFile()}
+              retryLabel={t('다시 선택')}
+              title={t('파일을 올리지 못했어요')}
             />
-          </Card>
-        </AnimatedReveal>
+          ) : null}
 
-        {errorMessage ? (
-          <ErrorState
-            compact
-            description={t(errorMessage)}
-            onRetry={() => void pickFile()}
-            retryLabel={t('다시 선택')}
-            title={t('파일을 올리지 못했어요')}
-          />
-        ) : null}
+          {notice ? (
+            <View accessibilityLiveRegion="polite" style={styles.notice}>
+              <AppText tone="muted" variant="meta">
+                {t(notice)}
+              </AppText>
+            </View>
+          ) : null}
 
-        {notice ? (
-          <View accessibilityLiveRegion="polite" style={styles.notice}>
-            <AppText tone="muted" variant="meta">
-              {t(notice)}
+          <AnimatedReveal delay={150}>
+            <View style={styles.formatSection}>
+              <View style={styles.formatHeading}>
+                <AppText variant="itemTitle">{t('지원하는 파일')}</AppText>
+                {isTablet ? null : <StatusBadge label={t('최대 4GB')} />}
+              </View>
+              <View style={isTablet ? styles.formatGrid : styles.formatList}>
+                {FORMATS.map((format, index) => (
+                  <View
+                    key={format.name}
+                    style={
+                      isTablet
+                        ? styles.formatTile
+                        : [
+                            styles.formatRow,
+                            index < FORMATS.length - 1 ? styles.formatRowDivider : null,
+                          ]
+                    }
+                  >
+                    <View style={styles.formatIcon}>
+                      <format.icon
+                        {...decorative}
+                        color={colors.text}
+                        size={iconSizes.section}
+                        strokeWidth={1.9}
+                      />
+                    </View>
+                    <View style={styles.flex}>
+                      <AppText variant="bodyStrong">{t(format.name)}</AppText>
+                      <AppText tone="muted" variant="meta">
+                        {t(format.extensions)}
+                      </AppText>
+                    </View>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.formatNotes}>
+                <AppText tone="muted" variant="meta">
+                  {t(
+                    '문서는 쪽 단위로 읽어요. 소리가 없으니 재생 대신 쪽 번호가 붙어요. 스캔한 이미지 PDF는 글자가 없어서 읽지 못해요.',
+                  )}
+                </AppText>
+                <AppText tone="muted" variant="meta">
+                  {t('일부 파일은 기기에 따라 재생이 안 될 수 있어요.')}
+                </AppText>
+              </View>
+            </View>
+          </AnimatedReveal>
+
+          <View style={styles.localNote}>
+            <ShieldCheck {...decorative} color={colors.textFaint} size={iconSizes.inline} strokeWidth={1.9} />
+            <AppText style={styles.flex} tone="muted" variant="meta">
+              {t('원본은 기기에 먼저 저장돼요. 중간에 멈춰도 원본은 남아 있어요.')}
             </AppText>
           </View>
-        ) : null}
-
-        <AnimatedReveal delay={150}>
-          <Card style={styles.formatCard} variant="soft">
-            <View style={styles.formatHeading}>
-              <AppText variant="itemTitle">{t('지원하는 파일')}</AppText>
-              <StatusBadge label={t('최대 4GB')} />
-            </View>
-            <View style={styles.formatRow}>
-              <View style={styles.formatIcon}>
-                <FileVideo2 {...decorative} color={colors.text} size={iconSizes.section} strokeWidth={1.9} />
-              </View>
-              <View style={styles.flex}>
-                <AppText variant="bodyStrong">{t('영상')}</AppText>
-                <AppText tone="muted" variant="meta">
-                  {t('MP4, MOV, WEBM, MKV, AVI 등')}
-                </AppText>
-              </View>
-            </View>
-            <View style={styles.formatRow}>
-              <View style={styles.formatIcon}>
-                <AudioLines {...decorative} color={colors.text} size={iconSizes.section} strokeWidth={1.9} />
-              </View>
-              <View style={styles.flex}>
-                <AppText variant="bodyStrong">{t('음성')}</AppText>
-                <AppText tone="muted" variant="meta">
-                  {t('M4A, MP3, WAV, AAC, OGG 등')}
-                </AppText>
-              </View>
-            </View>
-            <View style={styles.formatRow}>
-              <View style={styles.formatIcon}>
-                <FileText {...decorative} color={colors.text} size={iconSizes.section} strokeWidth={1.9} />
-              </View>
-              <View style={styles.flex}>
-                <AppText variant="bodyStrong">{t('문서')}</AppText>
-                <AppText tone="muted" variant="meta">
-                  PDF, PPTX
-                </AppText>
-              </View>
-            </View>
-            <AppText tone="muted" variant="meta">
-              {t(
-                '문서는 쪽 단위로 읽어요. 소리가 없으니 재생 대신 쪽 번호가 붙어요. 스캔한 이미지 PDF는 글자가 없어서 읽지 못해요.',
-              )}
-            </AppText>
-            <AppText tone="muted" variant="meta">
-              {t('일부 파일은 기기에 따라 재생이 안 될 수 있어요.')}
-            </AppText>
-          </Card>
-        </AnimatedReveal>
-
-        <View style={styles.localNote}>
-          <ShieldCheck {...decorative} color={colors.textFaint} size={iconSizes.inline} strokeWidth={1.9} />
-          <AppText style={styles.flex} tone="muted" variant="meta">
-            {t('원본은 기기에 먼저 저장돼요. 중간에 멈춰도 원본은 남아 있어요.')}
-          </AppText>
-        </View>
+        </DeskCard>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
-        <Button
-          fullWidth
-          loading={isPicking}
-          onPress={() => void pickFile()}
-          size="large"
-          variant="primary"
-        >
-          {t('파일 선택')}
-        </Button>
-      </View>
+      {isTablet ? null : (
+        <View style={styles.bottomBar}>
+          <Button
+            fullWidth
+            loading={isPicking}
+            onPress={() => void pickFile()}
+            size="large"
+            variant="primary"
+          >
+            {t('파일 선택')}
+          </Button>
+        </View>
+      )}
 
       <BottomSheetModal
         onClose={() => setSubjectSheetVisible(false)}
@@ -455,10 +529,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    gap: spacing.xl,
     paddingBottom: spacing.xxl,
     paddingHorizontal: spacing.gutter,
     paddingTop: spacing.sm,
+  },
+  contentWide: {
+    paddingTop: spacing.xl,
   },
   intro: {
     gap: spacing.xs,
@@ -503,8 +579,80 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
     minWidth: 0,
   },
-  formatCard: {
+  formatSection: {
     gap: spacing.md,
+  },
+  formatList: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radii.card,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  formatGrid: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  formatTile: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radii.tile,
+    borderWidth: 1,
+    flex: 1,
+    gap: spacing.md,
+    minWidth: 0,
+    padding: spacing.lg,
+  },
+  formatRowDivider: {
+    borderBottomColor: colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  formatNotes: {
+    gap: spacing.xs,
+  },
+  dropZone: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSoft,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.card,
+    borderStyle: 'dashed',
+    borderWidth: 1.5,
+    gap: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' as const } : null),
+  },
+  dropZoneHovered: {
+    backgroundColor: colors.brandSubtle,
+    borderColor: colors.brand,
+  },
+  dropZonePressed: {
+    transform: [{ scale: 0.99 }],
+  },
+  dropZoneBusy: {
+    opacity: 0.7,
+  },
+  dropIcon: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderColor: colors.brandSoft,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    height: spacing.massive,
+    justifyContent: 'center',
+    width: spacing.massive,
+  },
+  dropAction: {
+    alignItems: 'center',
+    backgroundColor: colors.action,
+    borderRadius: radii.button,
+    height: sizes.button,
+    justifyContent: 'center',
+    minWidth: 136,
+    paddingHorizontal: spacing.xl,
+  },
+  dropCopy: {
+    gap: spacing.xs,
   },
   formatHeading: {
     alignItems: 'center',
@@ -516,10 +664,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   formatIcon: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.backgroundSoft,
     borderRadius: radii.input,
     height: sizes.iconButton,
     justifyContent: 'center',
