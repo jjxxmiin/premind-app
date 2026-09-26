@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react-native';
 import { Platform, StyleSheet, View } from 'react-native';
 
-import { Press } from '@/components/speak/Press';
+import { Tappable } from '@/components/app';
 import { AppText, type PressState } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { colors, iconSizes, radii, shadows, spacing } from '@/theme/tokens';
@@ -35,7 +35,7 @@ export function SpeakTabs<T extends string>({
         const selected = option.value === value;
         const Icon = option.icon;
         return (
-          <Press
+          <Tappable
             aria-selected={selected}
             accessibilityLabel={option.accessibilityLabel ?? option.label}
             accessibilityRole="tab"
@@ -62,7 +62,7 @@ export function SpeakTabs<T extends string>({
             <AppText numberOfLines={1} tone={selected ? 'default' : 'muted'} variant="label">
               {option.label}
             </AppText>
-          </Press>
+          </Tappable>
         );
       })}
     </View>

@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react';
 import { Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
-import { Press } from '@/components/speak/Press';
+import { Tappable } from '@/components/app';
 import type { PressState } from '@/components/ui';
 import { colors, palette, radii, shadows, spacing } from '@/theme/tokens';
 
@@ -30,7 +30,7 @@ export function SpeakCard({
 }>) {
   const face = tone === 'default' ? 'raised' : tone;
   return (
-    <Press
+    <Tappable
       accessibilityHint={accessibilityHint}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
@@ -45,7 +45,7 @@ export function SpeakCard({
       testID={testID}
     >
       {children}
-    </Press>
+    </Tappable>
   );
 }
 

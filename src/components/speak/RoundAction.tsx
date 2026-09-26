@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { Press } from '@/components/speak/Press';
+import { Tappable } from '@/components/app';
 import { AppText, BreathingView } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { colors, palette, shadows, spacing } from '@/theme/tokens';
@@ -26,7 +26,7 @@ export function RoundAction({
 }) {
   const halo = size + 28;
   return (
-    <Press
+    <Tappable
       accessibilityHint={accessibilityHint}
       accessibilityLabel={label}
       accessibilityRole="button"
@@ -57,7 +57,7 @@ export function RoundAction({
           </AppText>
         </>
       )}
-    </Press>
+    </Tappable>
   );
 }
 
