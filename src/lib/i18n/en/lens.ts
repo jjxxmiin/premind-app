@@ -15,6 +15,8 @@ export const EN_LENS: EnDict = {
     'We score your presentation or speech from its transcript. Recordings, uploaded videos, and YouTube links all work.',
   '새 평가 시작': 'Start a new review',
   '발표 녹음하기': 'Record a presentation',
+  '새로 평가받기': 'Get a new review',
+  '가진 자료를 고르거나 지금 녹음해요.': 'Pick a material you have, or record one now.',
   '지난 평가': 'Past reviews',
   '점수가 제대로 나오는 녹음이에요.': 'For a recording that scores fairly.',
   '이렇게 써요': 'How to use it',

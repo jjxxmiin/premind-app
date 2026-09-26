@@ -60,6 +60,9 @@ export function ScoreRing({
   const safe = clampScore(score, max);
   const word = verdict !== undefined ? t(verdict) : verdictWord(safe, t.locale);
   const centre = diameter / 2;
+  // An English verdict ("Review a bit more") is wider than the ring's lower chord; keep it
+  // inside the circle by narrowing it and, when long, dropping a size. Korean words stay as they were.
+  const fitVerdict = t.locale === 'en';
   const number = safe.toFixed(precision);
   /** A percentage ring prints "56%" over its label; a Lens ring prints "4.1" over "/ 5.0". */
   const bigText = unit ? `${number}${unit}` : number;
@@ -100,7 +103,12 @@ export function ScoreRing({
             <AppText tone="muted" variant="badge">
               {scaleText}
             </AppText>
-            <AppText align="center" style={styles.verdict} variant="label">
+            <AppText
+              align="center"
+              numberOfLines={2}
+              style={[styles.verdict, fitVerdict ? { maxWidth: diameter * 0.64, paddingHorizontal: 0 } : null]}
+              variant={fitVerdict && word.length > 10 ? 'badge' : 'label'}
+            >
               {word}
             </AppText>
           </>

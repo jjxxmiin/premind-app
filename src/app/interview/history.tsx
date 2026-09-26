@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
 import { InterviewSessionRow, RemoteSessionRow } from '@/components/interview/InterviewSessionRow';
+import { SpeakColumns, SpeakFrame } from '@/components/speak/SpeakColumns';
 import {
   AppText,
   AuthField,
@@ -40,6 +41,7 @@ export default function InterviewHistoryScreen() {
   const t = useT();
   const locale = useLocale();
   const { breakpoint, gutter } = useLayout();
+  const wide = breakpoint === 'expanded';
   const { sessions } = useInterviewSessions();
   const [remote, setRemote] = useState<BackupMeta[] | null>(null);
   const [dday, setDday] = useState<Dday | null>(null);
@@ -172,19 +174,8 @@ export default function InterviewHistoryScreen() {
 
   const empty = sessions && sessions.length === 0 && remote !== null && remote.length === 0;
 
-  return (
-    <Screen padded={false}>
-      <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title={t('연습 기록')} />
-      <ScrollView style={styles.scroll}>
-        <View style={[styles.content, { paddingHorizontal: gutter }]}>
-          <AppText tone="muted" variant="body">
-            {t('멈춘 연습은 이어서 하고, 끝난 연습은 답변과 피드백을 다시 확인하세요.')}
-          </AppText>
-          <View style={[styles.top, breakpoint !== 'compact' ? styles.topRow : null]}>
-            <View style={styles.topItem}>{statsBlock}</View>
-            <View style={styles.topItem}>{ddayBlock}</View>
-          </View>
-
+  const lists = (
+    <>
           {empty ? (
             <EmptyState
               actionLabel={t('새 연습 시작하기')}
@@ -237,7 +228,42 @@ export default function InterviewHistoryScreen() {
           <AppText tone="faint" variant="badge">
             {t('녹음과 영상은 이 기기에만 저장돼요. 연습의 글(질문, 내가 한 말, 피드백, 메모)은 계정에 보관돼 다른 기기에서도 볼 수 있어요.')}
           </AppText>
-        </View>
+    </>
+  );
+
+  return (
+    <Screen fullBleed padded={false}>
+      <SpeakFrame>
+        <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title={t('연습 기록')} />
+      </SpeakFrame>
+      <ScrollView style={styles.scroll}>
+        <SpeakFrame>
+          <View style={[styles.content, { paddingHorizontal: gutter }]}>
+            <AppText tone="muted" variant="body">
+              {t('멈춘 연습은 이어서 하고, 끝난 연습은 답변과 피드백을 다시 확인하세요.')}
+            </AppText>
+            {wide ? (
+              <SpeakColumns
+                main={lists}
+                side={
+                  <>
+                    {statsBlock}
+                    {ddayBlock}
+                  </>
+                }
+                sideWidth={360}
+              />
+            ) : (
+              <>
+                <View style={[styles.top, breakpoint !== 'compact' ? styles.topRow : null]}>
+                  <View style={styles.topItem}>{statsBlock}</View>
+                  <View style={styles.topItem}>{ddayBlock}</View>
+                </View>
+                {lists}
+              </>
+            )}
+          </View>
+        </SpeakFrame>
       </ScrollView>
     </Screen>
   );
@@ -263,15 +289,15 @@ const styles = StyleSheet.create({
   top: { gap: spacing.md },
   topRow: { alignItems: 'stretch', flexDirection: 'row' },
   topItem: { flex: 1, minWidth: 0 },
-  stats: { gap: spacing.lg, height: '100%' },
+  stats: { gap: spacing.lg, flexGrow: 1 },
   statRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   stat: { flexBasis: 64, flexGrow: 1, gap: spacing.xxs },
   bars: { flexDirection: 'row', gap: spacing.sm, height: 72 },
-  barCol: { alignItems: 'center', flex: 1, gap: spacing.xs },
-  barTrack: { flex: 1, justifyContent: 'flex-end', width: '100%' },
+  barCol: { alignItems: 'center', flex: 1, gap: spacing.xs, minWidth: 0 },
+  barTrack: { flex: 1, justifyContent: 'flex-end', maxWidth: 28, width: '100%' },
   bar: { backgroundColor: colors.brand, borderRadius: radii.badge, minHeight: 4, width: '100%' },
   barEmpty: { backgroundColor: colors.backgroundMuted },
-  dday: { gap: spacing.md, height: '100%' },
+  dday: { gap: spacing.md, flexGrow: 1 },
   ddayHead: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   flex: { flex: 1, gap: spacing.xxs, minWidth: 0 },
   block: { gap: spacing.sm },

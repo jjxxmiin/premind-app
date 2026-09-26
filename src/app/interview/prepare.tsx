@@ -506,7 +506,7 @@ function ModeOption({ title, body, price, selected, onPress }: { title: string; 
       accessibilityRole="radio"
       accessibilityState={{ selected, checked: selected }}
       onPress={onPress}
-      style={({ pressed }) => [styles.mode, selected ? styles.modeOn : null, pressed ? styles.pressed : null]}
+      style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [styles.mode, hovered && !selected ? styles.modeHover : null, selected ? styles.modeOn : null, pressed ? styles.pressed : null]}
     >
       <View style={styles.modeHead}>
         <AppText variant="heading">{title}</AppText>
@@ -524,6 +524,8 @@ function ModeOption({ title, body, price, selected, onPress }: { title: string; 
 
 function PackPicker({ selected, onPick }: { selected: string | null; onPick: (id: string) => void }) {
   const t = useT();
+  const { breakpoint } = useLayout();
+  const grid = breakpoint !== 'compact';
   const groups = useMemo(
     () => [
       { key: 'common', title: '공통 질문', packs: COMMON_PACKS },
@@ -531,6 +533,43 @@ function PackPicker({ selected, onPick }: { selected: string | null; onPick: (id
     ],
     [],
   );
+  const renderPack = (pack: (typeof COMMON_PACKS)[number], index: number, count: number) => {
+    const on = selected === pack.id;
+    return (
+      <Pressable
+        accessibilityLabel={`${t(pack.name)}, ${t(pack.audience ?? pack.stage)}, ${t('질문 {n}개', { n: pack.questions.length })}`}
+        accessibilityRole="radio"
+        accessibilityState={{ selected: on, checked: on }}
+        key={pack.id}
+        onPress={() => onPick(pack.id)}
+        style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
+          styles.packRow,
+          grid ? styles.packCard : index < count - 1 ? styles.divider : null,
+          grid && hovered && !on ? styles.packCardHover : null,
+          !grid && hovered && !on ? styles.packHover : null,
+          on ? (grid ? styles.packCardOn : styles.packOn) : null,
+          pressed ? styles.pressed : null,
+        ]}
+      >
+        <View style={styles.flex}>
+          <AppText numberOfLines={1} variant="itemTitle">
+            {t(pack.name)}
+          </AppText>
+          <AppText numberOfLines={2} tone="muted" variant="meta">
+            {t('{label} / 질문 {n}개', { label: t(pack.audience ?? pack.stage), n: pack.questions.length })}
+          </AppText>
+          {pack.traits.length > 0 ? (
+            <AppText numberOfLines={1} tone="faint" variant="badge">
+              {pack.traits.map((trait) => t(trait.label)).join(', ')}
+            </AppText>
+          ) : null}
+        </View>
+        <View {...decorative} style={[styles.radio, on ? styles.radioOn : null]}>
+          {on ? <Check color={colors.textInverse} size={iconSizes.dense} strokeWidth={3} /> : null}
+        </View>
+      </Pressable>
+    );
+  };
   return (
     <View style={styles.section}>
       <AppText tone="muted" variant="body">
@@ -539,34 +578,19 @@ function PackPicker({ selected, onPick }: { selected: string | null; onPick: (id
       {groups.map((group) => (
         <View key={group.key} style={styles.section}>
           <SectionHeader title={t.ctx('pack', group.title)} />
-          <Card padding={false}>
-            {group.packs.map((pack, index) => {
-              const on = selected === pack.id;
-              return (
-                <Pressable
-                  accessibilityLabel={`${t(pack.name)}, ${t(pack.audience ?? pack.stage)}, ${t('질문 {n}개', { n: pack.questions.length })}`}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: on, checked: on }}
-                  key={pack.id}
-                  onPress={() => onPick(pack.id)}
-                  style={({ pressed }) => [styles.packRow, index < group.packs.length - 1 ? styles.divider : null, on ? styles.packOn : null, pressed ? styles.pressed : null]}
-                >
-                  <View style={styles.flex}>
-                    <AppText variant="itemTitle">{t(pack.name)}</AppText>
-                    <AppText tone="muted" variant="meta">{t('{label} / 질문 {n}개', { label: t(pack.audience ?? pack.stage), n: pack.questions.length })}</AppText>
-                    {pack.traits.length > 0 ? (
-                      <AppText numberOfLines={1} tone="faint" variant="badge">
-                        {pack.traits.map((trait) => t(trait.label)).join(', ')}
-                      </AppText>
-                    ) : null}
-                  </View>
-                  <View {...decorative} style={[styles.radio, on ? styles.radioOn : null]}>
-                    {on ? <Check color={colors.textInverse} size={iconSizes.dense} strokeWidth={3} /> : null}
-                  </View>
-                </Pressable>
-              );
-            })}
-          </Card>
+          {grid ? (
+            // 태블릿, 데스크톱: 한 줄 목록이 화면을 가로지르지 않게 두 장씩 카드로.
+            <View style={styles.packGrid}>
+              {Array.from({ length: Math.ceil(group.packs.length / 2) }, (_, row) => (
+                <View key={row} style={styles.packGridRow}>
+                  {group.packs.slice(row * 2, row * 2 + 2).map((pack, index) => renderPack(pack, index, group.packs.length))}
+                  {group.packs.length % 2 === 1 && row === Math.ceil(group.packs.length / 2) - 1 ? <View style={styles.packFiller} /> : null}
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Card padding={false}>{group.packs.map((pack, index) => renderPack(pack, index, group.packs.length))}</Card>
+          )}
         </View>
       ))}
       <Card variant="soft">
@@ -602,17 +626,33 @@ const styles = StyleSheet.create({
     borderColor: colors.borderStrong,
     borderRadius: radii.card,
     borderWidth: 1,
+    cursor: 'pointer',
     flex: 1,
     gap: spacing.sm,
     padding: spacing.gutter,
   },
   modeOn: { backgroundColor: colors.brandSubtle, borderColor: colors.brand },
+  modeHover: { borderColor: colors.textFaint },
   modeHead: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   aiNotes: { gap: spacing.md },
   toggle: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   pressed: { opacity: 0.7 },
-  packRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, minHeight: 68, paddingHorizontal: spacing.gutter, paddingVertical: spacing.md },
+  packRow: { alignItems: 'center', cursor: 'pointer', flexDirection: 'row', gap: spacing.md, minHeight: 68, paddingHorizontal: spacing.gutter, paddingVertical: spacing.md },
   packOn: { backgroundColor: colors.brandSubtle },
+  packHover: { backgroundColor: colors.backgroundSoft },
+  packGrid: { gap: spacing.md },
+  packGridRow: { flexDirection: 'row', gap: spacing.md },
+  packCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radii.card,
+    borderWidth: 1,
+    flex: 1,
+    minWidth: 0,
+  },
+  packCardHover: { borderColor: colors.borderStrong },
+  packCardOn: { backgroundColor: colors.brandSubtle, borderColor: colors.brand },
+  packFiller: { borderColor: colors.transparent, borderWidth: 1, flex: 1, paddingHorizontal: spacing.gutter },
   divider: { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
   radio: {
     alignItems: 'center',
