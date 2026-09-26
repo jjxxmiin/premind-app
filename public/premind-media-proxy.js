@@ -4,7 +4,9 @@
  * exposes a same-origin virtual URL and forwards Range requests to the private
  * API without putting the access token in a URL or buffering the whole file.
  */
-const MEDIA_PATH_PREFIX = '/__premind_media__/';
+// Under the worker's own scope: '/__premind_media__/' at the site root,
+// '/app/__premind_media__/' on premind.co.kr (the web build lives under /app).
+const MEDIA_PATH_PREFIX = new URL('__premind_media__/', self.registration.scope).pathname;
 const SOURCE_REQUEST_TIMEOUT_MS = 20_000;
 const sources = new Map();
 const waiters = new Map();

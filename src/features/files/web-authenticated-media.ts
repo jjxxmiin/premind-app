@@ -1,5 +1,32 @@
-const WORKER_URL = '/premind-media-proxy.js';
-const MEDIA_PATH_PREFIX = '/__premind_media__/';
+/**
+ * Where the web build is served from: '' at the site root (local dev), '/app'
+ * on premind.co.kr (Expo experiments.baseUrl). Read off the entry bundle's own
+ * address, so it follows whatever base the build was exported with.
+ *
+ * A service worker only controls pages under its own directory, so the worker
+ * file, its scope and the virtual media addresses all live under this base
+ * (2026-09-26: it was registered at the site root and 404'd under /app, so a
+ * recording opened on a second device never played).
+ */
+export function webBasePath(): string {
+  if (typeof document === 'undefined') return '';
+  for (const script of Array.from(document.scripts)) {
+    const src = script.src;
+    const at = src.indexOf('/_expo/');
+    if (at < 0) continue;
+    try {
+      const path = new URL(src.slice(0, at), window.location.href).pathname;
+      return path.replace(/\/+$/, '');
+    } catch {
+      return '';
+    }
+  }
+  return '';
+}
+
+const workerUrl = () => `${webBasePath()}/premind-media-proxy.js`;
+const workerScope = () => `${webBasePath()}/`;
+const mediaPathPrefix = () => `${webBasePath()}/__premind_media__/`;
 
 export interface PrivateMediaSource {
   uri: string;
@@ -26,7 +53,7 @@ function serviceWorkerApi(): ServiceWorkerContainer {
 
 async function activeController(): Promise<ServiceWorker> {
   const serviceWorker = serviceWorkerApi();
-  registrationPromise ??= serviceWorker.register(WORKER_URL, { scope: '/' });
+  registrationPromise ??= serviceWorker.register(workerUrl(), { scope: workerScope() });
   const registration = await registrationPromise;
   await serviceWorker.ready;
   if (serviceWorker.controller) return serviceWorker.controller;
@@ -146,7 +173,7 @@ export async function createAuthenticatedWebMediaUrl(
   serviceWorker.addEventListener('message', answerSourceRequest);
 
   return {
-    uri: `${window.location.origin}${MEDIA_PATH_PREFIX}${encodeURIComponent(id)}`,
+    uri: `${window.location.origin}${mediaPathPrefix()}${encodeURIComponent(id)}`,
     release: () => {
       released = true;
       serviceWorker.removeEventListener('message', answerSourceRequest);
