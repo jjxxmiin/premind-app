@@ -5,16 +5,15 @@ import { Children, Fragment, isValidElement, useState, type PropsWithChildren } 
 import { Linking, Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
+import { Surface } from '@/components/speak/SpeakKit';
 import {
   AppText,
   BottomSheetModal,
   Button,
-  Card,
   Dialog,
   IconButton,
   Screen,
   SettingsRow,
-  StatusBadge,
   Wordmark,
 } from '@/components/ui';
 import { PRIVACY_URL, TERMS_URL } from '@/data/subscription-plans';
@@ -122,6 +121,7 @@ export default function ProfileScreen() {
 
   return (
     <Screen
+      background="soft"
       contentStyle={styles.screenContent}
       maxWidth={720}
       padded={false}
@@ -141,7 +141,7 @@ export default function ProfileScreen() {
       />
 
       <View style={styles.content}>
-        <Card style={styles.profileCard}>
+        <Surface style={styles.profileCard} tone="raised">
           <View
             accessibilityLabel={`${displayName}, ${session?.user.email ?? ''}`}
             style={styles.profileRow}
@@ -156,13 +156,7 @@ export default function ProfileScreen() {
                 <AppText numberOfLines={1} style={styles.name} variant="heading">
                   {displayName}
                 </AppText>
-                {demoAccount ? <StatusBadge label={t('데모')} tone="brand" /> : null}
               </View>
-              {session?.user.email ? (
-                <AppText numberOfLines={1} tone="muted" variant="meta">
-                  {session.user.email}
-                </AppText>
-              ) : null}
             </View>
           </View>
 
@@ -180,18 +174,16 @@ export default function ProfileScreen() {
               {t('로그인하기')}
             </Button>
           ) : null}
-        </Card>
+        </Surface>
 
-        <GroupCard title={t('앱 설정')}>
+        <GroupCard>
           <SettingsRow
-            // 영어를 못 읽는 사람도, 한국어를 못 읽는 사람도 찾게 두 말로.
-            description={locale === 'en' ? '한국어로 바꿔요' : 'Language'}
+            // 영어를 못 읽는 사람도, 한국어를 못 읽는 사람도 찾게 두 말로(한 줄).
             onPress={() => setLocale(locale === 'en' ? 'ko' : 'en')}
-            title={t('언어')}
+            title={t('언어 / Language')}
             value={APP_LOCALE_LABELS[locale]}
           />
           <SettingsRow
-            description={t('마인드팩이 준비되면 알려드려요')}
             onToggle={(next) => void handleNotificationsToggle(next)}
             title={t('알림')}
             toggled={settings.notificationsEnabled}
@@ -208,32 +200,30 @@ export default function ProfileScreen() {
           </AppText>
         ) : null}
 
-        <GroupCard title={t('구독과 결제')}>
+        <GroupCard>
           <SettingsRow
-            description={usageLine(planStatus.usage, locale) ?? t('처리 분량과 보관을 늘려요')}
+            description={usageLine(planStatus.usage, locale) ?? undefined}
             onPress={() => router.push('/subscription')}
             title={t('구독')}
             value={planStatus.loading ? '' : planLabel(planStatus.plan, locale)}
           />
         </GroupCard>
 
-        <GroupCard title={t.ctx('settings', '정보')}>
+        <GroupCard>
           <SettingsRow onPress={() => router.push('/guide')} title={t('사용 가이드')} />
           <SettingsRow
-            description="support@camorix.com"
             onPress={() => openUrl(SUPPORT_MAILTO)}
             title={t('문의하기')}
           />
-          <SettingsRow onPress={() => openUrl(TERMS_URL)} title={t('이용약관')} />
-          <SettingsRow onPress={() => openUrl(PRIVACY_URL)} title={t('개인정보 처리방침')} />
+          {/* 이용약관, 개인정보 처리방침, 버전은 한 줄(정보) 뒤 시트에 모은다. */}
           <SettingsRow
             onPress={() => setDialog('about')}
-            title={t('버전 정보')}
+            title={t.ctx('settings', '정보')}
             value={appVersion}
           />
         </GroupCard>
 
-        <GroupCard title={t('계정')}>
+        <GroupCard>
           <SettingsRow
             onPress={() => setDialog('logout')}
             title={t(demoAccount ? '데모 종료' : '로그아웃')}
@@ -261,7 +251,7 @@ export default function ProfileScreen() {
 
       <BottomSheetModal
         onClose={() => setDialog(null)}
-        title={t('버전 정보')}
+        title={t.ctx('settings', '정보')}
         visible={dialog === 'about'}
       >
         <View style={styles.aboutContent}>
@@ -273,6 +263,10 @@ export default function ProfileScreen() {
             Expo SDK {Constants.expoConfig?.sdkVersion ?? '57'} / {Platform.OS}
           </AppText>
         </View>
+        <GroupCard>
+          <SettingsRow onPress={() => openUrl(TERMS_URL)} title={t('이용약관')} />
+          <SettingsRow onPress={() => openUrl(PRIVACY_URL)} title={t('개인정보 처리방침')} />
+        </GroupCard>
       </BottomSheetModal>
 
       <Dialog
@@ -336,29 +330,23 @@ export default function ProfileScreen() {
 }
 
 /**
- * A captioned group of settings rows on one white card, with a hairline
- * between rows. (The shared SettingsGroup draws groups without a surface.)
+ * A group of settings rows on one white card over the grey screen, with a
+ * hairline between rows (2026-09-26: no caption above; the space between
+ * cards is what separates the groups).
  */
-function GroupCard({ title, children }: PropsWithChildren<{ title: string }>) {
+function GroupCard({ children }: PropsWithChildren) {
   const rows = Children.toArray(children).filter(isValidElement);
   return (
-    <View style={styles.group}>
-      <AppText accessibilityRole="header" style={styles.groupTitle} tone="muted" variant="label">
-        {title}
-      </AppText>
-      <Card padding={false}>
-        {/* Card's own padding shorthand wins over a horizontal override on
-            web, so the inset lives on an inner view. */}
-        <View style={styles.groupRows}>
-          {rows.map((row, index) => (
-            <Fragment key={row.key ?? index}>
-              {index > 0 ? <View {...decorative} style={styles.rowDivider} /> : null}
-              {row}
-            </Fragment>
-          ))}
-        </View>
-      </Card>
-    </View>
+    <Surface padding={0} tone="raised">
+      <View style={styles.groupRows}>
+        {rows.map((row, index) => (
+          <Fragment key={row.key ?? index}>
+            {index > 0 ? <View {...decorative} style={styles.rowDivider} /> : null}
+            {row}
+          </Fragment>
+        ))}
+      </View>
+    </Surface>
   );
 }
 
@@ -387,12 +375,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 48,
   },
-  group: {
-    gap: spacing.sm,
-  },
-  groupTitle: {
-    paddingHorizontal: spacing.xs,
-  },
   groupRows: {
     paddingHorizontal: spacing.gutter,
   },
@@ -414,7 +396,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   rowNote: {
-    marginTop: -spacing.md,
+    marginTop: -spacing.sm,
     paddingHorizontal: spacing.xs,
   },
   errorBox: {
@@ -425,6 +407,7 @@ const styles = StyleSheet.create({
   aboutContent: {
     alignItems: 'center',
     gap: spacing.gutter,
+    marginBottom: spacing.xl,
   },
   deleteField: {
     gap: spacing.sm,

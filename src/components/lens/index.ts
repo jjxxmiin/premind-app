@@ -3,7 +3,6 @@ export * from './LatestReportCard';
 export * from './LensIntroCard';
 export * from './LensHistoryList';
 export * from './LensReportRow';
-export * from './LensTipsCard';
 export * from './MomentDensity';
 export * from './MomentsTimeline';
 export * from './RubricBandTrack';
@@ -26,7 +25,6 @@ export {
   type ReportConclusion,
 } from './lens-copy';
 export {
-  TIPS_UNTIL,
   lensEvaluatedAt,
   lensFailure,
   lensHome,

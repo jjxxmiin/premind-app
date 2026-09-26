@@ -15,16 +15,18 @@ jest.mock('@/features/interview/interview-media', () => ({ interviewMedia: {} })
 const base = { planRenewsAt: null, questions: { used: 0, limit: 1 }, periodEnd: null };
 
 describe('AllowanceCard', () => {
-  it('says the free AI trial is still there and links to plans', async () => {
+  it('says the free AI trial is still there and opens the plans', async () => {
+    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
     await render(<AllowanceCard allowance={{ ...base, plan: 'free', ai: { used: 0, limit: 0, freeTrial: true } }} />);
     expect(screen.getByText('AI 피드백 무료 체험 1회가 남았어요')).toBeTruthy();
-    expect(screen.getByText('요금제 보기')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button'));
+    expect(router.push).toHaveBeenCalledWith('/subscription');
   });
 
   it('counts this month for 스탠다드 without a plan link', async () => {
     await render(<AllowanceCard allowance={{ ...base, plan: 'standard', ai: { used: 3, limit: 10, freeTrial: false } }} />);
     expect(screen.getByText('이번 달 AI 피드백 7회 남았어요')).toBeTruthy();
-    expect(screen.queryByText('요금제 보기')).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 });
 
@@ -32,8 +34,8 @@ it('lists a practice by what was done, never by a score', async () => {
   const onPress = jest.fn();
   await render(<InterviewSessionRow onPress={onPress} session={webBackupPayload as InterviewSession} />);
   expect(screen.getByText('한빛전자 영업관리 면접 연습')).toBeTruthy();
-  expect(screen.getByText(/AI 피드백 연습 \/ 2 \/ 2개 답변 \/ 50초/)).toBeTruthy();
-  expect(screen.getByText('연습 완료')).toBeTruthy();
+  expect(screen.getByText(/^2 \/ 2개 답변 \/ /)).toBeTruthy();
+  expect(screen.getByLabelText(/AI 피드백 연습, 연습 완료/)).toBeTruthy();
   expect(screen.queryByText(/점수|합격/)).toBeNull();
   await fireEvent.press(screen.getByRole('button'));
   expect(onPress).toHaveBeenCalled();

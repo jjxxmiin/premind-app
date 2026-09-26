@@ -2,16 +2,15 @@ import { ChevronRight } from 'lucide-react-native';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { SpeakCard } from '@/components/speak/SpeakCard';
-import { AppText, StatusBadge } from '@/components/ui';
+import { AppText } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
-import { formatDuration, formatRelativeDate } from '@/lib/format';
+import { formatRelativeDate } from '@/lib/format';
 import { useT } from '@/lib/i18n';
-import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
+import { colors, iconSizes, spacing } from '@/theme/tokens';
 import type { LensReport } from '@/types';
 
 import { ScoreRing } from './ScoreRing';
 import { reportConclusion, scoreWord } from './lens-copy';
-import { verdictTone } from './lens-home';
 
 export interface LatestReportCardProps {
   title: string;
@@ -24,9 +23,9 @@ export interface LatestReportCardProps {
 }
 
 /**
- * The newest report, big enough to read without opening it: the ring, the
- * 총평 sentence, and the one thing to fix first. The whole card opens the
- * report.
+ * The newest report: the ring, the title and its meta line (2026-09-26
+ * declutter: the verdict badge, the 총평 sentence and the thing to fix first
+ * live in the report; a screen reader still hears them). The whole card opens it.
  */
 export function LatestReportCard({
   onPress,
@@ -39,14 +38,11 @@ export function LatestReportCard({
   const t = useT();
   const conclusion = reportConclusion(report, t.locale);
   const verdict = scoreWord(report.overall, t.locale);
-  const fixTime = conclusion.fix ? formatDuration(conclusion.fix.sourceStartMs / 1_000) : null;
   const meta = `${projectTitle} / ${formatRelativeDate(updatedAt)}`;
   const spoken = [
     t('최근 평가, {title}. {meta}.', { title, meta }),
-    conclusion.sentence,
-    conclusion.fix
-      ? t('먼저 고칠 것, {time}. {text}', { time: fixTime, text: conclusion.fix.text })
-      : null,
+    t('{score}점, {verdict}.', { score: report.overall.toFixed(1), verdict }),
+    conclusion.fix ? t('먼저 고칠 것, {text}', { text: conclusion.fix.text }) : null,
   ]
     .filter(Boolean)
     .join(' ');
@@ -59,12 +55,6 @@ export function LatestReportCard({
       onPress={onPress}
       style={[styles.card, style]}
     >
-      <View style={styles.head}>
-        <AppText tone="muted" variant="badge">
-          {t('최근 평가')}
-        </AppText>
-        <StatusBadge label={verdict} tone={verdictTone(report.overall)} />
-      </View>
       <View style={styles.main}>
         <ScoreRing label={t('전체 평가')} score={report.overall} size="medium" />
         <View style={styles.copy}>
@@ -75,30 +65,7 @@ export function LatestReportCard({
             {meta}
           </AppText>
         </View>
-      </View>
-      <AppText tone="soft" variant="body">
-        {conclusion.sentence}
-      </AppText>
-      {conclusion.fix && fixTime ? (
-        <View style={styles.fix}>
-          <View style={styles.fixHead}>
-            <AppText tone="brand" variant="badge">
-              {t('먼저 고칠 것')}
-            </AppText>
-            <View style={styles.timeChip}>
-              <AppText tabular tone="soft" variant="badge">
-                {fixTime}
-              </AppText>
-            </View>
-          </View>
-          <AppText variant="body">{conclusion.fix.text}</AppText>
-        </View>
-      ) : null}
-      <View {...decorative} style={styles.link}>
-        <AppText tone="soft" variant="label">
-          {t('자세히 보기')}
-        </AppText>
-        <ChevronRight color={colors.textFaint} size={iconSizes.inline} strokeWidth={2} />
+        <ChevronRight {...decorative} color={colors.textFaint} size={iconSizes.inline} strokeWidth={2} />
       </View>
     </SpeakCard>
   );
@@ -106,12 +73,7 @@ export function LatestReportCard({
 
 const styles = StyleSheet.create({
   card: {
-    gap: spacing.lg,
-  },
-  head: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: spacing.md,
   },
   main: {
     alignItems: 'center',
@@ -122,28 +84,5 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xxs,
     minWidth: 0,
-  },
-  fix: {
-    backgroundColor: colors.brandSubtle,
-    borderRadius: radii.tile,
-    gap: spacing.xs,
-    padding: spacing.md,
-  },
-  fixHead: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  timeChip: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.chip,
-    paddingHorizontal: 6,
-    paddingVertical: spacing.xxs,
-  },
-  link: {
-    alignItems: 'center',
-    alignSelf: 'flex-end',
-    flexDirection: 'row',
-    gap: spacing.xxs,
   },
 });

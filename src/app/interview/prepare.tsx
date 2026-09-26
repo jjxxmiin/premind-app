@@ -355,9 +355,6 @@ export default function InterviewPrepareScreen() {
               <PackPicker onPick={setPackId} selected={packId} />
             ) : from === 'resume' ? (
               <View style={styles.section}>
-                <AppText tone="muted" variant="body">
-                  {t('지원 정보와 자기소개서를 적으면 나올 질문과 꼬리질문을 만들어요. 자기소개서는 질문을 만드는 데만 쓰고 저장하지 않아요.')}
-                </AppText>
                 <View style={[styles.fields, breakpoint !== 'compact' ? styles.fieldsRow : null]}>
                   <View style={styles.field}>
                     <AuthField label={t('지원 회사')} maxLength={GUIDED_INPUT_LIMITS.company} onChangeText={(company) => setForm((current) => ({ ...current, company }))} placeholder={t('예: 한빛전자')} value={form.company} />
@@ -367,7 +364,6 @@ export default function InterviewPrepareScreen() {
                   </View>
                 </View>
                 <TextArea
-                  hint={t('선택이에요. 공고의 주요 업무나 자격 요건을 붙여 넣어요.')}
                   label={t('채용 공고 (선택)')}
                   maxLength={GUIDED_INPUT_LIMITS.jobDescription}
                   minHeight={88}
@@ -387,6 +383,9 @@ export default function InterviewPrepareScreen() {
                   placeholder={t('자기소개서 내용을 붙여 넣어 주세요.')}
                   value={form.resumeText}
                 />
+                <AppText tone="faint" variant="badge">
+                  {t('자기소개서는 저장하지 않아요.')}
+                </AppText>
                 {questions.length > 0 ? (
                   <View style={styles.section}>
                     <SectionHeader
@@ -434,17 +433,17 @@ export default function InterviewPrepareScreen() {
                   })}
                 </AppText>
               </Card>
-              <SectionHeader description={t('준비한 질문 전체, 연습 1회 기준이에요.')} title={t('어떻게 연습할까요?')} />
+              <SectionHeader title={t('어떻게 연습할까요?')} />
               <View accessibilityRole="radiogroup" style={[styles.modes, breakpoint !== 'compact' ? styles.modesRow : null]}>
                 <ModeOption
-                  body={t('녹음 없이 질문과 타이머로 혼자 연습해요. 말하는 데 집중해요.')}
+                  body={t('녹음 없이 타이머로 연습해요.')}
                   onPress={() => setMode('basic')}
                   price={t('무료')}
                   selected={mode === 'basic'}
                   title={t('기본 연습')}
                 />
                 <ModeOption
-                  body={t('답변을 녹음해 내가 한 말, 잘한 점, 빠진 내용, 다음에 해볼 것을 받아요.')}
+                  body={t('답변을 녹음하고 피드백을 받아요.')}
                   onPress={() => setMode('ai')}
                   price={demo ? t('데모에서는 못 써요') : t(aiPriceLabel(allowance, locale))}
                   selected={mode === 'ai'}
@@ -477,7 +476,7 @@ export default function InterviewPrepareScreen() {
                       <View style={styles.flex}>
                         <AppText variant="bodyStrong">{t('내 모습도 녹화하기')}</AppText>
                         <AppText tone="muted" variant="meta">
-                          {t('영상은 이 브라우저에만 저장하고 어디에도 보내지 않아요.')}
+                          {t('이 브라우저에만 저장해요.')}
                         </AppText>
                       </View>
                       <Switch accessibilityLabel={t('내 모습도 녹화하기')} onValueChange={setVideo} thumbColor={colors.surface} trackColor={{ false: colors.borderStrong, true: colors.brand }} value={video} />
@@ -558,11 +557,6 @@ function PackPicker({ selected, onPick }: { selected: string | null; onPick: (id
           <AppText numberOfLines={2} tone="muted" variant="meta">
             {t('{label} / 질문 {n}개', { label: t(pack.audience ?? pack.stage), n: pack.questions.length })}
           </AppText>
-          {pack.traits.length > 0 ? (
-            <AppText numberOfLines={1} tone="faint" variant="badge">
-              {pack.traits.map((trait) => t(trait.label)).join(', ')}
-            </AppText>
-          ) : null}
         </View>
         <View {...decorative} style={[styles.radio, on ? styles.radioOn : null]}>
           {on ? <Check color={colors.textInverse} size={iconSizes.dense} strokeWidth={3} /> : null}
@@ -572,9 +566,6 @@ function PackPicker({ selected, onPick }: { selected: string | null; onPick: (id
   };
   return (
     <View style={styles.section}>
-      <AppText tone="muted" variant="body">
-        {t('공통 질문이나 지원할 회사의 질문 세트를 골라 바로 연습해요.')}
-      </AppText>
       {groups.map((group) => (
         <View key={group.key} style={styles.section}>
           <SectionHeader title={t.ctx('pack', group.title)} />
@@ -593,11 +584,9 @@ function PackPicker({ selected, onPick }: { selected: string | null; onPick: (id
           )}
         </View>
       ))}
-      <Card variant="soft">
-        <AppText tone="muted" variant="meta">
-          {t(INTERVIEW_DISCLAIMER).replace(/\n/g, ' ')}
-        </AppText>
-      </Card>
+      <AppText tone="faint" variant="badge">
+        {t(INTERVIEW_DISCLAIMER).replace(/\n/g, ' ')}
+      </AppText>
     </View>
   );
 }

@@ -1,9 +1,7 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
 
 import { AppText, type AppTextTone } from '@/components/ui';
-import { decorative } from '@/lib/a11y';
 import { colors, fontFamilies, radii, shadows, spacing } from '@/theme/tokens';
 
 /**
@@ -58,51 +56,6 @@ export function Surface({
 }>) {
   return (
     <View {...rest} style={[styles.surface, surfaceTones[tone], { padding }, style]}>
-      {children}
-    </View>
-  );
-}
-
-/** 머리 카드(hero): 옅은 브랜드 면, 큰 반경, 테두리 없음. */
-export function SpeakHero({ children, style }: PropsWithChildren<{ style?: StyleProp<ViewStyle> }>) {
-  return (
-    <Surface padding={spacing.xl} style={[styles.hero, style]} tone="brand">
-      {children}
-    </Surface>
-  );
-}
-
-/** 작은 링: 남은 횟수처럼 "얼마 중 얼마"를 한눈에. 가운데 글자는 부르는 쪽이 넣는다. */
-export function MiniRing({
-  value,
-  max,
-  size = 48,
-  stroke = 5,
-  color = colors.brand,
-  children,
-}: PropsWithChildren<{ value: number; max: number; size?: number; stroke?: number; color?: string }>) {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const ratio = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
-  const centre = size / 2;
-  return (
-    <View {...decorative} style={{ alignItems: 'center', height: size, justifyContent: 'center', width: size }}>
-      <Svg height={size} style={StyleSheet.absoluteFill} width={size}>
-        <Circle cx={centre} cy={centre} fill="none" r={radius} stroke={colors.surface} strokeWidth={stroke} />
-        {ratio > 0 ? (
-          <Circle
-            cx={centre}
-            cy={centre}
-            fill="none"
-            r={radius}
-            stroke={color}
-            strokeDasharray={`${circumference * ratio} ${circumference}`}
-            strokeLinecap="round"
-            strokeWidth={stroke}
-            transform={`rotate(-90 ${centre} ${centre})`}
-          />
-        ) : null}
-      </Svg>
       {children}
     </View>
   );
@@ -171,22 +124,6 @@ export function TileGrid({ children }: { children: ReactNode }) {
   return <View style={styles.grid}>{children}</View>;
 }
 
-/** Interview Warmup 결의 인사이트 칩: 채점 없이 사실만. */
-export function InsightChip({ label, value, tone = 'soft' }: { label: string; value?: string; tone?: 'soft' | 'brand' | 'positive' }) {
-  return (
-    <View style={[styles.chip, tone === 'brand' ? styles.chipBrand : tone === 'positive' ? styles.chipPositive : null]}>
-      {value ? (
-        <AppText tabular tone={tone === 'positive' ? 'positive' : tone === 'brand' ? 'brand' : 'default'} variant="label">
-          {value}
-        </AppText>
-      ) : null}
-      <AppText tone={value ? 'muted' : tone === 'positive' ? 'positive' : 'soft'} variant="label">
-        {label}
-      </AppText>
-    </View>
-  );
-}
-
 /** 섹션 제목 줄: 앱식으로 굵고 짧게, 오른쪽에 작은 링크 하나. */
 export function SpeakSectionTitle({ title, action }: { title: string; action?: ReactNode }) {
   return (
@@ -204,7 +141,6 @@ const TILE_GAP = spacing.sm + spacing.xs;
 const styles = StyleSheet.create({
   title: { gap: spacing.xs },
   surface: { borderRadius: radii.hero },
-  hero: { borderRadius: 24, gap: spacing.lg },
   tile: { flexBasis: '46%', flexGrow: 1, gap: spacing.xs, minWidth: 0 },
   tileValue: { alignItems: 'baseline', flexDirection: 'row', gap: spacing.xs },
   bigNumber: {
@@ -217,17 +153,5 @@ const styles = StyleSheet.create({
   },
   shrink: { flexShrink: 1, minWidth: 0 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: TILE_GAP },
-  chip: {
-    alignItems: 'center',
-    backgroundColor: colors.backgroundSoft,
-    borderRadius: radii.chip,
-    flexDirection: 'row',
-    gap: spacing.xs + 2,
-    minHeight: 34,
-    paddingHorizontal: spacing.md + 2,
-    paddingVertical: spacing.xs + 2,
-  },
-  chipBrand: { backgroundColor: colors.surface },
-  chipPositive: { backgroundColor: colors.positiveSoft },
   sectionTitle: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, justifyContent: 'space-between' },
 });

@@ -17,9 +17,6 @@ export function verdictTone(overall: number): StatusTone {
   return 'warning';
 }
 
-/** Reports below this count still get the "이렇게 써요" tips. */
-export const TIPS_UNTIL = 3;
-
 export interface LensHome {
   /** The newest finished report; the featured card. */
   latest: StudyMaterial | null;
@@ -40,7 +37,6 @@ export interface LensHome {
   candidates: StudyMaterial[];
   /** How many reports are finished. */
   reportCount: number;
-  showTips: boolean;
 }
 
 /** When a material was last evaluated: the report's own date, or the material's. */
@@ -140,6 +136,5 @@ export function lensHome(
     showRows,
     candidates,
     reportCount: finished.length,
-    showTips: finished.length < TIPS_UNTIL,
   };
 }

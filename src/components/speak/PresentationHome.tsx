@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Bell, Check, FolderOpen, Link2, Mic, Play } from "lucide-react-native";
+import { Bell, Check, FolderOpen, Mic, Play } from "lucide-react-native";
 import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -9,7 +9,6 @@ import {
   LatestReportCard,
   LensEvaluatingTile,
   LensReportTile,
-  LensTipsCard,
   ScoreTrend,
   lensFailure,
   lensHome,
@@ -19,9 +18,9 @@ import { MediaArtwork } from "@/components/MediaArtwork";
 import { SpeakColumns, SpeakFrame } from "@/components/speak/SpeakColumns";
 import { RoundAction } from "@/components/speak/RoundAction";
 import {
-  SpeakHero,
   SpeakSectionTitle,
   SpeakTitle,
+  Surface,
 } from "@/components/speak/SpeakKit";
 import {
   AnimatedReveal,
@@ -63,7 +62,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
     t("폴더 없음");
 
   const isEvaluating = (id: string) => evaluatingMaterialIds.includes(id);
-  const { candidates, history, latest, rows, showTips } = lensHome(
+  const { candidates, history, latest, rows } = lensHome(
     materials,
     evaluatingMaterialIds,
   );
@@ -86,51 +85,36 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
       .catch((error: unknown) => setFailure(lensFailure(error)));
   };
 
-  // 머리 카드: 할 일 하나(녹음)를 큰 둥근 버튼으로, 가진 자료로 평가는 조용한 보조 버튼(시트).
-  const heroCopy = (
-    <View style={styles.heroCopy}>
-      <AppText variant={compact ? "pageTitle" : "heroTitle"}>
-        {t(latest ? "한 번 더 말해 볼까요?" : "발표를 들려주세요")}
-      </AppText>
-      {latest ? null : (
-        <AppText tone="soft" variant={compact ? "meta" : "body"}>
-          {t(
-            "발표나 스피치를 대본으로 채점해요. 녹음, 올린 영상, 유튜브 링크 다 돼요.",
-          )}
-        </AppText>
-      )}
-    </View>
-  );
-  const pickButton = (
-    <Button
-      leftIcon={<FolderOpen color={colors.text} size={iconSizes.inline} />}
-      onPress={openPicker}
-      style={styles.pick}
-      variant="ghost"
-    >
-      {t("가진 자료로 평가")}
-    </Button>
-  );
-  const record = (
-    <RoundAction
-      accessibilityHint={t("녹음 화면을 열어요")}
-      icon={Mic}
-      label={t("발표 녹음하기")}
-      size={compact ? 64 : 88}
-      onPress={openRecorder}
-      testID="speak-record"
-    />
-  );
+  // 머리 카드(흰 면): 제목 한 줄 + 큰 둥근 녹음 버튼. 가진 자료로 평가는 작은 회색 버튼(시트).
   const hero = (
-    <SpeakHero>
+    <Surface padding={spacing.xl} style={styles.hero} tone="raised">
       <View style={[styles.heroRow, compact ? styles.heroRowCompact : null]}>
         <View style={styles.heroLeft}>
-          {heroCopy}
-          {pickButton}
+          <AppText variant={compact ? "pageTitle" : "heroTitle"}>
+            {t(latest ? "한 번 더 말해 볼까요?" : "발표를 들려주세요")}
+          </AppText>
+          <Button
+            leftIcon={
+              <FolderOpen color={colors.text} size={iconSizes.inline} />
+            }
+            onPress={openPicker}
+            size="small"
+            style={styles.pick}
+            variant="secondary"
+          >
+            {t("자료로 평가")}
+          </Button>
         </View>
-        {record}
+        <RoundAction
+          accessibilityHint={t("녹음 화면을 열어요")}
+          icon={Mic}
+          label={t("녹음하기")}
+          size={compact ? 64 : 88}
+          onPress={openRecorder}
+          testID="speak-record"
+        />
       </View>
-    </SpeakHero>
+    </Surface>
   );
 
   const latestCard = latest?.lensReport ? (
@@ -177,25 +161,16 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
       </View>
     ) : null;
 
-  const tips = showTips ? (
-    <View style={styles.section}>
-      <SpeakSectionTitle title={t("이렇게 써요")} />
-      <LensTipsCard />
-    </View>
-  ) : null;
-
   const top = (
     <View style={styles.top}>
-      <SpeakTitle
-        description={t("내가 말한 것을 돌려받아요")}
-        title={t("말하기")}
-      />
+      <SpeakTitle title={t("말하기")} />
       {switcher}
     </View>
   );
 
   return (
     <Screen
+      background="soft"
       fullBleed
       padded={false}
       safeAreaEdges={["top", "left", "right"]}
@@ -230,14 +205,9 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
                 </>
               }
               side={
-                <>
-                  {trend ? (
-                    <AnimatedReveal delay={120}>{trend}</AnimatedReveal>
-                  ) : null}
-                  {tips ? (
-                    <AnimatedReveal delay={180}>{tips}</AnimatedReveal>
-                  ) : null}
-                </>
+                trend ? (
+                  <AnimatedReveal delay={120}>{trend}</AnimatedReveal>
+                ) : null
               }
               sideWidth={340}
             />
@@ -253,33 +223,15 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
               {trend ? (
                 <AnimatedReveal delay={220}>{trend}</AnimatedReveal>
               ) : null}
-              {tips ? (
-                <AnimatedReveal delay={260}>{tips}</AnimatedReveal>
-              ) : null}
             </>
           )}
         </View>
       </SpeakFrame>
 
       <BottomSheetModal
-        description={t(
-          "평가할 자료를 골라 주세요. 녹음, 올린 영상이나 음성, 유튜브 링크 다 돼요. 말소리가 없는 PDF와 PPTX는 평가하지 않아요.",
-        )}
+        description={t("말이 담긴 자료를 골라 주세요.")}
         footer={
           <View style={styles.sheetFooter}>
-            <Card style={styles.sheetNote} variant="soft">
-              <Link2
-                {...decorative}
-                color={colors.textMuted}
-                size={iconSizes.inline}
-                strokeWidth={2}
-              />
-              <AppText style={styles.flex} tone="muted" variant="meta">
-                {t(
-                  "여기서 평가 시작을 눌러야 채점해요. 자료를 올려도 알아서 평가하지 않아요. 말이 담긴 자료면 무엇이든 골라도 돼요.",
-                )}
-              </AppText>
-            </Card>
             <Button
               disabled={!selectedId}
               fullWidth
@@ -315,9 +267,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
           <EmptyState
             actionLabel={t("녹음 시작")}
             compact
-            description={t(
-              "발표를 녹음하거나, 영상이나 음성 파일 또는 유튜브 링크를 올려 주세요. PDF와 PPTX는 말소리가 없어서 평가할 수 없어요.",
-            )}
+            description={t("PDF와 PPTX는 말소리가 없어 평가할 수 없어요.")}
             icon={Mic}
             onAction={() => {
               setPickerOpen(false);
@@ -400,7 +350,6 @@ function CandidateRow({
           {` / ${formatMaterialLength(material.source.kind, material.source.durationMs, material.transcript.length)}`}
           {" / "}
           {formatRelativeDate(material.updatedAt)}
-          {material.lensReport ? ` / ${t("평가 있음")}` : ""}
         </AppText>
       </View>
       <View
@@ -421,7 +370,7 @@ function CandidateRow({
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.xl,
+    gap: spacing.xxl,
     paddingBottom: spacing.xxl,
     paddingTop: spacing.xs,
   },
@@ -431,8 +380,8 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.md,
   },
-  heroCopy: {
-    gap: spacing.sm,
+  hero: {
+    borderRadius: 24,
   },
   heroRow: {
     alignItems: "center",
@@ -449,7 +398,6 @@ const styles = StyleSheet.create({
   },
   pick: {
     alignSelf: "flex-start",
-    backgroundColor: colors.surface,
   },
   flex: {
     flex: 1,
@@ -490,11 +438,5 @@ const styles = StyleSheet.create({
   },
   sheetFooter: {
     gap: spacing.md,
-  },
-  sheetNote: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: spacing.sm,
-    padding: spacing.md,
   },
 });

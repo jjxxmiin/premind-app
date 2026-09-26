@@ -78,6 +78,9 @@ const cycleOptions = [
 ] as const;
 
 const SUPPORT_EMAIL = 'support@camorix.com';
+
+/** 2026-09-26 덜어내기: 요금제 카드에 먼저 보이는 줄. 나머지는 "혜택 모두 보기" 안에. */
+const PRIMARY_BENEFITS: readonly string[] = ['minutes', 'lens', 'interview', 'retention'];
 /** A mail app is not a payment link, so this is allowed in a native build. */
 const supportMailto = (subject: string) =>
   `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;
@@ -89,21 +92,6 @@ function openUrl(url: string) {
   void Linking.openURL(url).catch(() => undefined);
 }
 
-/** One fact of the subscription: its name on the left, its value on the right. */
-function ManageFact({ label, value }: { label: string; value: string }) {
-  const t = useT();
-  return (
-    <View style={styles.manageRow}>
-      <AppText tone="muted" variant="meta">
-        {t(label)}
-      </AppText>
-      <AppText tabular variant="itemTitle">
-        {value}
-      </AppText>
-    </View>
-  );
-}
-
 /**
  * One plan as a card: name, price (while it can be bought here), then every
  * line of the offer with this plan's value. 스탠다드 wears the brand border
@@ -111,6 +99,7 @@ function ManageFact({ label, value }: { label: string; value: string }) {
  */
 function PlanCard({
   current,
+  expanded,
   plan,
   price,
   priceNote,
@@ -118,6 +107,8 @@ function PlanCard({
   wide,
 }: {
   current: boolean;
+  /** Every line of the offer; folded, only the lines people ask about first. */
+  expanded: boolean;
   plan: 'free' | 'standard';
   price: string | null;
   priceNote: string | null;
@@ -130,6 +121,7 @@ function PlanCard({
     <Card
       style={[
         styles.planCard,
+        styles.flat,
         wide ? styles.planCardWide : null,
         recommended ? styles.planCardOffer : null,
       ]}
@@ -138,8 +130,6 @@ function PlanCard({
         <AppText variant="heading">{t(standard ? '스탠다드' : '무료')}</AppText>
         {current ? (
           <StatusBadge label={t('이용 중')} tone={standard ? 'positive' : 'neutral'} />
-        ) : recommended ? (
-          <StatusBadge label={t('추천')} tone="brand" />
         ) : null}
       </View>
       {price ? (
@@ -147,15 +137,18 @@ function PlanCard({
           <AppText tabular variant="display">
             {price}
           </AppText>
-          {/* Holds the line on the free card too, so both lists start level. */}
+          {/* Holds the line on the free card too, so side-by-side lists start level. */}
           <AppText tone="muted" variant="meta">
-            {priceNote ?? (standard ? ' ' : t('카드 없이 바로 써요'))}
+            {priceNote ?? ' '}
           </AppText>
         </View>
       ) : null}
-      <View style={styles.planDivider} />
+      {expanded || standard || wide ? <View style={styles.planDivider} /> : null}
       <View style={styles.benefits}>
-        {PLAN_BENEFITS.map((benefit) => {
+        {/* 폰에서 무료 카드는 이름만: 줄마다의 비교는 "혜택 모두 보기" 안에. */}
+        {PLAN_BENEFITS.filter((benefit) =>
+          expanded || (PRIMARY_BENEFITS.includes(benefit.key) && (standard || wide)),
+        ).map((benefit) => {
           const value = standard ? benefit.standard : benefit.free;
           return (
             <View key={benefit.key} style={styles.benefitRow}>
@@ -221,6 +214,7 @@ export default function SubscriptionScreen() {
   const locale = useLocale();
   const { session } = useAppStore();
   const [cycle, setCycle] = useState<BillingCycle>('monthly');
+  const [allBenefits, setAllBenefits] = useState(false);
   const [webCheckout, setWebCheckout] = useState<{ busy: boolean; error: string | null }>({
     busy: false,
     error: null,
@@ -338,7 +332,7 @@ export default function SubscriptionScreen() {
   };
 
   return (
-    <Screen padded={false}>
+    <Screen background="soft" padded={false}>
       <AppHeader
         onBack={() => goBackOrReplace('/(tabs)/profile')}
         title={t('구독')}
@@ -350,19 +344,18 @@ export default function SubscriptionScreen() {
       >
         <View style={styles.intro}>
           <AppText variant="pageTitle">{t('더 많이 담고, 오래 남겨요')}</AppText>
-          <AppText tone="muted" variant="body">
-            {t('무료로도 모든 기능을 쓸 수 있어요. 스탠다드는 처리 분량과 보관을 늘려 줘요.')}
-          </AppText>
           {/* The plan and its renewal date sit above the fold: a learner who
               opens this screen worried about being charged should not have to
               scroll past a price table to find out what they are on. */}
-          <AppText tabular tone="soft" variant="meta">
-            {planLine}
-          </AppText>
+          {subscribed ? (
+            <AppText tabular tone="soft" variant="meta">
+              {planLine}
+            </AppText>
+          ) : null}
         </View>
 
         {usage ? (
-          <Card style={styles.usageCard}>
+          <Card style={[styles.usageCard, styles.flat]}>
             <View style={styles.usageHead}>
               <AppText variant="itemTitle">{t('이번 달 처리 분량')}</AppText>
               <AppText tabular tone="muted" variant="meta">
@@ -404,13 +397,17 @@ export default function SubscriptionScreen() {
             (plan) => (
               <PlanCard
                 current={plan === 'standard' ? subscribed : !subscribed}
+                expanded={allBenefits}
                 key={plan}
                 plan={plan}
+                // 폰에서는 무료 카드의 0원을 뺀다. 나란히 놓는 넓은 화면은 두 목록 높이를 맞추려고 둔다.
                 price={
                   canBuyHere && !subscribed
                     ? plan === 'standard'
                       ? copy.headline
-                      : fmtWon(0, locale)
+                      : wide
+                        ? fmtWon(0, locale)
+                        : null
                     : null
                 }
                 priceNote={
@@ -422,12 +419,21 @@ export default function SubscriptionScreen() {
             ),
           )}
         </View>
+        <Button
+          accessibilityState={{ expanded: allBenefits }}
+          onPress={() => setAllBenefits((open) => !open)}
+          size="small"
+          style={styles.moreBenefits}
+          variant="ghost"
+          >
+          {allBenefits ? t.ctx('fold', '접기') : t('혜택 모두 보기')}
+        </Button>
 
         {/* Google Play requires all four of these sentences to be visible
             before the purchase button, so they are one block that cannot be
             split up by a later redesign. */}
         {canBuyHere && !subscribed ? (
-          <Card style={styles.termsCard}>
+          <Card style={[styles.termsCard, styles.flat]}>
             <AppText accessibilityRole="header" variant="itemTitle">
               {t('결제 안내')}
             </AppText>
@@ -443,8 +449,8 @@ export default function SubscriptionScreen() {
           </Card>
         ) : null}
 
-        <Card padding={false}>
-          <View style={styles.manageCopy}>
+        <Card padding={false} style={styles.flat}>
+          <View style={[styles.manageCopy, styles.manageCopyDivider]}>
             <AppText accessibilityRole="header" variant="heading">
               {t('구독을 관리해요')}
             </AppText>
@@ -457,16 +463,6 @@ export default function SubscriptionScreen() {
                     })
                 : t('지금 버전에서는 앱에서 바로 구독할 수 없어요. 스토어에서 앱을 업데이트하면 구독할 수 있어요.')}
             </AppText>
-          </View>
-          <View style={styles.manageFacts}>
-            <ManageFact label="지금 요금제" value={planName} />
-            <ManageFact label="다음 갱신일" value={renewsText} />
-            {usage ? (
-              <ManageFact
-                label="이번 달 처리 분량"
-                value={minutesText(usage.minutes_used, usage.minutes_limit)}
-              />
-            ) : null}
           </View>
           {storeBilling && subscribed ? (
             <ListRow
@@ -499,12 +495,11 @@ export default function SubscriptionScreen() {
             divider={false}
             leadingIcon={Mail}
             onPress={() => openUrl(supportMailto(t('[PREMIND] 구독 문의')))}
-            subtitle={SUPPORT_EMAIL}
             title={t('문의하기')}
           />
         </Card>
 
-        <Card padding={false}>
+        <Card padding={false} style={styles.flat}>
           <ListRow
             compact
             leadingIcon={FileText}
@@ -723,20 +718,15 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.gutter,
   },
-  manageFacts: {
+  manageCopyDivider: {
     borderBottomColor: colors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    gap: spacing.md,
-    paddingHorizontal: spacing.gutter,
-    paddingVertical: spacing.md,
   },
-  manageRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.md,
-    justifyContent: 'space-between',
+  flat: {
+    borderColor: colors.transparent,
+  },
+  moreBenefits: {
+    alignSelf: 'center',
   },
   bottomBar: {
     borderTopColor: colors.border,
