@@ -10,9 +10,9 @@ import type { StudyMaterial } from '@/types';
 
 import { ScoreRing } from './ScoreRing';
 import { scoreWord } from './lens-copy';
-import { lensEvaluatedAt, lensRowMeta, verdictTone } from './lens-home';
+import { lensEvaluatedAt, lensRowMeta } from './lens-home';
 
-/** 지난 평가 한 장(옆으로 넘기는 줄 안): 링, 판정 한 마디, 제목, 날짜. 카드 전체가 리포트를 연다. */
+/** 지난 평가 한 장(옆으로 넘기는 줄 안): 링, 제목, 날짜(판정 배지는 2026-09-26 덜어냄). 카드 전체가 리포트를 연다. */
 export function LensReportTile({
   material,
   projectTitle,
@@ -32,11 +32,10 @@ export function LensReportTile({
       accessibilityLabel={`${material.title}. ${t('{score}점', { score: overall.toFixed(1) })}, ${verdict}. ${meta}`}
       onPress={onPress}
       style={styles.card}
-      tone="soft"
+      tone="raised"
     >
       <View style={styles.head}>
         <ScoreRing score={overall} size="small" />
-        <StatusBadge label={verdict} tone={verdictTone(overall)} />
       </View>
       <AppText numberOfLines={2} style={styles.title} variant="itemTitle">
         {material.title}
@@ -56,7 +55,7 @@ export function LensEvaluatingTile({ material, projectTitle }: { material: Study
       accessibilityLabel={`${material.title}. ${t('평가 중')}`}
       accessible
       style={styles.card}
-      tone="soft"
+      tone="raised"
     >
       <View style={styles.head}>
         <Skeleton height={40} radius={radii.full} width={40} />
@@ -73,7 +72,7 @@ export function LensEvaluatingTile({ material, projectTitle }: { material: Study
 }
 
 const styles = StyleSheet.create({
-  card: { flex: 1, gap: spacing.sm, minHeight: 148 },
+  card: { flex: 1, gap: spacing.sm, minHeight: 136 },
   head: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
   title: { flexGrow: 1 },
 });

@@ -1,7 +1,6 @@
 import type { LensReport, StudyMaterial } from '@/types';
 
 import {
-  TIPS_UNTIL,
   lensEvaluatedAt,
   lensFailure,
   lensHome,
@@ -148,15 +147,6 @@ describe('lensHome', () => {
     });
     const home = lensHome([plain, pdf], []);
     expect(home.candidates.map((row) => row.id)).toEqual(['plain']);
-  });
-
-  it('drops the tips once enough reports exist', () => {
-    expect(lensHome([], []).showTips).toBe(true);
-    expect(lensHome([older, newer], []).showTips).toBe(true);
-    const many = Array.from({ length: TIPS_UNTIL }, (_, index) =>
-      material(`report-${index}`, `2026-09-0${index + 1}T09:00:00.000Z`, { lensReport: REPORT }),
-    );
-    expect(lensHome(many, []).showTips).toBe(false);
   });
 
   it('hides the 지난 평가 list when it would only repeat the featured card', () => {

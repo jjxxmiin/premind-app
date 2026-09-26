@@ -6,11 +6,11 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { AppHeader } from '@/components/AppHeader';
 import { InterviewSessionRow, RemoteSessionRow } from '@/components/interview/InterviewSessionRow';
 import { SpeakColumns, SpeakFrame } from '@/components/speak/SpeakColumns';
+import { Surface } from '@/components/speak/SpeakKit';
 import {
   AppText,
   AuthField,
   Button,
-  Card,
   EmptyState,
   Screen,
   SectionHeader,
@@ -26,7 +26,7 @@ import { formatAnswerDuration, lastActivity, sessionDestination } from '@/featur
 import { decorative } from '@/lib/a11y';
 import { useLocale, useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
-import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
+import { colors, fontFamilies, iconSizes, radii, spacing } from '@/theme/tokens';
 import { INTERVIEW_HOME } from '@/features/interview/routes';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -85,13 +85,23 @@ export default function InterviewHistoryScreen() {
     setDayError(null);
   };
 
+  // 2026-09-26 덜어내기(알라미 결): 큰 숫자 하나(이번 주 연습) + 7일 막대, 나머지 셋은 작은 한 줄.
   const statsBlock = stats ? (
-    <Card style={styles.stats}>
-      <View style={styles.statRow}>
-        <Stat label={t('이번 주 연습')} value={t.ctx('stat', '{n}회', { n: stats.weekPractices })} />
-        <Stat label={t('답변')} value={t.ctx('stat', '{n}개', { n: stats.weekAnswers })} />
-        <Stat label={t('말한 시간')} value={formatAnswerDuration(stats.weekSpeakingMs, locale)} />
-        <Stat label={t('연속')} value={t.ctx('stat', '{n}일', { n: stats.streakDays })} />
+    <Surface style={styles.stats} tone="raised">
+      <View style={styles.statHead}>
+        <AppText tone="muted" variant="label">
+          {t('이번 주 연습')}
+        </AppText>
+        <AppText style={styles.bigNumber} tabular>
+          {t.ctx('stat', '{n}회', { n: stats.weekPractices })}
+        </AppText>
+        <AppText tone="muted" variant="meta">
+          {[
+            t('답변 {n}개', { n: stats.weekAnswers }),
+            formatAnswerDuration(stats.weekSpeakingMs, locale),
+            t('{n}일 연속', { n: stats.streakDays }),
+          ].join(' / ')}
+        </AppText>
       </View>
       <View accessibilityLabel={t('최근 7일 답변 수 {list}', { list: stats.week.map((day) => day.answers).join(', ') })} style={styles.bars}>
         {stats.week.map((day) => {
@@ -108,23 +118,31 @@ export default function InterviewHistoryScreen() {
           );
         })}
       </View>
-    </Card>
+    </Surface>
   ) : (
     <Skeleton height={160} />
   );
 
+  // 면접 날짜: 없으면 한 줄(아이콘, 이름, 넣기 버튼). 있으면 D-날짜와 오늘 할 만큼.
   const ddayBlock = (
-    <Card style={styles.dday}>
+    <Surface style={styles.dday} tone="raised">
       <View style={styles.ddayHead}>
         <CalendarDays {...decorative} color={colors.brand} size={iconSizes.section} />
-        <View style={styles.flex}>
-          <AppText tone="muted" variant="badge">
-            {t('면접 날짜')}
-          </AppText>
-          <AppText variant="itemTitle">
-            {days === null ? t('면접 날짜를 넣으면 오늘 할 만큼을 알려 드려요') : days > 0 ? `D-${days}, ${t(plan?.stage ?? '')}` : t(plan?.stage ?? '')}
-          </AppText>
-        </View>
+        <AppText style={styles.flex} variant="itemTitle">
+          {days === null ? t('면접 날짜') : days > 0 ? `D-${days}, ${t(plan?.stage ?? '')}` : t(plan?.stage ?? '')}
+        </AppText>
+        {editingDay ? null : (
+          <Button
+            onPress={() => {
+              setDayInput(dday?.date ?? '');
+              setEditingDay(true);
+            }}
+            size="small"
+            variant="secondary"
+          >
+            {t(dday ? '날짜 바꾸기' : '날짜 넣기')}
+          </Button>
+        )}
       </View>
       {plan && days !== null && days >= 0 ? (
         <AppText tone="muted" variant="meta">{t('오늘은 {n}문항 말하기. {tip}', { n: plan.goal, tip: t(plan.tip) })}</AppText>
@@ -154,22 +172,8 @@ export default function InterviewHistoryScreen() {
             ) : null}
           </View>
         </View>
-      ) : (
-        <Button
-          onPress={() => {
-            setDayInput(dday?.date ?? '');
-            setEditingDay(true);
-          }}
-          size="small"
-          variant="secondary"
-        >
-          {t(dday ? '날짜 바꾸기' : '날짜 넣기')}
-        </Button>
-      )}
-      <AppText tone="faint" variant="badge">
-        {t('날짜는 이 기기에만 저장해요.')}
-      </AppText>
-    </Card>
+      ) : null}
+    </Surface>
   );
 
   const empty = sessions && sessions.length === 0 && remote !== null && remote.length === 0;
@@ -189,29 +193,29 @@ export default function InterviewHistoryScreen() {
           {active.length > 0 ? (
             <View style={styles.section}>
               <SectionHeader title={t('이어할 연습')} />
-              <Card padding={false}>
+              <Surface padding={0} style={styles.clip} tone="raised">
                 {active.map((session, index) => (
-                  <InterviewSessionRow key={session.id} last={index === active.length - 1} onPress={() => router.push(sessionDestination(session))} session={session} />
+                  <InterviewSessionRow key={session.id} last={index === active.length - 1} onPress={() => router.push(sessionDestination(session))} session={session} showStatus={false} />
                 ))}
-              </Card>
+              </Surface>
             </View>
           ) : null}
 
           {done.length > 0 ? (
             <View style={styles.section}>
               <SectionHeader title={t('완료한 연습')} />
-              <Card padding={false}>
+              <Surface padding={0} style={styles.clip} tone="raised">
                 {done.map((session, index) => (
                   <InterviewSessionRow key={session.id} last={index === done.length - 1} onPress={() => router.push(sessionDestination(session))} session={session} />
                 ))}
-              </Card>
+              </Surface>
             </View>
           ) : null}
 
           {remote && remote.length > 0 ? (
             <View style={styles.section}>
-              <SectionHeader description={t('다른 기기나 예전 면접 사이트에서 남긴 기록이에요. 녹음 없이 글만 볼 수 있어요.')} title={t('다른 기기의 기록')} />
-              <Card padding={false}>
+              <SectionHeader title={t('다른 기기의 기록')} />
+              <Surface padding={0} style={styles.clip} tone="raised">
                 {remote.map((backup, index) => (
                   <RemoteSessionRow
                     key={backup.session_id}
@@ -221,27 +225,21 @@ export default function InterviewHistoryScreen() {
                     updatedAt={backup.updated_at}
                   />
                 ))}
-              </Card>
+              </Surface>
             </View>
           ) : null}
 
-          <AppText tone="faint" variant="badge">
-            {t('녹음과 영상은 이 기기에만 저장돼요. 연습의 글(질문, 내가 한 말, 피드백, 메모)은 계정에 보관돼 다른 기기에서도 볼 수 있어요.')}
-          </AppText>
     </>
   );
 
   return (
-    <Screen fullBleed padded={false}>
+    <Screen background="soft" fullBleed padded={false}>
       <SpeakFrame>
         <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title={t('연습 기록')} />
       </SpeakFrame>
       <ScrollView style={styles.scroll}>
         <SpeakFrame>
           <View style={[styles.content, { paddingHorizontal: gutter }]}>
-            <AppText tone="muted" variant="body">
-              {t('멈춘 연습은 이어서 하고, 끝난 연습은 답변과 피드백을 다시 확인하세요.')}
-            </AppText>
             {wide ? (
               <SpeakColumns
                 main={lists}
@@ -255,11 +253,9 @@ export default function InterviewHistoryScreen() {
               />
             ) : (
               <>
-                <View style={[styles.top, breakpoint !== 'compact' ? styles.topRow : null]}>
-                  <View style={styles.topItem}>{statsBlock}</View>
-                  <View style={styles.topItem}>{ddayBlock}</View>
-                </View>
+                {statsBlock}
                 {lists}
+                {ddayBlock}
               </>
             )}
           </View>
@@ -269,35 +265,26 @@ export default function InterviewHistoryScreen() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.stat}>
-      <AppText tabular variant="heading">
-        {value}
-      </AppText>
-      <AppText tone="muted" variant="badge">
-        {label}
-      </AppText>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  content: { gap: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
+  content: { gap: spacing.xxl, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
   section: { gap: spacing.md },
-  top: { gap: spacing.md },
-  topRow: { alignItems: 'stretch', flexDirection: 'row' },
-  topItem: { flex: 1, minWidth: 0 },
-  stats: { gap: spacing.lg, flexGrow: 1 },
-  statRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  stat: { flexBasis: 64, flexGrow: 1, gap: spacing.xxs },
+  stats: { gap: spacing.lg },
+  statHead: { gap: spacing.xxs },
+  bigNumber: {
+    color: colors.text,
+    fontFamily: fontFamilies.extraBold,
+    fontSize: 34,
+    letterSpacing: -0.8,
+    lineHeight: 40,
+  },
+  clip: { overflow: 'hidden' },
   bars: { flexDirection: 'row', gap: spacing.sm, height: 72 },
   barCol: { alignItems: 'center', flex: 1, gap: spacing.xs, minWidth: 0 },
   barTrack: { flex: 1, justifyContent: 'flex-end', maxWidth: 28, width: '100%' },
   bar: { backgroundColor: colors.brand, borderRadius: radii.badge, minHeight: 4, width: '100%' },
   barEmpty: { backgroundColor: colors.backgroundMuted },
-  dday: { gap: spacing.md, flexGrow: 1 },
+  dday: { gap: spacing.md },
   ddayHead: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   flex: { flex: 1, gap: spacing.xxs, minWidth: 0 },
   block: { gap: spacing.sm },

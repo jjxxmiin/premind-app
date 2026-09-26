@@ -8,7 +8,8 @@ import {
 } from 'react-native';
 import Svg, { Circle, Polyline } from 'react-native-svg';
 
-import { AppText, Card } from '@/components/ui';
+import { Surface } from '@/components/speak/SpeakKit';
+import { AppText } from '@/components/ui';
 import type { AppTextTone } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatRelativeDate } from '@/lib/format';
@@ -60,7 +61,7 @@ export function ScoreTrend({ entries, style }: ScoreTrendProps) {
   if (!latest || !first) return null;
 
   return (
-    <Card
+    <Surface
       accessibilityLabel={t('평가 추이, {n}번. 점수 {scores}. {delta}', {
         n: entries.length,
         scores: values.map((value) => value.toFixed(1)).join(', '),
@@ -68,14 +69,11 @@ export function ScoreTrend({ entries, style }: ScoreTrendProps) {
       })}
       accessible
       style={[styles.card, style]}
-      variant="soft"
+      tone="raised"
     >
       <View style={styles.head}>
         <AppText tone="muted" variant="badge">
           {t('추이')}
-        </AppText>
-        <AppText tabular tone="faint" variant="badge">
-          {t('{n}번 평가', { n: entries.length })}
         </AppText>
       </View>
       <View style={styles.body}>
@@ -128,7 +126,7 @@ export function ScoreTrend({ entries, style }: ScoreTrendProps) {
           </View>
         </View>
       </View>
-    </Card>
+    </Surface>
   );
 }
 

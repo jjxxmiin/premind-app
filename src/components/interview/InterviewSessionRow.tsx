@@ -1,4 +1,4 @@
-import { ChevronRight, CloudDownload, MessagesSquare } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, StatusBadge } from '@/components/ui';
@@ -6,25 +6,25 @@ import { resolveSessionSource } from '@/features/interview/session-source';
 import type { InterviewSession } from '@/features/interview/types';
 import {
   answeredQuestionCount,
-  formatAnswerDuration,
   lastActivity,
   modeLabel,
   relativeDay,
   sessionStatusLabel,
-  totalSpeakingMs,
 } from '@/features/interview/view-model';
 import { decorative } from '@/lib/a11y';
 import { useLocale, useT } from '@/lib/i18n';
-import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
+import { colors, iconSizes, spacing } from '@/theme/tokens';
 
 export interface InterviewSessionRowProps {
   session: InterviewSession;
   onPress: () => void;
   last?: boolean;
+  /** "진행 중" chip; off where the section title already says it. */
+  showStatus?: boolean;
 }
 
-/** One practice in a list: what was practised, how far, and when. */
-export function InterviewSessionRow({ session, onPress, last = false }: InterviewSessionRowProps) {
+/** One practice in a list: what was practised, how far, and when (title + one line). */
+export function InterviewSessionRow({ session, onPress, last = false, showStatus = true }: InterviewSessionRowProps) {
   const t = useT();
   const locale = useLocale();
   const source = resolveSessionSource(session);
@@ -32,22 +32,19 @@ export function InterviewSessionRow({ session, onPress, last = false }: Intervie
   const total = source?.questions.length ?? 0;
   const status = sessionStatusLabel(session);
   const statusLabel = t(status.label);
+  // 2026-09-26 덜어내기: 메타는 한 줄 둘(얼마나, 언제). 방식과 말한 시간은 결과 화면에.
   const meta = [
-    t(modeLabel(session)),
     t('{done} / {total}개 답변', { done: answeredQuestionCount(session), total }),
-    formatAnswerDuration(totalSpeakingMs(session), locale),
     relativeDay(lastActivity(session), new Date(), locale),
   ].join(' / ');
+  const inProgress = session.status !== 'completed';
   return (
     <Pressable
-      accessibilityLabel={`${title}, ${statusLabel}, ${meta}`}
+      accessibilityLabel={`${title}, ${t(modeLabel(session))}, ${statusLabel}, ${meta}`}
       accessibilityRole="button"
       onPress={onPress}
       style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [styles.row, !last ? styles.divider : null, hovered || pressed ? styles.pressed : null]}
     >
-      <View {...decorative} style={styles.icon}>
-        <MessagesSquare color={colors.textSoft} size={iconSizes.inline} strokeWidth={2} />
-      </View>
       <View style={styles.flex}>
         <AppText numberOfLines={1} variant="itemTitle">
           {title}
@@ -56,7 +53,7 @@ export function InterviewSessionRow({ session, onPress, last = false }: Intervie
           {meta}
         </AppText>
       </View>
-      <StatusBadge label={statusLabel} style={styles.badge} tone={status.tone} />
+      {inProgress && showStatus ? <StatusBadge label={statusLabel} style={styles.badge} tone={status.tone} /> : null}
       <ChevronRight {...decorative} color={colors.textFaint} size={iconSizes.inline} />
     </Pressable>
   );
@@ -74,9 +71,6 @@ export function RemoteSessionRow({ title, updatedAt, onPress, last = false }: { 
       onPress={onPress}
       style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [styles.row, !last ? styles.divider : null, hovered || pressed ? styles.pressed : null]}
     >
-      <View {...decorative} style={styles.icon}>
-        <CloudDownload color={colors.textSoft} size={iconSizes.inline} strokeWidth={2} />
-      </View>
       <View style={styles.flex}>
         <AppText numberOfLines={1} variant="itemTitle">
           {t(title)}
@@ -110,14 +104,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     backgroundColor: colors.backgroundSoft,
-  },
-  icon: {
-    alignItems: 'center',
-    backgroundColor: colors.backgroundSoft,
-    borderRadius: radii.full,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
   },
   flex: {
     flex: 1,

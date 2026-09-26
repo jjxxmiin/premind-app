@@ -11,23 +11,14 @@ export const EN_LENS: EnDict = {
   // ── 발표 홈 (PresentationHome) ─────────────────────────────────────────────
   '폴더 없음': 'No folder',
   알림: 'Notifications',
-  '발표나 스피치를 대본으로 채점해요. 녹음, 올린 영상, 유튜브 링크 다 돼요.':
-    'We score your presentation or speech from its transcript. Recordings, uploaded videos, and YouTube links all work.',
   '새 평가 시작': 'Start a new review',
   '발표 녹음하기': 'Record a presentation',
   '새로 평가받기': 'Get a new review',
   '가진 자료를 고르거나 지금 녹음해요.': 'Pick a material you have, or record one now.',
   '지난 평가': 'Past reviews',
   '점수가 제대로 나오는 녹음이에요.': 'For a recording that scores fairly.',
-  '이렇게 써요': 'How to use it',
-  '평가할 자료를 골라 주세요. 녹음, 올린 영상이나 음성, 유튜브 링크 다 돼요. 말소리가 없는 PDF와 PPTX는 평가하지 않아요.':
-    "Pick a material to review. Recordings, uploaded video or audio, and YouTube links all work. PDFs and PPTX files have no speech, so we don't review them.",
-  '여기서 평가 시작을 눌러야 채점해요. 자료를 올려도 알아서 평가하지 않아요. 말이 담긴 자료면 무엇이든 골라도 돼요.':
-    "Scoring starts only when you tap Start review here. Uploading a material doesn't review it on its own. Any material with speech in it works.",
   '평가 시작': 'Start review',
   '녹음 시작': 'Start recording',
-  '발표를 녹음하거나, 영상이나 음성 파일 또는 유튜브 링크를 올려 주세요. PDF와 PPTX는 말소리가 없어서 평가할 수 없어요.':
-    "Record a presentation, or upload a video or audio file or a YouTube link. PDFs and PPTX files have no speech, so they can't be reviewed.",
   '평가할 자료가 없어요': 'Nothing to review yet',
   확인: 'OK',
   '평가를 시작하지 못했어요': "Couldn't start the review",
@@ -39,7 +30,6 @@ export const EN_LENS: EnDict = {
   문서: 'Document',
   녹음: 'Recording',
   음성: 'Audio',
-  '평가 있음': 'Reviewed',
 
   // ── 첫 화면 소개, 팁 ────────────────────────────────────────────────────────
   '내 발표를 채점해요': 'Get your presentation scored',
@@ -52,15 +42,10 @@ export const EN_LENS: EnDict = {
   'rubric|전달력': 'Delivery',
   'rubric|말하기 습관': 'Speaking habits',
   '가진 자료로 평가': 'Review a material',
-  '녹음은 3분 이상 해요': 'Record for at least 3 minutes',
-  '조용한 곳에서 녹음해요': 'Record somewhere quiet',
-  '결론부터 말해요': 'Lead with your conclusion',
 
   // ── 최근 평가 카드, 목록 ────────────────────────────────────────────────────
   '최근 평가, {title}. {meta}.': 'Latest review, {title}. {meta}.',
-  '먼저 고칠 것, {time}. {text}': 'Fix first, {time}. {text}',
   '발표 평가 결과를 열어요': 'Opens the presentation review',
-  '최근 평가': 'Latest review',
   '전체 평가': 'Overall',
   '먼저 고칠 것': 'Fix first',
   '자세히 보기': 'See details',
@@ -86,7 +71,6 @@ export const EN_LENS: EnDict = {
     other: 'Score trend, {n} reviews. Scores {scores}. {delta}',
   },
   추이: 'Trend',
-  '{n}번 평가': { one: '{n} review', other: '{n} reviews' },
 
   // ── 차트 ────────────────────────────────────────────────────────────────────
   '강점 {strengths}개, 보완 {improvements}개, 모두 {total}개':
@@ -161,50 +145,40 @@ export const EN_LENS: EnDict = {
   '내 발표 녹음이라면 평가를 시작해 보세요. 점수와 근거가 여기에 생겨요.':
     "If this is a recording of your presentation, start a review. Your score and evidence will show up here.",
   '아직 평가가 없어요': 'No review yet',
-  '예시 평가': 'Sample review',
-  '근거 기반': 'Evidence based',
   '내 발표를 평가했어요': 'Your presentation review',
   '발표, 스피치, 면접 연습 녹음을 대본으로 채점했어요. 결론부터 읽고, 시간을 눌러 그 부분을 들어요.':
     'We scored your presentation, speech, or interview practice from its transcript. Read the conclusion first, then tap a time to hear that part.',
   '지금 보는 평가: {date}': 'Viewing review: {date}',
-  '데모 마인드팩에 들어 있는 예시 평가예요.': 'This is a sample review from the demo Mind Pack.',
   총평: 'Summary',
   '가장 잘한 것': 'Best moment',
   '대본에서 바로 잰 숫자예요. 눈금의 진한 구간이 알맞은 범위예요.':
     'Numbers measured straight from the transcript. The darker stretch on each scale is the healthy range.',
   '말하기 습관': 'Speaking habits',
-  '같은 녹음을 다시 평가한 결과예요. 항목마다 이번과 지난번을 나란히 놓았어요.':
-    'The same recording, reviewed again. Each item shows this time and last time side by side.',
   '지난번과 비교': 'Compared with last time',
-  '5점 만점이에요. 2.5부터 보통, 3.5부터 좋아요, 4.5부터 아주 좋아요예요.':
-    'Scored out of 5. Fair from 2.5, Good from 3.5, Excellent from 4.5.',
-  '{items}개 항목 / 근거 {moments}개': '{items} items / {moments} pieces of evidence',
   '{label}, {explanation}. {max}점 만점에 {score}점, {band} 구간이에요. 기준은 2.5 보통, 3.5 좋아요, 4.5 아주 좋아요예요.':
     '{label}, {explanation}. {score} out of {max}, in the {band} band. The bands are Fair from 2.5, Good from 3.5, Excellent from 4.5.',
-  '시간을 누르면 그 부분부터 들어요.': 'Tap a time to listen from that point.',
   '무엇이 좋았나요': 'What went well',
-  '하나만 골라 다음 연습에서 바꿔 봐요.': 'Pick just one to change in your next practice.',
   '무엇부터 고칠까요': 'What to fix first',
   우선순위: 'Priority',
   '이렇게 해요': 'Try this',
   '{time}부터 듣기': 'Listen from {time}',
-  '녹음 어디에서 잘했고 어디를 고칠지 한 줄에 표시했어요. 점을 누르면 그 줄로 가고, 아래 막대는 구간마다 몇 개인지 보여줘요.':
-    'Where in the recording you did well and what to fix, on one line. Tap a dot to go to that row. The bars below show how many fall in each section.',
   '어디를 다시 들을까요': 'Where to listen again',
-  '같은 녹음을 다시 평가한 기록이에요. 날짜를 누르면 그때 리포트를 봐요.':
-    'Every review of this recording. Tap a date to see that report.',
   '평가 이력': 'Review history',
-  '다음 연습에서 해 보기': 'Try in your next practice',
-  '먼저 고칠 것 하나만 기억하고 다시 한번 연습을 녹음해 보세요.':
-    'Keep just the one thing to fix first in mind, and record another practice.',
   '같은 대본으로 평가를 새로 만들어요.': 'Makes a new review from the same transcript.',
   '다시 평가': 'Review again',
   '그 부분부터 재생해요.': 'Plays from that point.',
 
   // ── 2026-09-26 앱다운 재설계: 말하기 탭 큰 제목, 머리 카드, 리포트 ─────────────────
-  '내가 말한 것을 돌려받아요': 'Get feedback on what you said',
   '한 번 더 말해 볼까요?': 'Ready for another run?',
   '발표를 들려주세요': "Let's hear your presentation",
   '녹음 화면을 열어요': 'Opens the recorder',
   '다시 녹음하기': 'Record again',
+
+  // ── 2026-09-26 덜어내기 ────────────────────────────────────────────────────
+  '자료로 평가': 'Review a file',
+  '말이 담긴 자료를 골라 주세요.': 'Pick a material with speech in it.',
+  'PDF와 PPTX는 말소리가 없어 평가할 수 없어요.': "PDFs and PPTX files have no speech, so they can't be reviewed.",
+  '{score}점, {verdict}.': '{score} points, {verdict}.',
+  '먼저 고칠 것, {text}': 'Fix first, {text}',
+  'fold|접기': 'Show less',
 };

@@ -2,30 +2,22 @@ import type { EnDict } from '../core';
 
 /** 영어 사전 — account 영역. 키는 화면의 한국어 문장 그대로. */
 export const EN_ACCOUNT: EnDict = {
-  언어: 'Language',
   // ── MY (profile) ──────────────────────────────────────────────────────────
   'PREMIND 사용자': 'PREMIND user',
   알림: 'Notifications',
-  데모: 'Demo',
   로그인하기: 'Sign in',
-  '앱 설정': 'App settings',
-  '마인드팩이 준비되면 알려드려요': "We'll let you know when your Mind Pack is ready",
   '이 환경에서는 알림을 지원하지 않아요. 앱에서 켜 주세요.':
     "Notifications aren't supported here. Turn them on in the app.",
   '알림 권한이 꺼져 있어요. 기기 설정에서 PREMIND 알림을 허용해 주세요.':
     'Notifications are off. Allow PREMIND notifications in your device settings.',
   '알림을 켜지 못했어요. 잠시 후 다시 시도해 주세요.':
     "We couldn't turn on notifications. Please try again in a moment.",
-  '구독과 결제': 'Subscription and billing',
-  '처리 분량과 보관을 늘려요': 'Get more processing time and storage',
   구독: 'Subscription',
   'settings|정보': 'About',
   '사용 가이드': 'User guide',
   문의하기: 'Contact us',
   이용약관: 'Terms of Service',
   '개인정보 처리방침': 'Privacy Policy',
-  '버전 정보': 'Version',
-  계정: 'Account',
   '데모 종료': 'Exit demo',
   로그아웃: 'Sign out',
   '데모 초기화': 'Reset demo',
@@ -159,14 +151,10 @@ export const EN_ACCOUNT: EnDict = {
   '스탠다드가 시작됐어요': 'Standard has started',
   '구독을 복원했어요': 'Subscription restored',
   '더 많이 담고, 오래 남겨요': 'Capture more, keep it longer',
-  '무료로도 모든 기능을 쓸 수 있어요. 스탠다드는 처리 분량과 보관을 늘려 줘요.':
-    'Every feature works on Free. Standard gives you more processing time and storage.',
   '이번 달 처리 분량': 'Processing this month',
   '이번 달 분량을 다 썼어요. 다음 달 1일에 다시 채워져요.':
     "You've used this month's time. It refills on the 1st of next month.",
-  추천: 'Recommended',
   '이용 중': 'Current plan',
-  '카드 없이 바로 써요': 'No card needed',
   'plan|없음': 'Not included',
   'plan|포함': 'Included',
   '결제 안내': 'Billing details',
@@ -176,8 +164,6 @@ export const EN_ACCOUNT: EnDict = {
     'Payment and cancellation are managed in {store} subscriptions.',
   '지금 버전에서는 앱에서 바로 구독할 수 없어요. 스토어에서 앱을 업데이트하면 구독할 수 있어요.':
     "You can't subscribe in this version of the app. Update the app from the store to subscribe.",
-  '지금 요금제': 'Current plan',
-  '다음 갱신일': 'Next renewal',
   'App Store에서 해지하거나 결제 수단을 바꿔요': 'Cancel or change your payment method in the App Store',
   'Google Play에서 해지하거나 결제 수단을 바꿔요':
     'Cancel or change your payment method in Google Play',
@@ -302,4 +288,8 @@ export const EN_ACCOUNT: EnDict = {
     'Free processes up to 120 minutes a month. Standard raises that to 1,200 minutes.',
   '지금 어떤 요금제인지는 MY 탭의 구독에서 확인해요.':
     'See which plan you are on under Subscription in the Me tab.',
+
+  // ── 2026-09-26 덜어내기 ────────────────────────────────────────────────────
+  '언어 / Language': 'Language / 언어',
+  '혜택 모두 보기': 'See all benefits',
 };

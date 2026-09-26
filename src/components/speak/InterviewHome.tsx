@@ -3,26 +3,22 @@ import {
   Building2,
   FileText,
   History,
-  Lightbulb,
   ListChecks,
   Mic,
   PenLine,
   Play,
+  Plus,
   Ticket,
   type LucideIcon,
 } from "lucide-react-native";
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { AppHeader } from "@/components/AppHeader";
-import { Carousel } from "@/components/app";
 import { AllowanceCard } from "@/components/interview/AllowanceCard";
 import { InterviewSessionRow } from "@/components/interview/InterviewSessionRow";
-import { SpeakCard } from "@/components/speak/SpeakCard";
 import { SpeakColumns, SpeakFrame } from "@/components/speak/SpeakColumns";
-import { RoundAction } from "@/components/speak/RoundAction";
 import {
-  SpeakHero,
   SpeakSectionTitle,
   SpeakTitle,
   Surface,
@@ -30,15 +26,14 @@ import {
 import {
   AnimatedReveal,
   AppText,
+  BottomSheetModal,
   Button,
   IconButton,
   ListRow,
   Screen,
   Skeleton,
-  StatusBadge,
 } from "@/components/ui";
 import { installBackupSync } from "@/features/interview/backup-sync";
-import { PLAN } from "@/features/interview/pricing";
 import { latestNextPractice } from "@/features/interview/practice-stats";
 import { resolveSessionSource } from "@/features/interview/session-source";
 import type { InterviewSession } from "@/features/interview/types";
@@ -53,43 +48,22 @@ import {
 import { decorative } from "@/lib/a11y";
 import { useLocale, useT } from "@/lib/i18n";
 import { useLayout } from "@/lib/layout";
-import { colors, iconSizes, radii, spacing } from "@/theme/tokens";
+import { colors, iconSizes, spacing } from "@/theme/tokens";
 
-type StartOption = {
-  from: "resume" | "packs" | "custom";
-  icon: LucideIcon;
-  title: string;
-  body: string;
-  tag?: string;
-};
+type StartFrom = "resume" | "packs" | "custom";
 
-// 연습을 시작하는 길. 면접 웹(interview-home.tsx)의 두 길에 직접 질문 만들기를 더했다.
-const START_OPTIONS: StartOption[] = [
-  {
-    from: "resume",
-    icon: FileText,
-    title: "자기소개서로 연습",
-    body: "자기소개서에서 나올 질문과 꼬리질문을 만들어요.",
-    tag: "추천",
-  },
-  {
-    from: "packs",
-    icon: ListChecks,
-    title: "질문 세트로 연습",
-    body: "공기업, 대기업, 고졸 채용 공통 질문이나 회사별 질문으로 바로 시작해요.",
-  },
-  {
-    from: "custom",
-    icon: PenLine,
-    title: "질문 직접 만들기",
-    body: "받고 싶은 질문을 적고 답변 시간을 정해요.",
-  },
+// 연습을 시작하는 세 길. 주 버튼이 질문 세트면 나머지 둘이 작은 회색 버튼, 이어서 하기가 있으면
+// "새 연습" 버튼 하나가 세 길을 시트로 연다.
+const START_WAYS: readonly { from: StartFrom; label: string; icon: LucideIcon }[] = [
+  { from: "packs", label: "질문 세트", icon: ListChecks },
+  { from: "resume", label: "자소서로", icon: FileText },
+  { from: "custom", label: "직접 만들기", icon: PenLine },
 ];
 
 /**
- * 말하기 탭의 면접 쪽(2026-09-26 앱다운 재설계). 머리 카드 하나에 할 일 하나 — 이어서 하기가 있으면
- * 그것, 없으면 큰 둥근 시작 버튼(스픽). 시작하는 다른 길 셋은 옆으로 넘기는 카드, AI 피드백 남은 횟수는
- * 작은 링, 최근 연습 행. `switcher` 는 발표, 면접을 고르는 알약.
+ * 말하기 탭의 면접 쪽. 2026-09-26 덜어내기(플랜핏 결): 흰 카드 하나에 제목 한 줄, 화면 폭 주 버튼
+ * 하나(이어서 하기, 없으면 연습 시작), 그 아래 작은 회색 보조 버튼들. 그다음 최근 연습 목록,
+ * AI 피드백 남은 횟수 한 줄, 기관 한 줄. `switcher` 는 발표, 면접을 고르는 알약.
  */
 export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
   const t = useT();
@@ -98,7 +72,8 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
   const account = useInterviewAccount();
   const { sessions } = useInterviewSessions();
   const wide = breakpoint === "expanded";
-  const compact = breakpoint === "compact";
+
+  const [startSheet, setStartSheet] = useState(false);
 
   useEffect(() => installBackupSync(), []);
 
@@ -114,7 +89,8 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
     return {
       next: latestNextPractice(sessions),
       inProgress,
-      recent: sorted.slice(0, 3),
+      // 머리 카드에 크게 보인 이어서 하기는 목록에서 뺀다(같은 것을 두 번 보이지 않게).
+      recent: sorted.filter((session) => session !== inProgress).slice(0, 3),
       firstTime: sessions.length === 0,
     };
   }, [sessions]);
@@ -124,148 +100,107 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
   const demo = account.status === "ready" && account.demo;
   const open = (session: InterviewSession) =>
     router.push(sessionDestination(session));
-  const start = (from: StartOption["from"]) =>
+  const start = (from: StartFrom) => {
+    setStartSheet(false);
     router.push({ pathname: "/interview/prepare", params: { from } });
+  };
 
-  // 머리 카드: 이어서 하기가 있으면 그것 하나, 없으면 첫 질문부터(질문 세트로 바로).
+  // 머리 카드: 이어서 하기가 있으면 그것, 없으면 질문 세트로 바로 시작.
   const resume = view?.inProgress ?? null;
   const resumeSource = resume ? resolveSessionSource(resume) : null;
-  const heroCopy = resume ? (
-    <View style={styles.heroCopy}>
-      <AppText numberOfLines={2} variant={compact ? "pageTitle" : "heroTitle"}>
-        {t(resumeSource?.title ?? "면접 연습")}
-      </AppText>
-      <AppText tone="soft" variant={compact ? "meta" : "body"}>
-        {t("{done} / {total}개 답변, {when}", {
-          done: answeredQuestionCount(resume),
-          total: resumeSource?.questions.length ?? 0,
-          when: relativeDay(lastActivity(resume), new Date(), locale),
-        })}
-      </AppText>
-    </View>
-  ) : (
-    <View style={styles.heroCopy}>
-      <AppText variant={compact ? "pageTitle" : "heroTitle"}>
-        {t(view?.firstTime ? "첫 질문부터 말해볼까요?" : "무엇을 연습할까요?")}
-      </AppText>
-      <AppText tone="soft" variant={compact ? "meta" : "body"}>
-        {t("질문을 준비하고, 타이머에 맞춰 답하고, 내가 한 말을 돌아봐요.")}
-      </AppText>
-    </View>
-  );
-  const nextHint =
-    !resume && view?.next ? (
-      <View style={styles.hint}>
-        <Lightbulb
-          {...decorative}
-          color={colors.warningStrong}
-          size={iconSizes.section}
-          strokeWidth={2}
-        />
-        <View style={styles.flex}>
-          <AppText tone="warning" variant="badge">
-            {t("지난 연습에서 이어갈 점")}
-          </AppText>
-          <AppText variant="bodyStrong">{view.next.text}</AppText>
-        </View>
-      </View>
-    ) : null;
-  const heroAction = resume ? (
-    <RoundAction
-      icon={Play}
-      label={t("이어서 하기")}
-      onPress={() => open(resume)}
-      size={compact ? 64 : 88}
-      testID="interview-continue"
-    />
-  ) : (
-    <RoundAction
-      accessibilityHint={t(
-        "공기업, 대기업, 고졸 채용 공통 질문이나 회사별 질문으로 바로 시작해요.",
-      )}
-      icon={Mic}
-      label={t("연습 시작")}
-      size={compact ? 64 : 88}
-      onPress={() => start("packs")}
-      testID="interview-start"
-    />
-  );
+  const heroTitle = resume
+    ? t(resumeSource?.title ?? "면접 연습")
+    : t(view?.firstTime ? "첫 질문부터 말해볼까요?" : "무엇을 연습할까요?");
+  const heroMeta = resume
+    ? t("{done} / {total}개 답변, {when}", {
+        done: answeredQuestionCount(resume),
+        total: resumeSource?.questions.length ?? 0,
+        when: relativeDay(lastActivity(resume), new Date(), locale),
+      })
+    : view?.next
+      ? view.next.text
+      : null;
   const hero = (
-    <SpeakHero>
-      <View style={[styles.heroRow, compact ? styles.heroRowCompact : null]}>
-        <View style={styles.heroLeft}>
-          {heroCopy}
-          {nextHint}
-        </View>
-        {heroAction}
+    <Surface padding={spacing.xl} style={styles.hero} tone="raised">
+      <View style={styles.heroCopy}>
+        <AppText numberOfLines={2} variant="pageTitle">
+          {heroTitle}
+        </AppText>
+        {heroMeta ? (
+          <AppText numberOfLines={2} tone="muted" variant="meta">
+            {heroMeta}
+          </AppText>
+        ) : null}
       </View>
-    </SpeakHero>
-  );
-
-  const startWays = (
-    <View style={styles.section}>
-      <SpeakSectionTitle
-        title={t(
-          resume || !view?.firstTime ? "새 연습 시작" : "어떻게 시작할까요?",
-        )}
-      />
-      {compact ? (
-        <Carousel accessibilityLabel={t("새 연습 시작")} itemWidth={236}>
-          {START_OPTIONS.map((option) => (
-            <StartCard
-              key={option.from}
-              onPress={() => start(option.from)}
-              option={option}
-            />
-          ))}
-        </Carousel>
+      {resume ? (
+        <Button
+          fullWidth
+          leftIcon={<Play color={colors.textInverse} size={iconSizes.inline} />}
+          onPress={() => open(resume)}
+          size="large"
+          testID="interview-continue"
+          variant="brand"
+        >
+          {t("이어서 하기")}
+        </Button>
       ) : (
-        <View style={styles.optionsRow}>
-          {START_OPTIONS.map((option) => (
-            <StartCard
-              key={option.from}
-              onPress={() => start(option.from)}
-              option={option}
-            />
-          ))}
-        </View>
+        <Button
+          accessibilityHint={t(
+            "공기업, 대기업, 고졸 채용 공통 질문이나 회사별 질문으로 바로 시작해요.",
+          )}
+          fullWidth
+          leftIcon={<Mic color={colors.textInverse} size={iconSizes.inline} />}
+          onPress={() => start("packs")}
+          size="large"
+          testID="interview-start"
+          variant="brand"
+        >
+          {t("연습 시작")}
+        </Button>
       )}
-      <AppText tone="muted" variant="meta">
-        {t(
-          "기본 연습은 무료예요. AI 피드백 연습은 첫 회 무료, 스탠다드는 매달 {n}회예요. 같은 연습 안에서 다시 답하는 건 횟수에 들어가지 않아요.",
-          { n: PLAN.aiStandardMonthly },
+      <View style={styles.secondaryRow}>
+        {resume ? (
+          <Button
+            leftIcon={<Plus color={colors.text} size={iconSizes.inline} />}
+            onPress={() => setStartSheet(true)}
+            size="small"
+            style={styles.secondary}
+            variant="secondary"
+          >
+            {t("새 연습")}
+          </Button>
+        ) : (
+          START_WAYS.filter((way) => way.from !== "packs").map((way) => (
+            <Button
+              key={way.from}
+              onPress={() => start(way.from)}
+              size="small"
+              style={styles.secondary}
+              variant="secondary"
+            >
+              {t(way.label)}
+            </Button>
+          ))
         )}
-      </AppText>
-    </View>
+      </View>
+    </Surface>
   );
 
   const allowanceBlock =
     account.status === "loading" ? (
-      <Skeleton height={148} />
+      <Skeleton height={72} />
     ) : (
       <AllowanceCard allowance={allowance} demo={demo} />
     );
 
-  const recentBlock = (
+  // 이어서 하기 하나뿐이면 목록은 비워 두지 않고 통째로 뺀다.
+  const recentBlock = view && view.recent.length === 0 && resume ? null : (
     <View style={styles.section}>
-      <SpeakSectionTitle
-        action={
-          sessions && sessions.length > 0 ? (
-            <Button
-              onPress={() => router.push("/interview/history")}
-              size="small"
-              variant="ghost"
-            >
-              {t("전체 기록")}
-            </Button>
-          ) : null
-        }
-        title={t("최근 연습")}
-      />
+      <SpeakSectionTitle title={t("최근 연습")} />
       {!view ? (
         <Skeleton height={68} />
       ) : view.recent.length === 0 ? (
-        <Surface style={styles.emptyRecent} tone="soft">
+        <Surface style={styles.emptyRecent} tone="raised">
           <History
             {...decorative}
             color={colors.textFaint}
@@ -273,9 +208,7 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
             strokeWidth={1.8}
           />
           <AppText style={styles.flex} tone="muted" variant="meta">
-            {t(
-              "아직 연습 기록이 없어요. 위에서 질문을 골라 첫 연습을 시작해 보세요.",
-            )}
+            {t("아직 연습 기록이 없어요.")}
           </AppText>
         </Surface>
       ) : (
@@ -294,55 +227,48 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
   );
 
   const orgBlock = (
-    <View style={styles.section}>
-      <SpeakSectionTitle title={t("학교, 기관")} />
-      <Surface padding={0} style={styles.list} tone="soft">
-        {user?.role === "manager" ? (
-          <ListRow
-            divider={false}
-            leadingIcon={Building2}
-            onPress={() => router.push("/interview/org")}
-            showChevron
-            subtitle={t("학생들의 가입과 연습 참여를 봐요")}
-            title={t("기관 현황")}
-          />
-        ) : user?.role === "student" && user.orgName ? (
-          <ListRow
-            divider={false}
-            leadingIcon={Building2}
-            subtitle={
-              user.groupName
-                ? t("{group}에 참여하고 있어요", { group: user.groupName })
-                : t("기관에 참여하고 있어요")
-            }
-            title={user.orgName}
-          />
-        ) : (
-          <ListRow
-            divider={false}
-            leadingIcon={Ticket}
-            onPress={() => router.push("/interview/join")}
-            showChevron
-            subtitle={t("학교나 취업센터에서 받은 코드로 참여해요")}
-            title={t("초대 코드 입력")}
-          />
-        )}
-      </Surface>
-    </View>
+    <Surface padding={0} style={styles.list} tone="raised">
+      {user?.role === "manager" ? (
+        <ListRow
+          divider={false}
+          leadingIcon={Building2}
+          onPress={() => router.push("/interview/org")}
+          showChevron
+          title={t("기관 현황")}
+        />
+      ) : user?.role === "student" && user.orgName ? (
+        <ListRow
+          divider={false}
+          leadingIcon={Building2}
+          subtitle={
+            user.groupName
+              ? t("{group}에 참여하고 있어요", { group: user.groupName })
+              : t("기관에 참여하고 있어요")
+          }
+          title={user.orgName}
+        />
+      ) : (
+        <ListRow
+          divider={false}
+          leadingIcon={Ticket}
+          onPress={() => router.push("/interview/join")}
+          showChevron
+          title={t("초대 코드 입력")}
+        />
+      )}
+    </Surface>
   );
 
   const top = (
     <View style={styles.top}>
-      <SpeakTitle
-        description={t("내가 말한 것을 돌려받아요")}
-        title={t("말하기")}
-      />
+      <SpeakTitle title={t("말하기")} />
       {switcher}
     </View>
   );
 
   return (
     <Screen
+      background="soft"
       fullBleed
       padded={false}
       safeAreaEdges={["top", "left", "right"]}
@@ -367,8 +293,7 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
               main={
                 <>
                   <AnimatedReveal delay={60}>{hero}</AnimatedReveal>
-                  <AnimatedReveal delay={120}>{startWays}</AnimatedReveal>
-                  <AnimatedReveal delay={180}>{recentBlock}</AnimatedReveal>
+                  {recentBlock ? <AnimatedReveal delay={120}>{recentBlock}</AnimatedReveal> : null}
                 </>
               }
               side={
@@ -382,92 +307,48 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
           ) : (
             <>
               <AnimatedReveal delay={60}>{hero}</AnimatedReveal>
-              <AnimatedReveal delay={120}>{startWays}</AnimatedReveal>
+              {recentBlock ? <AnimatedReveal delay={120}>{recentBlock}</AnimatedReveal> : null}
               <AnimatedReveal delay={160}>{allowanceBlock}</AnimatedReveal>
-              <AnimatedReveal delay={200}>{recentBlock}</AnimatedReveal>
-              <AnimatedReveal delay={240}>{orgBlock}</AnimatedReveal>
+              <AnimatedReveal delay={200}>{orgBlock}</AnimatedReveal>
             </>
           )}
         </View>
       </SpeakFrame>
-    </Screen>
-  );
-}
-
-/** 시작하는 길 한 장: 큰 아이콘, 제목, 한 줄 설명. 폰에서는 옆으로 넘기는 줄 안에 든다. */
-function StartCard({
-  option,
-  onPress,
-}: {
-  option: StartOption;
-  onPress: () => void;
-}) {
-  const t = useT();
-  const Icon = option.icon;
-  return (
-    <SpeakCard
-      accessibilityLabel={`${t(option.title)}. ${t(option.body)}`}
-      onPress={onPress}
-      style={styles.start}
-      tone="soft"
-    >
-      <View style={styles.startHead}>
-        <View {...decorative} style={styles.startIcon}>
-          <Icon color={colors.brand} size={28} strokeWidth={1.9} />
-        </View>
-        {option.tag ? <StatusBadge label={t(option.tag)} tone="brand" /> : null}
-      </View>
-      <AppText variant="heading">{t(option.title)}</AppText>
-      <AppText
-        numberOfLines={3}
-        style={styles.grow}
-        tone="muted"
-        variant="meta"
+      <BottomSheetModal
+        onClose={() => setStartSheet(false)}
+        title={t("새 연습")}
+        visible={startSheet}
       >
-        {t(option.body)}
-      </AppText>
-    </SpeakCard>
+        <Surface padding={0} style={styles.list} tone="raised">
+          {START_WAYS.map((way, index) => (
+            <ListRow
+              divider={index < START_WAYS.length - 1}
+              key={way.from}
+              leadingIcon={way.icon}
+              onPress={() => start(way.from)}
+              showChevron
+              title={t(way.label)}
+            />
+          ))}
+        </Surface>
+      </BottomSheetModal>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.xl,
+    gap: spacing.xxl,
     paddingBottom: spacing.xxl,
     paddingTop: spacing.xs,
   },
   top: { gap: spacing.lg },
   section: { gap: spacing.md },
   flex: { flex: 1, gap: spacing.xxs, minWidth: 0 },
-  grow: { flexGrow: 1 },
-  heroCopy: { alignItems: "flex-start", gap: spacing.sm },
-  heroRow: { alignItems: "center", flexDirection: "row", gap: spacing.xl },
-  heroRowCompact: { gap: spacing.md },
-  heroLeft: { flex: 1, gap: spacing.lg, minWidth: 0 },
-  hint: {
-    alignItems: "flex-start",
-    backgroundColor: colors.surface,
-    borderRadius: radii.tile,
-    flexDirection: "row",
-    gap: spacing.md,
-    padding: spacing.md,
-  },
+  hero: { borderRadius: 24, gap: spacing.lg },
+  heroCopy: { gap: spacing.xs },
+  secondaryRow: { flexDirection: "row", gap: spacing.sm },
+  secondary: { flex: 1, paddingHorizontal: spacing.xs },
   emptyRecent: { alignItems: "center", flexDirection: "row", gap: spacing.md },
   list: { overflow: "hidden" },
-  optionsRow: { flexDirection: "row", gap: spacing.md },
-  start: { flex: 1, gap: spacing.sm, minHeight: 188, minWidth: 0 },
-  startIcon: {
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderRadius: radii.full,
-    height: 52,
-    justifyContent: "center",
-    width: 52,
-  },
-  startHead: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: spacing.xs,
-  },
 });

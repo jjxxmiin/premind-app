@@ -1,10 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import {
+  ChevronDown,
   ChevronRight,
-  Mic,
-  FlaskConical,
+  ChevronUp,
   History,
-  Lightbulb,
+  Mic,
   PlayCircle,
   RefreshCw,
 } from 'lucide-react-native';
@@ -21,7 +21,7 @@ import {
 import { AppHeader } from '@/components/AppHeader';
 import { BOTTOM_ACTION_SPACE, BottomAction } from '@/components/app';
 import { SpeakFrame } from '@/components/speak/SpeakColumns';
-import { SpeakHero, SpeakSectionTitle, StatTile, Surface, TileGrid } from '@/components/speak/SpeakKit';
+import { SpeakSectionTitle, StatTile, Surface, TileGrid } from '@/components/speak/SpeakKit';
 import {
   BalanceStrip,
   LensHistoryList,
@@ -63,7 +63,6 @@ import { useLayout } from '@/lib/layout';
 import type { SpeechMetrics } from '@/lib/speech-metrics';
 import { goBackOrReplace } from '@/lib/navigation';
 import { speechMetrics } from '@/lib/speech-metrics';
-import { isDemoSession } from '@/services/api/session-manager';
 import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 import type { LensMoment } from '@/types';
@@ -73,7 +72,7 @@ export default function LensReportScreen() {
   const { breakpoint, gutter } = useLayout();
   const wide = breakpoint === 'expanded';
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { evaluatingMaterialIds, loadLensHistory, materials, requestLens, session } = useAppStore();
+  const { evaluatingMaterialIds, loadLensHistory, materials, requestLens } = useAppStore();
   const material = materials.find((item) => item.id === id);
   const habits = useMemo(() => (material ? speechMetrics(material.transcript) : null), [material]);
   const history = material?.lensHistory ?? [];
@@ -81,6 +80,8 @@ export default function LensReportScreen() {
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [evaluateError, setEvaluateError] = useState<string | null>(null);
   const [requesting, setRequesting] = useState(false);
+  /** 항목 점수, 습관, 근거 줄은 접어 두고 필요한 사람만 연다. */
+  const [showDetails, setShowDetails] = useState(false);
   /** `${kind}-${index}` of the moment the timeline last pointed at. */
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
@@ -243,7 +244,6 @@ export default function LensReportScreen() {
     );
   }
 
-  const demo = isDemoSession(session);
   // 이번 vs 지난 exists only once there is an earlier evaluation of this
   // recording; viewing an older one compares it with the one before it.
   const comparison = comparisonPair(history, viewing?.id ?? null);
@@ -261,45 +261,24 @@ export default function LensReportScreen() {
     });
   };
 
-  // 총평부터 평가 이력까지는 읽는 칸, 점수와 방사형 그림, 다음 연습은 옆 칸(데스크톱).
-  // 머리: 큰 점수 링 + 총평 한 문장(토스: 제일 중요한 숫자 하나를 크게).
+  // 2026-09-26 덜어내기(산타 분석 결): 흰 카드에 링 하나(숫자는 링 안에만) + 범례 둘, 그 아래 총평 두 줄.
+  // 항목 점수, 말하기 습관, 근거 줄, 타임라인, 비교, 이력은 "자세히 보기" 안에 접어 둔다.
   const scoreBlock = (
-    <>
-      <SpeakHero style={styles.scoreHero}>
-        <StatusBadge
-          label={demo ? t('예시 평가') : t('근거 기반')}
-          style={styles.center}
-          tone={demo ? 'neutral' : 'brand'}
-        />
-        <ScoreRing score={report.overall} />
-        <View style={styles.heroCopy}>
-          {/* A YouTube title is long; one line turned it into an ellipsis
-                    that told the reader nothing about which recording this was. */}
-          <AppText align="center" numberOfLines={2} tone="muted" variant="meta">
-            {material.title}
-          </AppText>
-          <AppText align="center" variant="heading">
-            {conclusion.sentence}
-          </AppText>
-          <AppText align="center" tone="faint" variant="badge">
-            {t('{items}개 항목 / 근거 {moments}개', {
-              items: report.rubric.length,
-              moments: momentCount,
-            })}
-          </AppText>
-        </View>
-        <BalanceStrip
-          improvementCount={report.improvements.length}
-          strengthCount={report.strengths.length}
-          style={styles.balance}
-        />
-      </SpeakHero>
-      {wide ? (
-        <Surface tone="raised">
-          <RubricRadar rubric={report.rubric} />
-        </Surface>
-      ) : null}
-    </>
+    <Surface padding={spacing.xl} style={styles.scoreHero} tone="raised">
+      <ScoreRing score={report.overall} />
+      <View style={styles.heroCopy}>
+        {/* A YouTube title is long; one line turned it into an ellipsis
+                  that told the reader nothing about which recording this was. */}
+        <AppText align="center" numberOfLines={2} tone="muted" variant="meta">
+          {material.title}
+        </AppText>
+      </View>
+      <BalanceStrip
+        improvementCount={report.improvements.length}
+        strengthCount={report.strengths.length}
+        style={styles.balance}
+      />
+    </Surface>
   );
   const recordAgain = (
     <Button
@@ -315,31 +294,227 @@ export default function LensReportScreen() {
   const reviewAgain = (
     <Button
       accessibilityHint={t('같은 대본으로 평가를 새로 만들어요.')}
-      fullWidth
       leftIcon={<RefreshCw color={colors.textSoft} size={iconSizes.inline} />}
       loading={requesting}
       onPress={evaluate}
-      variant="outline"
+      style={styles.center}
+      variant="ghost"
     >
       {t('다시 평가')}
     </Button>
   );
-  const nextBlock = (
-    <Surface style={styles.nextCard} tone="soft">
-      <View style={styles.nextTitle}>
-        <Lightbulb {...decorative} color={colors.text} size={iconSizes.section} strokeWidth={1.9} />
-        <AppText variant="itemTitle">{t('다음 연습에서 해 보기')}</AppText>
+
+  // 접기 전에 보이는 것은 먼저 고칠 것 한 줄. 잘한 것, 총평 문장, 이렇게 해요는 자세히 안에.
+  const summaryBlock = conclusion.fix ? (
+    <ConclusionLine label={t('먼저 고칠 것')} moment={conclusion.fix} onPress={jumpTo} tone="brand" />
+  ) : null;
+
+  const detailsToggle = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ expanded: showDetails }}
+      onPress={() => setShowDetails((open) => !open)}
+      style={({ pressed }) => [styles.detailsToggle, pressed ? styles.conclusionLinePressed : null]}
+      testID="report-details"
+    >
+      <AppText variant="bodyStrong">{showDetails ? t.ctx('fold', '접기') : t('자세히 보기')}</AppText>
+      {showDetails ? (
+        <ChevronUp {...decorative} color={colors.textMuted} size={iconSizes.inline} />
+      ) : (
+        <ChevronDown {...decorative} color={colors.textMuted} size={iconSizes.inline} />
+      )}
+    </Pressable>
+  );
+
+  const details = (
+    <>
+      <View style={styles.section}>
+        <SpeakSectionTitle title={t('총평')} />
+        <AppText variant="bodyStrong">{conclusion.sentence}</AppText>
+        {conclusion.highlight ? (
+          <ConclusionLine
+            label={t('가장 잘한 것')}
+            moment={conclusion.highlight}
+            onPress={jumpTo}
+            tone="positive"
+          />
+        ) : null}
       </View>
-      <AppText tone="muted" variant="body">
-        {t('먼저 고칠 것 하나만 기억하고 다시 한번 연습을 녹음해 보세요.')}
-      </AppText>
-      {wide ? recordAgain : null}
+
+      {habits ? <HabitTiles habits={habits} /> : null}
+
+      <View style={styles.section}>
+        <SpeakSectionTitle title={t('얼마나 잘했나요')} />
+        <Surface tone="raised">
+          <RubricRadar rubric={report.rubric} />
+        </Surface>
+        <Surface padding={0} style={styles.clip} tone="raised">
+          {report.rubric.map((metric, index) => (
+            <View
+              accessibilityLabel={`${t(
+                '{label}, {explanation}. {max}점 만점에 {score}점, {band} 구간이에요. 기준은 2.5 보통, 3.5 좋아요, 4.5 아주 좋아요예요.',
+                {
+                  label: rubricLabel(metric, t.locale),
+                  explanation: rubricExplanation(metric.key, t.locale),
+                  max: SCORE_MAX,
+                  score: metric.score.toFixed(1),
+                  band: scoreWord(metric.score, t.locale),
+                },
+              )} ${metric.evidence}`}
+              accessible
+              key={metric.key}
+              style={[styles.rubricRow, index < report.rubric.length - 1 ? styles.rowDivider : null]}
+            >
+              <View style={styles.rubricTopLine}>
+                <AppText style={styles.flex} variant="itemTitle">
+                  {rubricLabel(metric, t.locale)}
+                </AppText>
+                <View style={styles.rubricScore}>
+                  <AppText tabular variant="metric">
+                    {metric.score.toFixed(1)}
+                  </AppText>
+                </View>
+              </View>
+              <RubricBandTrack accessibilityLabel={null} score={metric.score} style={styles.bandTrack} />
+              <AppText tone="muted" variant="meta">
+                {metric.evidence}
+              </AppText>
+            </View>
+          ))}
+        </Surface>
+      </View>
+
+      {report.strengths.length > 0 ? (
+        <View onLayout={(event) => rememberOffset('section-strength', event)} style={styles.section}>
+          <SpeakSectionTitle title={t('무엇이 좋았나요')} />
+          <Surface
+            onLayout={(event) => rememberOffset('card-strength', event)}
+            padding={0}
+            style={styles.clip}
+            tone="raised"
+          >
+            {report.strengths.map((strength, index) => {
+              const key = momentKey('strength', index);
+              return (
+                <MomentRow
+                  active={key === activeKey}
+                  key={key}
+                  last={index === report.strengths.length - 1}
+                  moment={strength}
+                  onLayout={(event) => rememberOffset(`row-${key}`, event)}
+                  onPress={() => jumpTo(strength)}
+                />
+              );
+            })}
+          </Surface>
+        </View>
+      ) : null}
+
+      {priority || report.improvements.length > 0 ? (
+        <View onLayout={(event) => rememberOffset('section-improvement', event)} style={styles.section}>
+          <SpeakSectionTitle title={t('무엇부터 고칠까요')} />
+          {priority ? (
+            <Surface style={styles.priorityCard} tone="brand">
+              <StatusBadge label={t('우선순위')} showDot tone="brand" />
+              <AppText variant="heading">{priority.text}</AppText>
+              {priority.action ? (
+                <View style={styles.actionCallout}>
+                  <AppText tone="muted" variant="badge">
+                    {t('이렇게 해요')}
+                  </AppText>
+                  <AppText variant="bodyStrong">{priority.action}</AppText>
+                </View>
+              ) : null}
+              <Button
+                fullWidth
+                leftIcon={<PlayCircle color={colors.textSoft} size={iconSizes.inline} />}
+                onPress={() => jumpTo(priority)}
+                variant="outline"
+              >
+                {t('{time}부터 듣기', {
+                  time: formatDuration(priority.sourceStartMs / 1_000),
+                })}
+              </Button>
+            </Surface>
+          ) : null}
+          {report.improvements.length > 0 ? (
+          <Surface
+            onLayout={(event) => rememberOffset('card-improvement', event)}
+            padding={0}
+            style={styles.clip}
+            tone="raised"
+          >
+            {report.improvements.map((improvement, index) => {
+              const key = momentKey('improvement', index);
+              return (
+                <MomentRow
+                  active={key === activeKey}
+                  key={key}
+                  last={index === report.improvements.length - 1}
+                  moment={improvement}
+                  onLayout={(event) => rememberOffset(`row-${key}`, event)}
+                  onPress={() => jumpTo(improvement)}
+                />
+              );
+            })}
+          </Surface>
+          ) : null}
+        </View>
+      ) : null}
+
+      {momentCount > 0 ? (
+        <View style={styles.section}>
+          <SpeakSectionTitle title={t('어디를 다시 들을까요')} />
+          <Surface tone="raised">
+            <MomentsTimeline
+              activeKey={activeKey}
+              durationMs={material.source.durationMs}
+              improvements={report.improvements}
+              onSelect={focusMoment}
+              priority={priority}
+              strengths={report.strengths}
+            />
+            <MomentDensity
+              durationMs={material.source.durationMs}
+              improvements={report.improvements}
+              strengths={report.strengths}
+              style={styles.densityBlock}
+            />
+          </Surface>
+        </View>
+      ) : null}
+
+      {comparison ? (
+        <View style={styles.section}>
+          <SpeakSectionTitle title={t('지난번과 비교')} />
+          <Surface tone="raised">
+            <RubricCompare
+              current={comparison.current.report}
+              currentAt={comparison.current.evaluatedAt}
+              previous={comparison.previous.report}
+              previousAt={comparison.previous.evaluatedAt}
+            />
+          </Surface>
+        </View>
+      ) : null}
+
+      {history.length > 1 ? (
+        <View style={styles.section}>
+          <SpeakSectionTitle title={t('평가 이력')} />
+          <LensHistoryList
+            entries={history}
+            onSelect={(entryId) => setViewingId((current) => (current === entryId ? null : entryId))}
+            selectedId={viewing?.id ?? null}
+          />
+        </View>
+      ) : null}
+
       {reviewAgain}
-    </Surface>
+    </>
   );
 
   return (
-    <Screen fullBleed padded={false}>
+    <Screen background="soft" fullBleed padded={false}>
       <SpeakFrame>
         <AppHeader
           onBack={() =>
@@ -362,33 +537,14 @@ export default function LensReportScreen() {
             {wide ? null : scoreBlock}
 
             {viewing && !viewingIsLatest ? (
-              <Card style={styles.noticeCard} variant="soft">
-                <History
-                  {...decorative}
-                  color={colors.textMuted}
-                  size={iconSizes.section}
-                  strokeWidth={1.9}
-                />
+              <View style={styles.noticeLine}>
+                <History {...decorative} color={colors.textMuted} size={iconSizes.inline} strokeWidth={1.9} />
                 <AppText style={styles.flex} tone="muted" variant="meta">
                   {t('지금 보는 평가: {date}', {
                     date: formatEvaluatedAt(viewing.evaluatedAt, t.locale),
                   })}
                 </AppText>
-              </Card>
-            ) : null}
-
-            {demo ? (
-              <Card style={styles.noticeCard} variant="soft">
-                <FlaskConical
-                  {...decorative}
-                  color={colors.textMuted}
-                  size={iconSizes.section}
-                  strokeWidth={1.9}
-                />
-                <AppText style={styles.flex} tone="muted" variant="meta">
-                  {t('데모 마인드팩에 들어 있는 예시 평가예요.')}
-                </AppText>
-              </Card>
+              </View>
             ) : null}
 
             <View
@@ -396,248 +552,14 @@ export default function LensReportScreen() {
               style={wide ? styles.bodyRow : styles.bodyStack}
             >
               <View style={wide ? styles.mainColumn : styles.bodyStack}>
-                {habits ? <HabitTiles habits={habits} /> : null}
-
-                {conclusion.highlight || conclusion.fix ? (
-                  <View style={styles.section}>
-                    <SpeakSectionTitle title={t('총평')} />
-                    {conclusion.highlight ? (
-                      <ConclusionLine
-                        label={t('가장 잘한 것')}
-                        moment={conclusion.highlight}
-                        onPress={jumpTo}
-                        tone="positive"
-                      />
-                    ) : null}
-                    {conclusion.fix ? (
-                      <ConclusionLine
-                        label={t('먼저 고칠 것')}
-                        moment={conclusion.fix}
-                        onPress={jumpTo}
-                        tone="brand"
-                      />
-                    ) : null}
-                  </View>
-                ) : null}
-
-                {comparison ? (
-                  <View style={styles.section}>
-                    <SectionHeader
-                      description={t(
-                        '같은 녹음을 다시 평가한 결과예요. 항목마다 이번과 지난번을 나란히 놓았어요.',
-                      )}
-                      title={t('지난번과 비교')}
-                    />
-                    <Surface tone="raised">
-                      <RubricCompare
-                        current={comparison.current.report}
-                        currentAt={comparison.current.evaluatedAt}
-                        previous={comparison.previous.report}
-                        previousAt={comparison.previous.evaluatedAt}
-                      />
-                    </Surface>
-                  </View>
-                ) : null}
-
-                <View style={styles.section}>
-                  <SectionHeader
-                    description={t(
-                      '5점 만점이에요. 2.5부터 보통, 3.5부터 좋아요, 4.5부터 아주 좋아요예요.',
-                    )}
-                    title={t('얼마나 잘했나요')}
-                  />
-                  {wide ? null : (
-                    <Surface tone="raised">
-                      <RubricRadar rubric={report.rubric} />
-                    </Surface>
-                  )}
-                  <Surface padding={0} style={styles.clip} tone="raised">
-                    {report.rubric.map((metric, index) => (
-                      <View
-                        accessibilityLabel={`${t(
-                          '{label}, {explanation}. {max}점 만점에 {score}점, {band} 구간이에요. 기준은 2.5 보통, 3.5 좋아요, 4.5 아주 좋아요예요.',
-                          {
-                            label: rubricLabel(metric, t.locale),
-                            explanation: rubricExplanation(metric.key, t.locale),
-                            max: SCORE_MAX,
-                            score: metric.score.toFixed(1),
-                            band: scoreWord(metric.score, t.locale),
-                          },
-                        )} ${metric.evidence}`}
-                        accessible
-                        key={metric.key}
-                        style={[
-                          styles.rubricRow,
-                          index < report.rubric.length - 1 ? styles.rowDivider : null,
-                        ]}
-                      >
-                        <View style={styles.rubricTopLine}>
-                          <View style={styles.flex}>
-                            <AppText variant="itemTitle">{rubricLabel(metric, t.locale)}</AppText>
-                            <AppText tone="faint" variant="badge">
-                              {rubricExplanation(metric.key, t.locale)}
-                            </AppText>
-                          </View>
-                          <View style={styles.rubricScore}>
-                            <AppText tabular variant="metric">
-                              {metric.score.toFixed(1)}
-                            </AppText>
-                          </View>
-                        </View>
-                        <RubricBandTrack
-                          accessibilityLabel={null}
-                          score={metric.score}
-                          style={styles.bandTrack}
-                        />
-                        <AppText tone="muted" variant="meta">
-                          {metric.evidence}
-                        </AppText>
-                      </View>
-                    ))}
-                  </Surface>
-                </View>
-
-                {report.strengths.length > 0 ? (
-                  <View
-                    onLayout={(event) => rememberOffset('section-strength', event)}
-                    style={styles.section}
-                  >
-                    <SectionHeader
-                      description={t('시간을 누르면 그 부분부터 들어요.')}
-                      title={t('무엇이 좋았나요')}
-                    />
-                    <Surface
-                      onLayout={(event) => rememberOffset('card-strength', event)}
-                      padding={0}
-                      style={styles.clip}
-                      tone="raised"
-                    >
-                      {report.strengths.map((strength, index) => {
-                        const key = momentKey('strength', index);
-                        return (
-                          <MomentRow
-                            active={key === activeKey}
-                            key={key}
-                            last={index === report.strengths.length - 1}
-                            moment={strength}
-                            onLayout={(event) => rememberOffset(`row-${key}`, event)}
-                            onPress={() => jumpTo(strength)}
-                          />
-                        );
-                      })}
-                    </Surface>
-                  </View>
-                ) : null}
-
-                {priority || report.improvements.length > 0 ? (
-                  <View
-                    onLayout={(event) => rememberOffset('section-improvement', event)}
-                    style={styles.section}
-                  >
-                    <SectionHeader
-                      description={t('하나만 골라 다음 연습에서 바꿔 봐요.')}
-                      title={t('무엇부터 고칠까요')}
-                    />
-                    {priority ? (
-                      <Surface style={styles.priorityCard} tone="brand">
-                        <StatusBadge label={t('우선순위')} showDot tone="brand" />
-                        <AppText variant="heading">{priority.text}</AppText>
-                        {priority.action ? (
-                          <View style={styles.actionCallout}>
-                            <AppText tone="muted" variant="badge">
-                              {t('이렇게 해요')}
-                            </AppText>
-                            <AppText variant="bodyStrong">{priority.action}</AppText>
-                          </View>
-                        ) : null}
-                        <Button
-                          fullWidth
-                          leftIcon={<PlayCircle color={colors.textSoft} size={iconSizes.inline} />}
-                          onPress={() => jumpTo(priority)}
-                          variant="outline"
-                        >
-                          {t('{time}부터 듣기', {
-                            time: formatDuration(priority.sourceStartMs / 1_000),
-                          })}
-                        </Button>
-                      </Surface>
-                    ) : null}
-                    {report.improvements.length > 0 ? (
-                      <Surface
-                        onLayout={(event) => rememberOffset('card-improvement', event)}
-                        padding={0}
-                        style={styles.clip}
-                        tone="raised"
-                      >
-                        {report.improvements.map((improvement, index) => {
-                          const key = momentKey('improvement', index);
-                          return (
-                            <MomentRow
-                              active={key === activeKey}
-                              key={key}
-                              last={index === report.improvements.length - 1}
-                              moment={improvement}
-                              onLayout={(event) => rememberOffset(`row-${key}`, event)}
-                              onPress={() => jumpTo(improvement)}
-                            />
-                          );
-                        })}
-                      </Surface>
-                    ) : null}
-                  </View>
-                ) : null}
-
-                {momentCount > 0 ? (
-                  <View style={styles.section}>
-                    <SectionHeader
-                      description={t(
-                        '녹음 어디에서 잘했고 어디를 고칠지 한 줄에 표시했어요. 점을 누르면 그 줄로 가고, 아래 막대는 구간마다 몇 개인지 보여줘요.',
-                      )}
-                      title={t('어디를 다시 들을까요')}
-                    />
-                    <Surface tone="raised">
-                      <MomentsTimeline
-                        activeKey={activeKey}
-                        durationMs={material.source.durationMs}
-                        improvements={report.improvements}
-                        onSelect={focusMoment}
-                        priority={priority}
-                        strengths={report.strengths}
-                      />
-                      <MomentDensity
-                        durationMs={material.source.durationMs}
-                        improvements={report.improvements}
-                        strengths={report.strengths}
-                        style={styles.densityBlock}
-                      />
-                    </Surface>
-                  </View>
-                ) : null}
-
-                {history.length > 1 ? (
-                  <View style={styles.section}>
-                    <SectionHeader
-                      description={t(
-                        '같은 녹음을 다시 평가한 기록이에요. 날짜를 누르면 그때 리포트를 봐요.',
-                      )}
-                      title={t('평가 이력')}
-                    />
-                    <LensHistoryList
-                      entries={history}
-                      onSelect={(entryId) =>
-                        setViewingId((current) => (current === entryId ? null : entryId))
-                      }
-                      selectedId={viewing?.id ?? null}
-                    />
-                  </View>
-                ) : null}
-
-                {wide ? null : nextBlock}
+                {summaryBlock}
+                {detailsToggle}
+                {showDetails ? details : null}
               </View>
               {wide ? (
                 <View style={styles.sideColumn}>
                   {scoreBlock}
-                  {nextBlock}
+                  {recordAgain}
                 </View>
               ) : null}
             </View>
@@ -665,7 +587,6 @@ function HabitTiles({ habits }: { habits: SpeechMetrics }) {
           <StatTile
             caption={t.ctx('speech', metric.band)}
             captionTone={bandTone(metric)}
-            detail={t.ctx('speech', metric.advice)}
             key={metric.key}
             label={t.ctx('speech', metric.title)}
             unit={t.ctx('speech', metric.unit)}
@@ -710,25 +631,10 @@ function ConclusionLine({
         pressed ? styles.conclusionLinePressed : null,
       ]}
     >
-      <View style={styles.conclusionHead}>
-        <AppText tone={tone} variant="label">
-          {label}
-        </AppText>
-        <View style={styles.timeChip}>
-          <AppText tabular tone="soft" variant="badge">
-            {time}
-          </AppText>
-        </View>
-      </View>
+      <AppText tone={tone} variant="label">
+        {label}
+      </AppText>
       <AppText variant="bodyStrong">{moment.text}</AppText>
-      {moment.action ? (
-        <View style={styles.actionCallout}>
-          <AppText tone="muted" variant="badge">
-            {t('이렇게 해요')}
-          </AppText>
-          <AppText variant="bodyStrong">{moment.action}</AppText>
-        </View>
-      ) : null}
     </Pressable>
   );
 }
@@ -825,7 +731,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   bodyStack: {
-    gap: spacing.xl,
+    gap: spacing.xxl,
   },
   bodyRow: {
     alignItems: 'flex-start',
@@ -834,7 +740,7 @@ const styles = StyleSheet.create({
   },
   mainColumn: {
     flex: 1,
-    gap: spacing.xl,
+    gap: spacing.xxl,
     minWidth: 0,
   },
   /** 옆 칸: 점수와 다음 연습. 웹에서는 스크롤을 따라 붙는다. */
@@ -859,10 +765,19 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  noticeCard: {
-    alignItems: 'flex-start',
+  noticeLine: {
+    alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
+  },
+  detailsToggle: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    cursor: 'pointer',
+    flexDirection: 'row',
+    gap: spacing.xs,
+    minHeight: sizes.minimumTouchTarget,
+    paddingHorizontal: spacing.md,
   },
   scoreCard: {
     alignItems: 'center',
@@ -882,12 +797,6 @@ const styles = StyleSheet.create({
   conclusionLinePressed: {
     opacity: 0.85,
     transform: [{ scale: 0.99 }],
-  },
-  conclusionHead: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-    justifyContent: 'space-between',
   },
   rubricScore: {
     alignItems: 'flex-end',
@@ -966,9 +875,6 @@ const styles = StyleSheet.create({
   timeChipActive: {
     backgroundColor: colors.backgroundMuted,
   },
-  priorityCard: {
-    gap: spacing.md,
-  },
   scoreHero: {
     alignItems: 'center',
     gap: spacing.md,
@@ -983,10 +889,7 @@ const styles = StyleSheet.create({
   clip: {
     overflow: 'hidden',
   },
-  dockSpace: {
-    paddingBottom: BOTTOM_ACTION_SPACE + spacing.md,
-  },
-  tiles: {
+  priorityCard: {
     gap: spacing.md,
   },
   actionCallout: {
@@ -995,12 +898,10 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     padding: spacing.md,
   },
-  nextCard: {
-    gap: spacing.md,
+  dockSpace: {
+    paddingBottom: BOTTOM_ACTION_SPACE + spacing.md,
   },
-  nextTitle: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
+  tiles: {
+    gap: spacing.md,
   },
 });

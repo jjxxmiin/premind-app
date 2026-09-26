@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowRight, CircleAlert, History, Pencil, RefreshCw, RotateCcw, Trash2 } from 'lucide-react-native';
+import { ArrowRight, ChevronDown, ChevronUp, CircleAlert, History, Pencil, RefreshCw, RotateCcw, Trash2 } from 'lucide-react-native';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -8,7 +8,7 @@ import { BOTTOM_ACTION_SPACE, BottomAction, Carousel } from '@/components/app';
 import { RecordedVideo } from '@/components/interview/RecordedVideo';
 import { ShareWithOrg } from '@/components/interview/ShareWithOrg';
 import { SpeakFrame } from '@/components/speak/SpeakColumns';
-import { InsightChip, SpeakHero, Surface } from '@/components/speak/SpeakKit';
+import { Surface } from '@/components/speak/SpeakKit';
 import {
   AppText,
   Button,
@@ -52,19 +52,18 @@ import {
   highlightTranscript,
   latestAttempt,
   modeLabel,
-  totalSpeakingMs,
 } from '@/features/interview/view-model';
 import { decorative } from '@/lib/a11y';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 import { INTERVIEW_HOME } from '@/features/interview/routes';
-import { enDate, useLocale, useT, type AppLocale } from '@/lib/i18n';
+import { enShortDate, useLocale, useT, type AppLocale } from '@/lib/i18n';
 
 function formatDate(value: string | undefined, locale: AppLocale): string {
   if (!value) return '';
-  if (locale === 'en') return enDate(value);
+  if (locale === 'en') return enShortDate(value);
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '' : `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+  return Number.isNaN(date.getTime()) ? '' : `${date.getMonth() + 1}월 ${date.getDate()}일`;
 }
 
 /**
@@ -176,7 +175,7 @@ export default function InterviewReportScreen() {
 
   // 폰: 질문을 옆으로 넘기는 카드 줄(고른 카드는 주황 면). 넓은 화면: 왼쪽 목록.
   const questionList = wide ? (
-    <Surface padding={0} style={styles.clip} tone="soft">
+    <Surface padding={0} style={styles.clip} tone="raised">
       {questionItems.map(({ question, index, on, statusText }) => (
         <Pressable
           accessibilityRole="button"
@@ -226,46 +225,39 @@ export default function InterviewReportScreen() {
     </Carousel>
   );
 
-  // 이번 연습에서 다룬 요점(질문이 바란 내용 중 말한 것) 수. 채점이 아니라 사실(Interview Warmup 결).
-  const coveredPoints = questions.reduce((sum, question) => {
-    const evaluation = latestAttempt(byQuestion.get(question.id))?.analysis?.evaluation;
-    return sum + (evaluation?.status === 'ready' && evaluation.result ? evaluation.result.coverage.filter((item) => item.status === 'met').length : 0);
-  }, 0);
-
+  // 2026-09-26 덜어내기: 흰 카드에 제목, 메타 한 줄(방식, 날짜), 사실 한 줄(답변 수, 말한 시간), 돌아보기 한 문장.
+  // 판정은 하지 않는다는 안내는 맨 아래 작은 글씨로.
+  const metaLine = [
+    t(modeLabel(session)),
+    formatDate(session.completedAt ?? session.createdAt, locale),
+    t('답변 {done} / {total}개', { done: answeredCount, total: questions.length }),
+    remote ? t('다른 기기의 기록') : null,
+  ]
+    .filter(Boolean)
+    .join(' / ');
   const header = (
-    <SpeakHero style={styles.summary}>
-      <View style={styles.badges}>
-        <StatusBadge label={t(source.kindLabel)} style={styles.onBrand} tone="neutral" />
-        <StatusBadge label={t(modeLabel(session))} tone={session.feedbackMode === 'ai' ? 'brand' : 'neutral'} />
-        {remote ? <StatusBadge label={t('다른 기기의 기록')} tone="info" /> : null}
-      </View>
+    <Surface padding={spacing.xl} style={styles.summary} tone="raised">
       <View style={styles.titleBlock}>
-        <AppText variant="heroTitle">{t(source.title)}</AppText>
+        <AppText variant="pageTitle">{t(source.title)}</AppText>
         <AppText tone="muted" variant="meta">
-          {formatDate(session.completedAt ?? session.createdAt, locale)}
+          {metaLine}
         </AppText>
       </View>
-      <View accessibilityLabel={t('이번 연습 돌아보기')} style={styles.insights}>
-        <InsightChip label={t('답변한 질문 {done} / {total}개', { done: answeredCount, total: questions.length })} tone="brand" />
-        <InsightChip label={t('총 말한 시간 {time}', { time: formatAnswerDuration(totalSpeakingMs(session), locale) })} tone="brand" />
-        {coveredPoints > 0 ? <InsightChip label={t('다룬 요점 {n}개', { n: coveredPoints })} tone="brand" /> : null}
-      </View>
       {grounded ? (
-        <View style={styles.reflect}>
-          <AppText tone="brand" variant="badge">
-            {t('이번 연습 돌아보기')}
-          </AppText>
+        <View accessibilityLabel={`${t('이번 연습 돌아보기')}. ${clean(grounded.summary)}`} accessible style={styles.reflect}>
           <AppText variant="bodyStrong">{clean(grounded.summary)}</AppText>
         </View>
       ) : null}
-      <AppText tone="muted" variant="badge">
-        {t(
-          ai
-            ? 'AI가 만든 전사문과 피드백이에요. 사실과 다를 수 있으니 참고로만 봐 주세요. 합격 가능성이나 성격은 판단하지 않아요.'
-            : '이 화면은 답변 시간과 메모를 정리하며, 답변 내용이나 합격 가능성을 평가하지 않아요.',
-        )}
-      </AppText>
-    </SpeakHero>
+    </Surface>
+  );
+  const disclaimer = (
+    <AppText tone="faint" variant="badge">
+      {t(
+        ai
+          ? 'AI가 만든 전사문과 피드백이에요. 사실과 다를 수 있으니 참고로만 봐 주세요. 합격 가능성이나 성격은 판단하지 않아요.'
+          : '이 화면은 답변 시간과 메모를 정리하며, 답변 내용이나 합격 가능성을 평가하지 않아요.',
+      )}
+    </AppText>
   );
 
   const detail = selectedQuestion ? (
@@ -288,6 +280,7 @@ export default function InterviewReportScreen() {
       questionNumber={questions.indexOf(selectedQuestion) + 1}
       selected={selectedAttempt}
       session={session}
+      showQuestion={wide}
     />
   ) : null;
 
@@ -306,7 +299,7 @@ export default function InterviewReportScreen() {
   const docked = !remote && breakpoint === 'compact';
 
   return (
-    <Screen fullBleed padded={false}>
+    <Screen background="soft" fullBleed padded={false}>
       <SpeakFrame>
         <AppHeader onBack={() => (router.canGoBack() ? router.back() : router.replace(INTERVIEW_HOME))} title={t('연습 결과')} />
       </SpeakFrame>
@@ -325,7 +318,7 @@ export default function InterviewReportScreen() {
         ) : (
           <>
             <View style={styles.section}>
-              <SectionHeader description={t('질문을 누르면 내가 한 답변을 볼 수 있어요.')} title={t('질문별로 돌아보기')} />
+              <SectionHeader title={t('질문별로 돌아보기')} />
               {questionList}
             </View>
             {detail}
@@ -335,15 +328,13 @@ export default function InterviewReportScreen() {
         <View style={[styles.actions, breakpoint !== 'compact' ? styles.actionsRow : null]}>
           {!remote && breakpoint !== 'compact' ? againButton : null}
           {canShare && user ? <ShareWithOrg onMessage={toast.show} orgName={user.orgName ?? t('기관')} session={session} source={source} /> : null}
-          <Button onPress={() => router.push('/interview/history')} style={styles.action} variant="outline">
-            {t('연습 기록으로')}
-          </Button>
         </View>
         {!remote ? (
           <Button leftIcon={<Trash2 color={colors.negative} size={iconSizes.inline} />} onPress={() => setDeleteOpen(true)} textStyle={styles.danger} variant="ghost">
             {t('이 연습 기록 지우기')}
           </Button>
         ) : null}
+        {disclaimer}
         </View>
         </SpeakFrame>
       </ScrollView>
@@ -382,6 +373,8 @@ interface QuestionDetailProps {
   onRetryQuestion: () => void;
   onSaveNote: (note: string) => Promise<void>;
   onMessage: (message: string) => void;
+  /** The question text as a heading; off on a phone where the card row above shows it. */
+  showQuestion: boolean;
 }
 
 function QuestionDetail({
@@ -399,12 +392,15 @@ function QuestionDetail({
   onRetryQuestion,
   onSaveNote,
   onMessage,
+  showQuestion,
 }: QuestionDetailProps) {
   const t = useT();
   const locale = useLocale();
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [draftNote, setDraftNote] = useState(note);
+  /** 내가 한 말은 접어 둔다. 피드백이 없으면 그게 전부라 펼쳐 둔다. 고치는 중에는 늘 펼친다. */
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
   const analysis = selected?.analysis;
   const transcript = analysis?.transcription.transcript;
   const text = transcript ? getEffectiveTranscript(transcript) : '';
@@ -416,6 +412,16 @@ function QuestionDetail({
   const quotes = result ? [...result.coverage.map((item) => item.evidenceQuote), ...result.strengths.map((item) => item.evidenceQuote)] : [];
   const compare = comparison(attempts);
   const sharedFailure = hasSharedReportFailure(session.feedbackSummary, selected);
+  const showTranscript = !result || transcriptOpen || editing !== null;
+  /** 다음엔 이렇게 한 줄 아래의 말한 것, 잘한 점, 빠진 내용, 구성은 접어 둔다. */
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const hasMore = Boolean(
+    result &&
+      (result.coverage.length > 0 ||
+        result.strengths.length > 0 ||
+        result.missingPoints.length > 0 ||
+        result.suggestedStructure.length > 0),
+  );
 
   const saveTranscript = async (andEvaluate: boolean) => {
     if (!selected || editing === null) return;
@@ -435,15 +441,15 @@ function QuestionDetail({
   return (
     <View style={styles.section}>
       <Surface style={styles.detailCard} tone="raised">
-        <View style={styles.badges}>
+        {showQuestion || question.kind === 'follow_up' ? (
           <AppText tone="muted" variant="badge">
             {question.kind === 'follow_up' ? t('꼬리질문') : t('{n}번 질문', { n: questionNumber })}
           </AppText>
-          {question.traitIds.length > 0 ? <StatusBadge label={t('연결된 인재상')} tone="neutral" /> : null}
-        </View>
-        <AppText variant="heading">{t(question.text)}</AppText>
+        ) : null}
+        {/* 폰에서는 바로 위 카드 줄에 같은 질문이 보여 여기서는 뺀다(넓은 화면은 왼쪽 목록이 줄여 보여서 둔다). */}
+        {showQuestion ? <AppText variant="heading">{t(question.text)}</AppText> : null}
         {question.sourceQuote ? (
-          <AppText tone="muted" variant="meta">{t('질문과 연결된 내 자소서: {quote}', { quote: question.sourceQuote })}</AppText>
+          <AppText tone="muted" variant="meta">{`“${question.sourceQuote}”`}</AppText>
         ) : null}
 
         {attempts.length > 1 ? (
@@ -466,7 +472,7 @@ function QuestionDetail({
         ) : (
           <>
             <AppText tone="muted" variant="meta">
-              {t('{time} 동안 답변 / 권장 시간 {suggested}', {
+              {t('{time} / 권장 {suggested}', {
                 time: formatAnswerDuration(selected.durationMs, locale),
                 suggested: formatAnswerDuration(question.maxDurationMs, locale),
               })}
@@ -476,14 +482,30 @@ function QuestionDetail({
             {analysis ? (
               <View style={styles.block}>
                 <View style={styles.rowBetween}>
-                  <AppText variant="itemTitle">{t('내가 한 말')}</AppText>
-                  {editable && transcript && editing === null && !working ? (
+                  {result ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: showTranscript }}
+                      onPress={() => setTranscriptOpen((open) => !open)}
+                      style={styles.disclosure}
+                    >
+                      <AppText variant="itemTitle">{t('내가 한 말')}</AppText>
+                      {showTranscript ? (
+                        <ChevronUp {...decorative} color={colors.textMuted} size={iconSizes.inline} />
+                      ) : (
+                        <ChevronDown {...decorative} color={colors.textMuted} size={iconSizes.inline} />
+                      )}
+                    </Pressable>
+                  ) : (
+                    <AppText variant="itemTitle">{t('내가 한 말')}</AppText>
+                  )}
+                  {showTranscript && editable && transcript && editing === null && !working ? (
                     <Button leftIcon={<Pencil color={colors.text} size={iconSizes.dense} />} onPress={() => setEditing(text)} size="small" variant="ghost">
                       {t('내용 고치기')}
                     </Button>
                   ) : null}
                 </View>
-                {editing !== null ? (
+                {!showTranscript ? null : editing !== null ? (
                   <View style={styles.block}>
                     <TextArea label={t('내가 한 말 고치기')} maxLength={20_000} minHeight={140} onChangeText={setEditing} value={editing} />
                     <AppText tone="muted" variant="meta">
@@ -577,7 +599,24 @@ function QuestionDetail({
                     </AppText>
                     <AppText variant="bodyStrong">{clean(conciseReportText(result.nextFocus))}</AppText>
                   </View>
-                  {result.coverage.length > 0 ? (
+                  {hasMore ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: feedbackOpen }}
+                      onPress={() => setFeedbackOpen((open) => !open)}
+                      style={styles.disclosure}
+                    >
+                      <AppText tone="soft" variant="bodyStrong">
+                        {feedbackOpen ? t.ctx('fold', '접기') : t('자세히 보기')}
+                      </AppText>
+                      {feedbackOpen ? (
+                        <ChevronUp {...decorative} color={colors.textMuted} size={iconSizes.inline} />
+                      ) : (
+                        <ChevronDown {...decorative} color={colors.textMuted} size={iconSizes.inline} />
+                      )}
+                    </Pressable>
+                  ) : null}
+                  {feedbackOpen && result.coverage.length > 0 ? (
                     <View style={styles.block}>
                       <AppText variant="itemTitle">{t('질문이 바란 내용')}</AppText>
                       <View style={styles.coverageChips}>
@@ -599,7 +638,7 @@ function QuestionDetail({
                       </View>
                     </View>
                   ) : null}
-                  {result.strengths.length > 0 ? (
+                  {feedbackOpen && result.strengths.length > 0 ? (
                     <View style={[styles.block, styles.panel, styles.panelPositive]}>
                       <AppText tone="positive" variant="itemTitle">
                         {t('잘한 점')}
@@ -612,7 +651,7 @@ function QuestionDetail({
                       ))}
                     </View>
                   ) : null}
-                  {result.missingPoints.length > 0 ? (
+                  {feedbackOpen && result.missingPoints.length > 0 ? (
                     <View style={[styles.block, styles.panel, styles.panelSoft]}>
                       <AppText tone="warning" variant="itemTitle">
                         {t('빠진 내용')}
@@ -622,7 +661,7 @@ function QuestionDetail({
                       ))}
                     </View>
                   ) : null}
-                  {result.suggestedStructure.length > 0 ? (
+                  {feedbackOpen && result.suggestedStructure.length > 0 ? (
                     <View style={[styles.block, styles.panel, styles.panelBrand]}>
                       <AppText tone="brand" variant="itemTitle">
                         {t('이렇게 구성해 보세요')}
@@ -674,7 +713,7 @@ function QuestionDetail({
       </Surface>
 
       {compare ? (
-        <Surface style={styles.detailCard} tone="soft">
+        <Surface style={styles.detailCard} tone="raised">
           <View style={styles.rowBetween}>
             <AppText variant="itemTitle">{t('처음 답변과 비교')}</AppText>
             {compare.missingDelta !== null && compare.missingDelta > 0 ? (
@@ -708,7 +747,7 @@ function QuestionDetail({
       ) : null}
 
       {editable ? (
-        <Surface style={styles.detailCard} tone="soft">
+        <Surface style={styles.detailCard} tone="raised">
           <TextArea
             hint={t('다음에 해보고 싶은 것을 적어보세요. 비워둬도 괜찮아요.')}
             label={t('다음 연습 메모')}
@@ -728,7 +767,7 @@ function QuestionDetail({
           ) : null}
         </Surface>
       ) : note ? (
-        <Surface style={styles.detailCard} tone="soft">
+        <Surface style={styles.detailCard} tone="raised">
           <AppText tone="muted" variant="badge">
             {t('다음 연습 메모')}
           </AppText>
@@ -753,20 +792,18 @@ function Notice({ text, action }: { text: string; action: ReactNode }) {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  content: { gap: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
+  content: { gap: spacing.xxl, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
   section: { gap: spacing.md },
-  summary: { gap: spacing.md },
+  summary: { borderRadius: 24, gap: spacing.md },
   titleBlock: { gap: spacing.xxs },
-  insights: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  onBrand: { backgroundColor: colors.surface },
   clip: { overflow: 'hidden' },
   grow: { flexGrow: 1 },
   shrink: { flexShrink: 1, minWidth: 0 },
   dockSpace: { paddingBottom: BOTTOM_ACTION_SPACE + spacing.md },
-  qCard: { backgroundColor: colors.backgroundSoft, borderRadius: radii.hero, cursor: 'pointer', flex: 1, gap: spacing.sm, minHeight: 148, padding: spacing.lg },
+  qCard: { backgroundColor: colors.surface, borderRadius: radii.hero, cursor: 'pointer', flex: 1, gap: spacing.sm, minHeight: 148, padding: spacing.lg },
   qCardOn: { backgroundColor: colors.brandSoft },
   qCardPressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-  qBadge: { alignItems: 'center', backgroundColor: colors.surface, borderRadius: radii.full, height: 28, justifyContent: 'center', width: 28 },
+  qBadge: { alignItems: 'center', backgroundColor: colors.backgroundSoft, borderRadius: radii.full, height: 28, justifyContent: 'center', width: 28 },
   qBadgeOn: { backgroundColor: colors.brand },
   focus: { backgroundColor: colors.brandSoft, borderRadius: radii.tile, gap: spacing.xs, padding: spacing.md },
   coverageChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
@@ -778,7 +815,7 @@ const styles = StyleSheet.create({
   panelSoft: { backgroundColor: colors.backgroundSoft },
   panelBrand: { backgroundColor: colors.brandSubtle },
   badges: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  reflect: { backgroundColor: colors.surface, borderRadius: radii.tile, gap: spacing.xs, padding: spacing.md },
+  reflect: { gap: spacing.xs },
   columns: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.xl },
   listColumn: {
     flexShrink: 0,
@@ -798,6 +835,7 @@ const styles = StyleSheet.create({
   detailCard: { gap: spacing.md },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   block: { gap: spacing.sm },
+  disclosure: { alignItems: 'center', cursor: 'pointer', flexDirection: 'row', gap: spacing.xs, minHeight: 44 },
   rowBetween: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, justifyContent: 'space-between' },
   inlineActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   mark: { backgroundColor: colors.brandSoft },
