@@ -18,7 +18,6 @@ import { MediaArtwork } from "@/components/MediaArtwork";
 import { SpeakColumns, SpeakFrame } from "@/components/speak/SpeakColumns";
 import { RoundAction } from "@/components/speak/RoundAction";
 import {
-  SpeakTitle,
   Surface,
 } from "@/components/speak/SpeakKit";
 import {
@@ -161,7 +160,6 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
 
   const top = (
     <View style={styles.top}>
-      <SpeakTitle title={t("연습")} />
       {switcher}
     </View>
   );

@@ -215,20 +215,18 @@ export default function MasteryScreen() {
       )}
 
       <View style={[styles.content, { paddingHorizontal: gutter }, wide ? styles.contentWide : null]}>
-        <AnimatedReveal>
+        {/* 큰 제목 없음(2026-09-26 CEO "제목 없어도 될듯"): 어느 화면인지는 탭 바, 사이드바가 말한다.
+            데스크톱은 머리 막대가 없어 알림 종만 오른쪽에 둔다. */}
+        {wide ? (
           <View style={styles.titleRow}>
-            <AppText accessibilityRole="header" style={styles.title} variant="display">
-              {t('복습')}
-            </AppText>
-            {wide ? (
-              <IconButton
-                icon={Bell}
-                label={t('알림')}
-                onPress={() => router.push('/notifications')}
-              />
-            ) : null}
+            <View style={styles.flexSpacer} />
+            <IconButton
+              icon={Bell}
+              label={t('알림')}
+              onPress={() => router.push('/notifications')}
+            />
           </View>
-        </AnimatedReveal>
+        ) : null}
 
         {mastery.length === 0 ? (
           <AnimatedReveal delay={40}>
@@ -412,6 +410,7 @@ function ConfusionSpotCard({
 }
 
 const styles = StyleSheet.create({
+  flexSpacer: { flex: 1 },
   /** Header → title 8; between blocks 32; last block → end 40. */
   content: {
     gap: spacing.xxl,
@@ -421,7 +420,6 @@ const styles = StyleSheet.create({
   /** No header bar on a desktop: the title starts where the home's greeting does. */
   contentWide: { paddingTop: spacing.xl },
   titleRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
-  title: { flex: 1, minWidth: 0 },
   section: { gap: spacing.md },
   stack: { gap: spacing.sm },
   emptyFace: {

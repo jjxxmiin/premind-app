@@ -19,7 +19,6 @@ import { AllowanceCard } from "@/components/interview/AllowanceCard";
 import { InterviewSessionRow } from "@/components/interview/InterviewSessionRow";
 import { SpeakColumns, SpeakFrame } from "@/components/speak/SpeakColumns";
 import {
-  SpeakTitle,
   Surface,
 } from "@/components/speak/SpeakKit";
 import {
@@ -259,7 +258,6 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
 
   const top = (
     <View style={styles.top}>
-      <SpeakTitle title={t("연습")} />
       {switcher}
     </View>
   );
