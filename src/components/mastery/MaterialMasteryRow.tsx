@@ -1,35 +1,31 @@
 import { StyleSheet, View } from 'react-native';
 
-import { ScoreRing } from '@/components/lens';
-import { AppText, ListRow } from '@/components/ui';
+import { AppText } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { useT } from '@/lib/i18n';
 import { masteryLine, masteryVerdict, type MasterySummary } from '@/lib/mastery';
-import { colors, radii, sizes } from '@/theme/tokens';
+import { colors, radii, spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
+
+import { PressFace } from './PressFace';
 
 export interface MaterialMasteryRowProps {
   material: StudyMaterial;
   summary: MasterySummary;
   onPress: (material: StudyMaterial, summary: MasterySummary) => void;
+  /** Kept for callers; rows now sit apart on a filled face with no rules. */
   divider?: boolean;
 }
 
-/** The small ScoreRing's stroke, so the placeholder matches it. */
-const RING_STROKE = 3;
+const BAR = 8;
 
 /**
- * One material in the 자료별 이해도 list: a 40pt ring (or a grey "-" ring
- * before the first answer), the title on up to two lines, the one-line
- * meaning, and a chevron. No buttons in the row: the whole row opens what
- * comes next.
+ * One material in the list under the carousel: the title with its number on
+ * the right, a thick progress bar, and the one-line meaning. The row is its
+ * own filled face (no border, no rule between rows), and the whole of it opens
+ * what comes next.
  */
-export function MaterialMasteryRow({
-  divider = true,
-  material,
-  onPress,
-  summary,
-}: MaterialMasteryRowProps) {
+export function MaterialMasteryRow({ material, onPress, summary }: MaterialMasteryRowProps) {
   const t = useT();
   const line = masteryLine(summary, t.locale);
   const scored = summary.score !== null;
@@ -39,7 +35,7 @@ export function MaterialMasteryRow({
       ? t('문제를 풀어요')
       : t('요약에서 핵심 내용을 확인해요');
   return (
-    <ListRow
+    <PressFace
       accessibilityHint={hint}
       accessibilityLabel={
         scored
@@ -51,33 +47,52 @@ export function MaterialMasteryRow({
             })
           : `${material.title}. ${line}`
       }
-      divider={divider}
-      leading={
-        scored ? (
-          <ScoreRing max={100} precision={0} score={summary.score ?? 0} size="small" />
-        ) : (
-          <View {...decorative} style={styles.placeholder}>
-            <AppText tone="faint" variant="badge">
-              -
-            </AppText>
-          </View>
-        )
-      }
+      accessibilityRole="button"
+      haptic={false}
       onPress={() => onPress(material, summary)}
-      subtitle={line}
-      title={material.title}
-    />
+      style={styles.row}
+    >
+      <View style={styles.head}>
+        <AppText numberOfLines={2} style={styles.title} variant="itemTitle">
+          {material.title}
+        </AppText>
+        <AppText tabular tone={scored ? 'default' : 'faint'} variant="label">
+          {scored ? `${summary.score}%` : '-'}
+        </AppText>
+      </View>
+      <View {...decorative} style={styles.track}>
+        {scored && (summary.score ?? 0) > 0 ? (
+          <View style={[styles.fill, { width: `${summary.score ?? 0}%` }]} />
+        ) : null}
+      </View>
+      <AppText numberOfLines={1} tone="muted" variant="meta">
+        {line}
+      </AppText>
+    </PressFace>
   );
 }
 
+/** The tablet and desktop form: the same row, sized for a grid cell. */
+export function MaterialMasteryTile(props: Omit<MaterialMasteryRowProps, 'divider'>) {
+  return <MaterialMasteryRow {...props} />;
+}
+
 const styles = StyleSheet.create({
-  placeholder: {
-    alignItems: 'center',
-    borderColor: colors.backgroundMuted,
-    borderRadius: radii.full,
-    borderWidth: RING_STROKE,
-    height: sizes.iconButton,
-    justifyContent: 'center',
-    width: sizes.iconButton,
+  row: {
+    backgroundColor: colors.backgroundSoft,
+    borderRadius: radii.card,
+    flex: 1,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md + 2,
   },
+  head: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.md },
+  title: { flex: 1, minWidth: 0 },
+  track: {
+    backgroundColor: colors.borderStrong,
+    borderRadius: radii.full,
+    height: BAR,
+    overflow: 'hidden',
+  },
+  fill: { backgroundColor: colors.brand, borderRadius: radii.full, height: BAR },
 });

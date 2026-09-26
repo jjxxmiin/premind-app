@@ -1,39 +1,52 @@
+import { ArrowRight } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
 
-import { ScoreRing } from '@/components/lens';
-import { AppText, Button, Card } from '@/components/ui';
-import { decorative } from '@/lib/a11y';
+import { AppText, Button } from '@/components/ui';
 import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { masteryVerdict, type OverviewCopy, type WeekdayActivity } from '@/lib/mastery';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, fontFamilies, iconSizes, radii, spacing } from '@/theme/tokens';
 
-import { ActivityStrip } from './ActivityStrip';
+import { ProgressRing } from './ProgressRing';
+import { WeekDots } from './WeekDots';
 
 export interface MasteryHeroProps {
   /** Mean 이해도 over scored materials; null before anything is scored. */
   score: number | null;
   copy: OverviewCopy;
   days: readonly WeekdayActivity[];
-  /** Shown only before anything is scored: the one way in. */
-  onStart?: () => void;
+  /** Days in a row with at least one answer. */
+  streak: number;
+  /** The one button: 오늘 복습 시작, or 첫 문제 풀기 before anything is scored. */
+  actionLabel: string;
+  /** Where the button goes, said in a line above it ("5주차부터 시작해요"). */
+  actionDetail?: string;
+  onAction: () => void;
 }
 
-/** Same geometry as the large ScoreRing, so the two states line up. */
-const RING = { diameter: 148, stroke: 10 } as const;
-
 /**
- * The top of the 이해도 tab: one ring for everything studied, two lines that
- * say where the learner stands, and the week's activity.
+ * The head of the 이해도 tab, one card with one job (Toss): an activity ring
+ * with the overall number beside it in large type, how many questions this
+ * week, the week as seven dots with the run of days, and the single way in.
  *
- * On a phone the week sits under the ring in the same card. From a tablet up
- * it moves into a card of its own beside the ring: stretched across the full
- * width the seven bars drift a hundred points apart and stop reading as one
- * week.
+ * It sits on the brand's soft face with no border, so it reads as the screen's
+ * subject rather than one more box in a list. The button lives inside the
+ * card, not docked to the bottom: this is a tab, and the tab bar owns the
+ * bottom edge. From a tablet up the week moves into a card of its own beside
+ * it, as it did before.
  */
-export function MasteryHero({ copy, days, onStart, score }: MasteryHeroProps) {
+export function MasteryHero({
+  actionDetail,
+  actionLabel,
+  copy,
+  days,
+  onAction,
+  score,
+  streak,
+}: MasteryHeroProps) {
   const t = useT();
+  const { isTablet } = useLayout();
+  const weekCount = days.reduce((sum, day) => sum + day.attemptCount, 0);
   const spokenScore =
     score === null
       ? t('이해도 시작 전')
@@ -41,148 +54,102 @@ export function MasteryHero({ copy, days, onStart, score }: MasteryHeroProps) {
           score,
           verdict: masteryVerdict(score, t.locale),
         });
-  const { isTablet } = useLayout();
+  const next = copy.detail || copy.title;
 
   const overview = (
     <View
-      accessibilityLabel={`${spokenScore}. ${copy.title}${copy.detail ? `. ${copy.detail}` : ''}`}
+      accessibilityLabel={`${spokenScore}. ${t('이번 주 {n}문제', { n: weekCount })}`}
       accessible
       style={styles.top}
     >
-      {score === null ? (
-        <EmptyRing />
-      ) : (
-        <ScoreRing
-          label={t('이해도')}
-          max={100}
-          precision={0}
-          score={score}
-          unit="%"
-          verdict={masteryVerdict(score, t.locale)}
-        />
-      )}
-      <View style={styles.copy}>
-        <AppText variant="itemTitle">{copy.title}</AppText>
-        {copy.detail ? (
-          <AppText tone="muted" variant="meta">
-            {copy.detail}
+      <ProgressRing diameter={RING} stroke={RING_STROKE} value={score} />
+      <View style={styles.numbers}>
+        <AppText tone="soft" variant="label">
+          {t('전체 이해도')}
+        </AppText>
+        <AppText
+          numberOfLines={1}
+          style={[styles.big, score === null ? styles.bigEmpty : null]}
+          tabular
+        >
+          {`${score ?? 0}%`}
+        </AppText>
+        <AppText tabular tone="soft" variant="meta">
+          {t('이번 주 {n}문제', { n: weekCount })}
+        </AppText>
+      </View>
+    </View>
+  );
+
+  const action = (
+    <View style={styles.action}>
+      <View style={styles.nextCopy}>
+        <AppText variant="bodyStrong">{next}</AppText>
+        {actionDetail ? (
+          <AppText numberOfLines={1} tone="soft" variant="meta">
+            {actionDetail}
           </AppText>
         ) : null}
-        {score === null && onStart ? (
-          <Button
-            accessibilityHint={t('가장 최근 자료의 문제를 열어요')}
-            onPress={onStart}
-            size="small"
-            style={styles.start}
-            variant="primary"
-          >
-            {t('문제 풀러 가기')}
-          </Button>
-        ) : null}
       </View>
+      <Button
+        fullWidth
+        onPress={onAction}
+        rightIcon={<ArrowRight color={colors.textInverse} size={iconSizes.inline} />}
+        size="large"
+        variant="primary"
+      >
+        {actionLabel}
+      </Button>
     </View>
   );
 
   if (isTablet) {
     return (
       <View style={styles.pair}>
-        <Card style={[styles.card, styles.overviewCard]}>{overview}</Card>
-        <Card style={[styles.card, styles.weekCard]}>
-          <AppText tone="muted" variant="label">
-            {t('최근 7일')}
-          </AppText>
-          <ActivityStrip days={days} />
-        </Card>
+        <View style={[styles.hero, styles.heroMain]}>
+          {overview}
+          {action}
+        </View>
+        <View style={[styles.hero, styles.heroWeek]}>
+          <WeekDots days={days} streak={streak} />
+        </View>
       </View>
     );
   }
 
   return (
-    <Card style={styles.card}>
+    <View style={styles.hero}>
       {overview}
-      <View style={styles.rule} />
-      <ActivityStrip days={days} />
-    </Card>
-  );
-}
-
-/** The large ring before there is a number: grey track, "시작 전" inside. */
-function EmptyRing() {
-  const t = useT();
-  const { diameter, stroke } = RING;
-  const centre = diameter / 2;
-  return (
-    <View {...decorative} style={[styles.ring, { height: diameter, width: diameter }]}>
-      <Svg height={diameter} width={diameter}>
-        <Circle
-          cx={centre}
-          cy={centre}
-          fill="none"
-          r={(diameter - stroke) / 2}
-          stroke={colors.backgroundMuted}
-          strokeWidth={stroke}
-        />
-      </Svg>
-      <View style={styles.ringCentre}>
-        <AppText tone="faint" variant="label">
-          {t('시작 전')}
-        </AppText>
-      </View>
+      <WeekDots days={days} streak={streak} />
+      {action}
     </View>
   );
 }
 
+const RING = 112;
+const RING_STROKE = 14;
+
 const styles = StyleSheet.create({
-  card: {
-    gap: spacing.gutter,
+  hero: {
+    backgroundColor: colors.brandSoft,
+    borderRadius: radii.hero,
+    gap: spacing.xl,
+    padding: spacing.xl,
   },
-  /** Ring and week side by side, the ring's card the wider of the two. */
-  pair: {
-    alignItems: 'stretch',
-    flexDirection: 'row',
-    gap: spacing.md,
+  pair: { alignItems: 'stretch', flexDirection: 'row', gap: spacing.md },
+  heroMain: { flex: 3, minWidth: 0 },
+  heroWeek: { flex: 2, justifyContent: 'center', minWidth: 0 },
+  top: { alignItems: 'center', flexDirection: 'row', gap: spacing.xl },
+  numbers: { flex: 1, gap: spacing.xxs, minWidth: 0 },
+  /** The one number on the screen that matters, Toss-size. */
+  big: {
+    color: colors.text,
+    fontFamily: fontFamilies.extraBold,
+    fontSize: 48,
+    letterSpacing: -1.4,
+    lineHeight: 56,
   },
-  overviewCard: {
-    flex: 3,
-    justifyContent: 'center',
-    minWidth: 0,
-  },
-  weekCard: {
-    flex: 2,
-    gap: spacing.md,
-    justifyContent: 'space-between',
-    minWidth: 0,
-  },
-  rule: {
-    backgroundColor: colors.border,
-    height: StyleSheet.hairlineWidth,
-  },
-  top: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.lg,
-  },
-  copy: {
-    flex: 1,
-    gap: spacing.xs,
-    minWidth: 0,
-  },
-  start: {
-    alignSelf: 'flex-start',
-    marginTop: spacing.sm,
-  },
-  ring: {
-    alignItems: 'center',
-    flexShrink: 0,
-    justifyContent: 'center',
-  },
-  ringCentre: {
-    alignItems: 'center',
-    bottom: 0,
-    justifyContent: 'center',
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-  },
+  bigEmpty: { color: colors.textFaint },
+  action: { gap: spacing.md },
+  nextCopy: { gap: spacing.xxs },
 });
