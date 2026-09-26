@@ -22,7 +22,6 @@ import {
   EmptyState,
   IconButton,
   Screen,
-  SectionHeader,
 } from '@/components/ui';
 import { confusionSpots, type ConfusionSpot } from '@/lib/confusion-spots';
 import { formatSourcePosition } from '@/lib/format';
@@ -219,7 +218,7 @@ export default function MasteryScreen() {
         <AnimatedReveal>
           <View style={styles.titleRow}>
             <AppText accessibilityRole="header" style={styles.title} variant="display">
-              {t('이해도')}
+              {t('복습')}
             </AppText>
             {wide ? (
               <IconButton
@@ -263,10 +262,8 @@ export default function MasteryScreen() {
 
             {review.length ? (
               <AnimatedReveal delay={60}>
+                {/* 구역 제목 없이 카드로만 나눈다(2026-09-26 CEO "섹션별로 제목 굳이 없어도"). 이름은 화면 읽기용으로. */}
                 <View style={styles.section}>
-                  <SectionHeader
-                    title={anyScored ? t('지금 복습할 자료') : t('시작할 자료')}
-                  />
                   <Carousel
                     accessibilityLabel={anyScored ? t('지금 복습할 자료') : t('시작할 자료')}
                     itemWidth={isTablet ? 280 : undefined}
@@ -286,10 +283,7 @@ export default function MasteryScreen() {
 
             {spots.length ? (
               <AnimatedReveal delay={70}>
-                <View style={styles.section}>
-                  <SectionHeader
-                    title={t('헷갈린 곳')}
-                  />
+                <View accessibilityLabel={t('헷갈린 곳')} style={styles.section}>
                   {isTablet ? (
                     <TileGrid columns={2}>
                       {visibleSpots.map((spot) => (
@@ -319,10 +313,10 @@ export default function MasteryScreen() {
 
             {rest.length ? (
               <AnimatedReveal delay={80}>
-                <View style={styles.section}>
-                  <SectionHeader
-                    title={review.length ? t('나머지 자료') : t('자료별 이해도')}
-                  />
+                <View
+                  accessibilityLabel={review.length ? t('나머지 자료') : t('자료별 이해도')}
+                  style={styles.section}
+                >
                   {isTablet ? (
                     <TileGrid columns={Math.max(2, columns)} gap={spacing.sm}>
                       {visibleRows.map(({ material, summary }) => (

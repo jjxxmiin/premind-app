@@ -193,7 +193,7 @@ export const EN_INTERVIEW: EnDict = {
   "그룹 없음": "No group",
   "마지막 {date}": "Last {date}",
   "아직 없음": "None yet",
-  "학생은 앱의 말하기 탭 면접에서 코드를 입력해 바로 참여해요. 이미 참여한 학생은 코드를 마감해도 그대로 이용할 수 있어요.": "Students enter the code under Interview in the app's Speaking tab to join right away. Students who already joined can keep using PREMIND after you close a code.",
+  "학생은 앱의 연습 탭 면접에서 코드를 입력해 바로 참여해요. 이미 참여한 학생은 코드를 마감해도 그대로 이용할 수 있어요.": "Students enter the code under Interview in the app's Practice tab to join right away. Students who already joined can keep using PREMIND after you close a code.",
   "{group} / {uses} / {max}명 / {until}": "{group} / {uses} / {max} / {until}",
   "org|{date}까지": "until {date}",
   "제한 없음": "No limit",

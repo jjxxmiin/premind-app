@@ -28,8 +28,8 @@ const SUPPORT_MAILTO = 'mailto:support@camorix.com';
 const loop: { icon: LucideIcon; label: string }[] = [
   { icon: Mic, label: '녹음, 올리기' },
   { icon: BookOpenCheck, label: '마인드팩' },
-  { icon: Gauge, label: '이해도' },
-  { icon: BarChart3, label: '말하기' },
+  { icon: Gauge, label: '복습' },
+  { icon: BarChart3, label: '연습' },
 ];
 
 interface GuideStep {
@@ -79,14 +79,14 @@ const steps: GuideStep[] = [
   },
   {
     id: 'lens',
-    title: '이해도와 말하기',
-    summary: '이해도 탭 / 말하기 탭',
+    title: '복습과 연습',
+    summary: '복습 탭 / 연습 탭',
     icon: BarChart3,
     lines: [
-      '이해도 탭은 푼 문제와 확인한 핵심 내용으로 자료마다 이해도를 계산해요.',
+      '복습 탭은 푼 문제와 확인한 핵심 내용으로 자료마다 이해도를 계산해요.',
       '헷갈린 개념은 다시 들을 시점과 함께 알려줘요.',
-      '말하기 탭의 발표는 내 발표나 스피치 연습을 녹음하면 구조, 명료성, 근거, 전달력을 채점해요.',
-      '말하기 탭의 면접은 질문에 타이머 맞춰 답하고, 내가 한 말을 전사문과 피드백으로 돌아봐요.',
+      '연습 탭의 발표는 내 발표나 스피치 연습을 녹음하면 구조, 명료성, 근거, 전달력을 채점해요.',
+      '연습 탭의 면접은 질문에 타이머 맞춰 답하고, 내가 한 말을 전사문과 피드백으로 돌아봐요.',
       '먼저 고칠 것 하나만 다음 연습에서 바꿔 보세요.',
     ],
   },

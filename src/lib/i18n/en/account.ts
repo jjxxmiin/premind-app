@@ -268,16 +268,16 @@ export const EN_ACCOUNT: EnDict = {
     'The mind map shows how concepts connect as a picture.',
   '아래의 "이 자료에 물어보기"를 누르면 대본을 근거로 답해 줘요.':
     'Tap "Ask this material" at the bottom to get answers based on the transcript.',
-  '이해도와 말하기': 'Mastery and Speaking',
-  '이해도 탭 / 말하기 탭': 'Mastery tab / Speaking tab',
-  '이해도 탭은 푼 문제와 확인한 핵심 내용으로 자료마다 이해도를 계산해요.':
-    'The Mastery tab works out your mastery of each material from the quizzes you solved and the key points you checked.',
+  '복습과 연습': 'Review and Practice',
+  '복습 탭 / 연습 탭': 'Review tab / Practice tab',
+  '복습 탭은 푼 문제와 확인한 핵심 내용으로 자료마다 이해도를 계산해요.':
+    'The Review tab works out your mastery of each material from the quizzes you solved and the key points you checked.',
   '헷갈린 개념은 다시 들을 시점과 함께 알려줘요.':
     'Confusing spots come with the moment to listen to again.',
-  '말하기 탭의 발표는 내 발표나 스피치 연습을 녹음하면 구조, 명료성, 근거, 전달력을 채점해요.':
-    'In the Speaking tab, record a presentation or speech practice and Presentation review scores its structure, clarity, evidence, and delivery.',
-  '말하기 탭의 면접은 질문에 타이머 맞춰 답하고, 내가 한 말을 전사문과 피드백으로 돌아봐요.':
-    'In the Speaking tab, interview practice has you answer questions on a timer, then look back at what you said with a transcript and feedback.',
+  '연습 탭의 발표는 내 발표나 스피치 연습을 녹음하면 구조, 명료성, 근거, 전달력을 채점해요.':
+    'In the Practice tab, record a presentation or speech practice and Presentation review scores its structure, clarity, evidence, and delivery.',
+  '연습 탭의 면접은 질문에 타이머 맞춰 답하고, 내가 한 말을 전사문과 피드백으로 돌아봐요.':
+    'In the Practice tab, interview practice has you answer questions on a timer, then look back at what you said with a transcript and feedback.',
   '먼저 고칠 것 하나만 다음 연습에서 바꿔 보세요.':
     'Pick just one thing to fix first and change it in your next practice.',
   '무료와 스탠다드': 'Free and Standard',

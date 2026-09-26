@@ -18,7 +18,6 @@ import { MediaArtwork } from "@/components/MediaArtwork";
 import { SpeakColumns, SpeakFrame } from "@/components/speak/SpeakColumns";
 import { RoundAction } from "@/components/speak/RoundAction";
 import {
-  SpeakSectionTitle,
   SpeakTitle,
   Surface,
 } from "@/components/speak/SpeakKit";
@@ -136,7 +135,6 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
   const pastRow =
     past.length > 0 ? (
       <View style={styles.section}>
-        <SpeakSectionTitle title={t("지난 평가")} />
         <Carousel
           accessibilityLabel={t("지난 평가")}
           itemWidth={compact ? 220 : 240}
@@ -163,7 +161,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
 
   const top = (
     <View style={styles.top}>
-      <SpeakTitle title={t("말하기")} />
+      <SpeakTitle title={t("연습")} />
       {switcher}
     </View>
   );

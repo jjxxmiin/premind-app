@@ -32,7 +32,7 @@ function tabIcon(Icon: LucideIcon) {
 }
 
 /**
- * Five tabs (홈, 이해도, 추가, 말하기, MY) on a bar we draw ourselves (`AppTabBar`) so the bottom safe
+ * Five tabs (홈, 복습, 추가, 연습, MY; 2026-09-26 CEO: 이해도 → 복습, 말하기 → 연습) on a bar we draw ourselves (`AppTabBar`) so the bottom safe
  * area is measured natively and labels never end up under the system bar.
  *
  * 배우기(홈, 이해도) and 말하기 (발표 평가 + 면접 연습, since 2026-09-26) are
@@ -71,10 +71,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="mastery"
         options={{
-          title: t('이해도'),
-          tabBarAccessibilityLabel: t('이해도, 자료별 학습 상태'),
+          title: t('복습'),
+          tabBarAccessibilityLabel: t('복습, 자료별 이해도와 다시 볼 곳'),
           tabBarIcon: tabIcon(Gauge),
-          tabBarLabel: t('이해도'),
+          tabBarLabel: t('복습'),
         }}
       />
       {/* Not a tab: one button for every way to start a 마인드팩. It opens
@@ -103,10 +103,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="speak"
         options={{
-          title: t('말하기'),
-          tabBarAccessibilityLabel: t('말하기, 발표 평가와 면접 연습'),
+          title: t('연습'),
+          tabBarAccessibilityLabel: t('연습, 발표 평가와 면접 연습'),
           tabBarIcon: tabIcon(MicVocal),
-          tabBarLabel: t('말하기'),
+          tabBarLabel: t('연습'),
         }}
       />
       <Tabs.Screen

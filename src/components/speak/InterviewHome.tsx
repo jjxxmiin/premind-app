@@ -19,7 +19,6 @@ import { AllowanceCard } from "@/components/interview/AllowanceCard";
 import { InterviewSessionRow } from "@/components/interview/InterviewSessionRow";
 import { SpeakColumns, SpeakFrame } from "@/components/speak/SpeakColumns";
 import {
-  SpeakSectionTitle,
   SpeakTitle,
   Surface,
 } from "@/components/speak/SpeakKit";
@@ -195,8 +194,7 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
 
   // 이어서 하기 하나뿐이면 목록은 비워 두지 않고 통째로 뺀다.
   const recentBlock = view && view.recent.length === 0 && resume ? null : (
-    <View style={styles.section}>
-      <SpeakSectionTitle title={t("최근 연습")} />
+    <View accessibilityLabel={t("최근 연습")} style={styles.section}>
       {!view ? (
         <Skeleton height={68} />
       ) : view.recent.length === 0 ? (
@@ -261,7 +259,7 @@ export function InterviewHome({ switcher }: { switcher?: ReactNode }) {
 
   const top = (
     <View style={styles.top}>
-      <SpeakTitle title={t("말하기")} />
+      <SpeakTitle title={t("연습")} />
       {switcher}
     </View>
   );

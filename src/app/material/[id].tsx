@@ -1515,7 +1515,7 @@ function LensEntry({ material }: { material: StudyMaterial }) {
       <View style={styles.flex}>
         <AppText variant="itemTitle">{t('아직 평가가 없어요')}</AppText>
         <AppText tone="muted" variant="meta">
-          {t('말하기 탭의 발표에서 이 자료를 고르면 근거와 함께 평가해 줘요.')}
+          {t('연습 탭의 발표에서 이 자료를 고르면 근거와 함께 평가해 줘요.')}
         </AppText>
       </View>
     </Card>

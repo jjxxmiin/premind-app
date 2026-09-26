@@ -85,7 +85,7 @@ export const EN_MATERIAL: EnDict = {
   '근거와 먼저 고칠 것을 봐요': 'See the evidence and what to fix first',
   '평가 결과 보기': 'See review results',
   '아직 평가가 없어요': 'No review yet',
-  '말하기 탭의 발표에서 이 자료를 고르면 근거와 함께 평가해 줘요.': 'Pick this material under Presentation in the Speaking tab to get a review with evidence.',
+  '연습 탭의 발표에서 이 자료를 고르면 근거와 함께 평가해 줘요.': 'Pick this material under Presentation in the Practice tab to get a review with evidence.',
   // 공부 부품 (components/study)
   '닫기': 'Close',
   '{page}쪽 ({i} / {n})': 'Page {page} ({i} of {n})',
