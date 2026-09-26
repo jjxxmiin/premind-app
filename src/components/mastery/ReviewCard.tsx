@@ -88,7 +88,8 @@ const styles = StyleSheet.create({
     borderRadius: radii.hero,
     flex: 1,
     gap: spacing.md,
-    minHeight: 164,
+    // 내용만큼(약한 개념이 없는 카드가 빈 면으로 커 보였다). 한 줄의 카드 높이는 Carousel 이 가장 긴 카드에 맞춘다.
+    minHeight: 0,
     padding: spacing.lg,
   },
   top: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },

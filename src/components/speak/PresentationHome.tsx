@@ -1,10 +1,10 @@
-import { router } from 'expo-router';
-import { Bell, Check, FolderOpen, Link2, Mic, Play } from 'lucide-react-native';
-import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { router } from "expo-router";
+import { Bell, Check, FolderOpen, Link2, Mic, Play } from "lucide-react-native";
+import { useState, type ReactNode } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { AppHeader } from '@/components/AppHeader';
-import { Carousel } from '@/components/app';
+import { AppHeader } from "@/components/AppHeader";
+import { Carousel } from "@/components/app";
 import {
   LatestReportCard,
   LensEvaluatingTile,
@@ -14,11 +14,15 @@ import {
   lensFailure,
   lensHome,
   type LensFailure,
-} from '@/components/lens';
-import { MediaArtwork } from '@/components/MediaArtwork';
-import { SpeakColumns, SpeakFrame } from '@/components/speak/SpeakColumns';
-import { RoundAction } from '@/components/speak/RoundAction';
-import { SpeakHero, SpeakSectionTitle, SpeakTitle } from '@/components/speak/SpeakKit';
+} from "@/components/lens";
+import { MediaArtwork } from "@/components/MediaArtwork";
+import { SpeakColumns, SpeakFrame } from "@/components/speak/SpeakColumns";
+import { RoundAction } from "@/components/speak/RoundAction";
+import {
+  SpeakHero,
+  SpeakSectionTitle,
+  SpeakTitle,
+} from "@/components/speak/SpeakKit";
 import {
   AnimatedReveal,
   AppText,
@@ -29,14 +33,14 @@ import {
   EmptyState,
   IconButton,
   Screen,
-} from '@/components/ui';
-import { decorative } from '@/lib/a11y';
-import { formatMaterialLength, formatRelativeDate } from '@/lib/format';
-import { useT } from '@/lib/i18n';
-import { useLayout } from '@/lib/layout';
-import { useAppStore } from '@/state/app-store';
-import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
-import type { StudyMaterial } from '@/types';
+} from "@/components/ui";
+import { decorative } from "@/lib/a11y";
+import { formatMaterialLength, formatRelativeDate } from "@/lib/format";
+import { useT } from "@/lib/i18n";
+import { useLayout } from "@/lib/layout";
+import { useAppStore } from "@/state/app-store";
+import { colors, iconSizes, radii, spacing } from "@/theme/tokens";
+import type { StudyMaterial } from "@/types";
 
 /**
  * 말하기 탭의 발표 쪽(2026-09-26 앱다운 재설계). 큰 제목 → 알약 고르기 → 머리 카드 안의 큰 둥근
@@ -45,17 +49,18 @@ import type { StudyMaterial } from '@/types';
  */
 export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
   const t = useT();
-  const { evaluatingMaterialIds, materials, projects, requestLens } = useAppStore();
+  const { evaluatingMaterialIds, materials, projects, requestLens } =
+    useAppStore();
   const { breakpoint, gutter } = useLayout();
-  const wide = breakpoint === 'expanded';
-  const compact = breakpoint === 'compact';
+  const wide = breakpoint === "expanded";
+  const compact = breakpoint === "compact";
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [failure, setFailure] = useState<LensFailure | null>(null);
 
   const projectTitle = (material: StudyMaterial) =>
     projects.find((project) => project.id === material.projectId)?.title ??
-    t('폴더 없음');
+    t("폴더 없음");
 
   const isEvaluating = (id: string) => evaluatingMaterialIds.includes(id);
   const { candidates, history, latest, rows, showTips } = lensHome(
@@ -67,9 +72,9 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
     setSelectedId(null);
     setPickerOpen(true);
   };
-  const openRecorder = () => router.push('/record');
+  const openRecorder = () => router.push("/record");
   const openReport = (material: StudyMaterial) =>
-    router.push({ pathname: '/report/[id]', params: { id: material.id } });
+    router.push({ pathname: "/report/[id]", params: { id: material.id } });
 
   const startEvaluation = () => {
     if (!selectedId) return;
@@ -83,13 +88,15 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
 
   // 머리 카드: 할 일 하나(녹음)를 큰 둥근 버튼으로, 가진 자료로 평가는 조용한 보조 버튼(시트).
   const heroCopy = (
-    <View style={[styles.heroCopy, compact ? styles.heroCopyCentered : null]}>
-      <AppText align={compact ? 'center' : 'left'} variant="heroTitle">
-        {t(latest ? '한 번 더 말해 볼까요?' : '발표를 들려주세요')}
+    <View style={styles.heroCopy}>
+      <AppText variant={compact ? "pageTitle" : "heroTitle"}>
+        {t(latest ? "한 번 더 말해 볼까요?" : "발표를 들려주세요")}
       </AppText>
       {latest ? null : (
-        <AppText align={compact ? 'center' : 'left'} tone="soft" variant="body">
-          {t('발표나 스피치를 대본으로 채점해요. 녹음, 올린 영상, 유튜브 링크 다 돼요.')}
+        <AppText tone="soft" variant={compact ? "meta" : "body"}>
+          {t(
+            "발표나 스피치를 대본으로 채점해요. 녹음, 올린 영상, 유튜브 링크 다 돼요.",
+          )}
         </AppText>
       )}
     </View>
@@ -98,38 +105,31 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
     <Button
       leftIcon={<FolderOpen color={colors.text} size={iconSizes.inline} />}
       onPress={openPicker}
-      style={compact ? styles.pickCompact : styles.pick}
+      style={styles.pick}
       variant="ghost"
     >
-      {t('가진 자료로 평가')}
+      {t("가진 자료로 평가")}
     </Button>
   );
   const record = (
     <RoundAction
-      accessibilityHint={t('녹음 화면을 열어요')}
+      accessibilityHint={t("녹음 화면을 열어요")}
       icon={Mic}
-      label={t('발표 녹음하기')}
+      label={t("발표 녹음하기")}
+      size={compact ? 64 : 88}
       onPress={openRecorder}
       testID="speak-record"
     />
   );
   const hero = (
     <SpeakHero>
-      {compact ? (
-        <>
+      <View style={[styles.heroRow, compact ? styles.heroRowCompact : null]}>
+        <View style={styles.heroLeft}>
           {heroCopy}
-          {record}
           {pickButton}
-        </>
-      ) : (
-        <View style={styles.heroRow}>
-          <View style={styles.heroLeft}>
-            {heroCopy}
-            {pickButton}
-          </View>
-          {record}
         </View>
-      )}
+        {record}
+      </View>
     </SpeakHero>
   );
 
@@ -146,37 +146,50 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
   const trend = history.length >= 2 ? <ScoreTrend entries={history} /> : null;
 
   // 지난 평가: 위 카드에 크게 보인 최근 평가는 빼고, 쓰는 중인 것부터.
-  const past = rows.filter((material) => isEvaluating(material.id) || material.id !== latest?.id);
-  const pastRow = past.length > 0 ? (
-    <View style={styles.section}>
-      <SpeakSectionTitle title={t('지난 평가')} />
-      <Carousel accessibilityLabel={t('지난 평가')} itemWidth={compact ? 220 : 240}>
-        {past.map((material) =>
-          isEvaluating(material.id) ? (
-            <LensEvaluatingTile key={material.id} material={material} projectTitle={projectTitle(material)} />
-          ) : (
-            <LensReportTile
-              key={material.id}
-              material={material}
-              onPress={() => openReport(material)}
-              projectTitle={projectTitle(material)}
-            />
-          ),
-        )}
-      </Carousel>
-    </View>
-  ) : null;
+  const past = rows.filter(
+    (material) => isEvaluating(material.id) || material.id !== latest?.id,
+  );
+  const pastRow =
+    past.length > 0 ? (
+      <View style={styles.section}>
+        <SpeakSectionTitle title={t("지난 평가")} />
+        <Carousel
+          accessibilityLabel={t("지난 평가")}
+          itemWidth={compact ? 220 : 240}
+        >
+          {past.map((material) =>
+            isEvaluating(material.id) ? (
+              <LensEvaluatingTile
+                key={material.id}
+                material={material}
+                projectTitle={projectTitle(material)}
+              />
+            ) : (
+              <LensReportTile
+                key={material.id}
+                material={material}
+                onPress={() => openReport(material)}
+                projectTitle={projectTitle(material)}
+              />
+            ),
+          )}
+        </Carousel>
+      </View>
+    ) : null;
 
   const tips = showTips ? (
     <View style={styles.section}>
-      <SpeakSectionTitle title={t('이렇게 써요')} />
+      <SpeakSectionTitle title={t("이렇게 써요")} />
       <LensTipsCard />
     </View>
   ) : null;
 
   const top = (
     <View style={styles.top}>
-      <SpeakTitle description={t('내가 말한 것을 돌려받아요')} title={t('말하기')} />
+      <SpeakTitle
+        description={t("내가 말한 것을 돌려받아요")}
+        title={t("말하기")}
+      />
       {switcher}
     </View>
   );
@@ -185,7 +198,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
     <Screen
       fullBleed
       padded={false}
-      safeAreaEdges={['top', 'left', 'right']}
+      safeAreaEdges={["top", "left", "right"]}
       scroll
       scrollViewProps={{ showsVerticalScrollIndicator: false }}
     >
@@ -195,8 +208,8 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
           right={
             <IconButton
               icon={Bell}
-              label={t('알림')}
-              onPress={() => router.push('/notifications')}
+              label={t("알림")}
+              onPress={() => router.push("/notifications")}
             />
           }
         />
@@ -208,14 +221,22 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
               main={
                 <>
                   <AnimatedReveal delay={60}>{hero}</AnimatedReveal>
-                  {latestCard ? <AnimatedReveal delay={120}>{latestCard}</AnimatedReveal> : null}
-                  {pastRow ? <AnimatedReveal delay={180}>{pastRow}</AnimatedReveal> : null}
+                  {latestCard ? (
+                    <AnimatedReveal delay={120}>{latestCard}</AnimatedReveal>
+                  ) : null}
+                  {pastRow ? (
+                    <AnimatedReveal delay={180}>{pastRow}</AnimatedReveal>
+                  ) : null}
                 </>
               }
               side={
                 <>
-                  {trend ? <AnimatedReveal delay={120}>{trend}</AnimatedReveal> : null}
-                  {tips ? <AnimatedReveal delay={180}>{tips}</AnimatedReveal> : null}
+                  {trend ? (
+                    <AnimatedReveal delay={120}>{trend}</AnimatedReveal>
+                  ) : null}
+                  {tips ? (
+                    <AnimatedReveal delay={180}>{tips}</AnimatedReveal>
+                  ) : null}
                 </>
               }
               sideWidth={340}
@@ -226,9 +247,15 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
               {latestCard ? (
                 <AnimatedReveal delay={120}>{latestCard}</AnimatedReveal>
               ) : null}
-              {pastRow ? <AnimatedReveal delay={180}>{pastRow}</AnimatedReveal> : null}
-              {trend ? <AnimatedReveal delay={220}>{trend}</AnimatedReveal> : null}
-              {tips ? <AnimatedReveal delay={260}>{tips}</AnimatedReveal> : null}
+              {pastRow ? (
+                <AnimatedReveal delay={180}>{pastRow}</AnimatedReveal>
+              ) : null}
+              {trend ? (
+                <AnimatedReveal delay={220}>{trend}</AnimatedReveal>
+              ) : null}
+              {tips ? (
+                <AnimatedReveal delay={260}>{tips}</AnimatedReveal>
+              ) : null}
             </>
           )}
         </View>
@@ -236,7 +263,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
 
       <BottomSheetModal
         description={t(
-          '평가할 자료를 골라 주세요. 녹음, 올린 영상이나 음성, 유튜브 링크 다 돼요. 말소리가 없는 PDF와 PPTX는 평가하지 않아요.',
+          "평가할 자료를 골라 주세요. 녹음, 올린 영상이나 음성, 유튜브 링크 다 돼요. 말소리가 없는 PDF와 PPTX는 평가하지 않아요.",
         )}
         footer={
           <View style={styles.sheetFooter}>
@@ -249,24 +276,26 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
               />
               <AppText style={styles.flex} tone="muted" variant="meta">
                 {t(
-                  '여기서 평가 시작을 눌러야 채점해요. 자료를 올려도 알아서 평가하지 않아요. 말이 담긴 자료면 무엇이든 골라도 돼요.',
+                  "여기서 평가 시작을 눌러야 채점해요. 자료를 올려도 알아서 평가하지 않아요. 말이 담긴 자료면 무엇이든 골라도 돼요.",
                 )}
               </AppText>
             </Card>
             <Button
               disabled={!selectedId}
               fullWidth
-              leftIcon={<Play color={colors.textInverse} size={iconSizes.inline} />}
+              leftIcon={
+                <Play color={colors.textInverse} size={iconSizes.inline} />
+              }
               onPress={startEvaluation}
               size="large"
               variant="primary"
             >
-              {t('평가 시작')}
+              {t("평가 시작")}
             </Button>
           </View>
         }
         onClose={() => setPickerOpen(false)}
-        title={t('새 평가 시작')}
+        title={t("새 평가 시작")}
         visible={pickerOpen}
       >
         {candidates.length > 0 ? (
@@ -284,26 +313,26 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
           </Card>
         ) : (
           <EmptyState
-            actionLabel={t('녹음 시작')}
+            actionLabel={t("녹음 시작")}
             compact
             description={t(
-              '발표를 녹음하거나, 영상이나 음성 파일 또는 유튜브 링크를 올려 주세요. PDF와 PPTX는 말소리가 없어서 평가할 수 없어요.',
+              "발표를 녹음하거나, 영상이나 음성 파일 또는 유튜브 링크를 올려 주세요. PDF와 PPTX는 말소리가 없어서 평가할 수 없어요.",
             )}
             icon={Mic}
             onAction={() => {
               setPickerOpen(false);
               openRecorder();
             }}
-            title={t('평가할 자료가 없어요')}
+            title={t("평가할 자료가 없어요")}
           />
         )}
       </BottomSheetModal>
 
       <Dialog
-        confirm={{ label: t('확인'), onPress: () => setFailure(null) }}
+        confirm={{ label: t("확인"), onPress: () => setFailure(null) }}
         description={failure ? t(failure.message) : undefined}
         onRequestClose={() => setFailure(null)}
-        title={t(failure?.title ?? '평가를 시작하지 못했어요')}
+        title={t(failure?.title ?? "평가를 시작하지 못했어요")}
         visible={failure !== null}
       />
     </Screen>
@@ -316,10 +345,10 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
  * recordings can be scored.
  */
 function sourceLabel(material: StudyMaterial): string {
-  if (material.source.origin === 'link') return '유튜브 링크';
-  if (material.source.kind === 'video') return '영상';
-  if (material.source.kind === 'document') return '문서';
-  return material.source.origin === 'recording' ? '녹음' : '음성';
+  if (material.source.origin === "link") return "유튜브 링크";
+  if (material.source.kind === "video") return "영상";
+  if (material.source.kind === "document") return "문서";
+  return material.source.origin === "recording" ? "녹음" : "음성";
 }
 
 function CandidateRow({
@@ -343,7 +372,13 @@ function CandidateRow({
       accessibilityRole="radio"
       accessibilityState={{ selected, checked: selected }}
       onPress={onPress}
-      style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
+      style={({
+        hovered,
+        pressed,
+      }: {
+        hovered?: boolean;
+        pressed: boolean;
+      }) => [
         styles.row,
         !last ? styles.rowDivider : null,
         hovered && !selected ? styles.rowPressed : null,
@@ -351,7 +386,11 @@ function CandidateRow({
         pressed ? styles.rowPressed : null,
       ]}
     >
-      <MediaArtwork compact kind={material.source.kind} status={material.status} />
+      <MediaArtwork
+        compact
+        kind={material.source.kind}
+        status={material.status}
+      />
       <View style={styles.flex}>
         <AppText numberOfLines={2} variant="itemTitle">
           {material.title}
@@ -359,9 +398,9 @@ function CandidateRow({
         <AppText numberOfLines={1} tone="muted" variant="meta">
           {kind}
           {` / ${formatMaterialLength(material.source.kind, material.source.durationMs, material.transcript.length)}`}
-          {' / '}
+          {" / "}
           {formatRelativeDate(material.updatedAt)}
-          {material.lensReport ? ` / ${t('평가 있음')}` : ''}
+          {material.lensReport ? ` / ${t("평가 있음")}` : ""}
         </AppText>
       </View>
       <View
@@ -369,7 +408,11 @@ function CandidateRow({
         style={[styles.checkCircle, selected ? styles.checkCircleOn : null]}
       >
         {selected ? (
-          <Check color={colors.textInverse} size={iconSizes.dense} strokeWidth={3} />
+          <Check
+            color={colors.textInverse}
+            size={iconSizes.dense}
+            strokeWidth={3}
+          />
         ) : null}
       </View>
     </Pressable>
@@ -391,14 +434,13 @@ const styles = StyleSheet.create({
   heroCopy: {
     gap: spacing.sm,
   },
-  heroCopyCentered: {
-    alignItems: 'center',
-    paddingHorizontal: spacing.xs,
-  },
   heroRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: spacing.xl,
+  },
+  heroRowCompact: {
+    gap: spacing.md,
   },
   heroLeft: {
     flex: 1,
@@ -406,11 +448,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   pick: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
-  },
-  pickCompact: {
-    alignSelf: 'center',
+    alignSelf: "flex-start",
     backgroundColor: colors.surface,
   },
   flex: {
@@ -419,9 +457,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   row: {
-    alignItems: 'center',
-    cursor: 'pointer',
-    flexDirection: 'row',
+    alignItems: "center",
+    cursor: "pointer",
+    flexDirection: "row",
     gap: spacing.md,
     minHeight: 68,
     paddingHorizontal: spacing.gutter,
@@ -438,12 +476,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandSubtle,
   },
   checkCircle: {
-    alignItems: 'center',
+    alignItems: "center",
     borderColor: colors.borderStrong,
     borderRadius: radii.full,
     borderWidth: 1.5,
     height: spacing.xl,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: spacing.xl,
   },
   checkCircleOn: {
@@ -454,8 +492,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   sheetNote: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
+    alignItems: "flex-start",
+    flexDirection: "row",
     gap: spacing.sm,
     padding: spacing.md,
   },

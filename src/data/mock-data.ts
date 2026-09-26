@@ -147,6 +147,55 @@ const LENS_AI_INTRO: LensReport = {
   },
   };
 
+/** 데모 두 번째 평가(2026-09-26): 말하기 탭의 "지난 평가" 줄이 비지 않게. 시각화 실습 발표. */
+const LENS_DATA_VIZ: LensReport = {
+  overall: 3.6,
+  rubric: [
+    {
+      key: 'structure',
+      label: '구조',
+      score: 3.8,
+      evidence: '나쁜 그래프 예시를 먼저 보여 주고 고치는 순서로 이어 가 흐름이 분명했어요.',
+    },
+    {
+      key: 'clarity',
+      label: '명료성',
+      score: 3.7,
+      evidence: '축, 눈금, 색을 하나씩 짚어 무엇을 바꾸는지 알기 쉬웠어요.',
+    },
+    {
+      key: 'evidence',
+      label: '근거 활용',
+      score: 3.2,
+      evidence: '왜 막대그래프가 나은지 이유는 말했지만 비교 수치는 적었어요.',
+    },
+    {
+      key: 'delivery',
+      label: '전달력',
+      score: 3.7,
+      evidence: '화면을 가리키며 말해 듣는 사람이 따라가기 편했어요.',
+    },
+  ],
+  strengths: [
+    {
+      text: '같은 데이터를 두 그래프로 나란히 보여 줘 차이가 바로 보였어요.',
+      sourceStartMs: 612_000,
+    },
+  ],
+  improvements: [
+    {
+      text: '색을 줄이는 이유를 말할 때 색약 사용자 예를 하나 들면 더 설득력 있어요.',
+      sourceStartMs: 1_420_000,
+      action: '색을 줄이기 전과 후를 한 번씩 보여 주고 읽는 시간을 비교해요.',
+    },
+  ],
+  priority: {
+    text: '막대그래프를 고르는 기준을 첫머리에 한 문장으로 먼저 말하면 좋아요.',
+    sourceStartMs: 305_000,
+    action: '"비교는 막대, 흐름은 선"처럼 기준을 먼저 말하고 예시로 넘어가요.',
+  },
+};
+
 const LENS_AI_INTRO_FIRST: LensReport = {
   overall: 3.2,
   rubric: [
@@ -425,6 +474,7 @@ export const mockMaterials: StudyMaterial[] = [
       durationMs: 2_086_000,
     },
     status: 'ready',
+    lensReport: LENS_DATA_VIZ,
     progress: 1,
     progressLabel: '마인드팩 준비 완료',
     syncStatus: 'local-only',
@@ -778,6 +828,7 @@ export const defaultAppSettings: AppSettings = {
   homeChecklistDismissed: false,
 };
 
+
 /** A real account starts with nothing in it. */
 export function createEmptySnapshot(): PersistedAppSnapshot {
   return {
@@ -793,6 +844,10 @@ export function createEmptySnapshot(): PersistedAppSnapshot {
   };
 }
 
+function daysAgoIso(days: number): string {
+  return new Date(Date.now() - days * 86_400_000).toISOString();
+}
+
 export function createMockSnapshot(): PersistedAppSnapshot {
   return {
     schemaVersion: 1,
@@ -801,8 +856,34 @@ export function createMockSnapshot(): PersistedAppSnapshot {
     shareRooms: clone(mockShareRooms),
     activeProjectId: 'project-ai-intro',
     savedMaterialIds: ['material-ai-intro-01'],
-    confusionFeedback: [],
-    quizAttempts: [],
+    // 데모가 빈 이해도로 시작하지 않게(2026-09-26): 문제 두 개(하나는 틀림)와 헷갈린 곳 하나.
+    confusionFeedback: [
+      {
+        id: 'demo-confusion-1',
+        materialId: 'material-ai-intro-01',
+        segmentId: 'seg-ai-2',
+        reason: 'too-fast',
+        createdAt: daysAgoIso(1),
+      },
+    ],
+    quizAttempts: [
+      {
+        id: 'demo-attempt-1',
+        materialId: 'material-ai-intro-01',
+        questionId: 'quiz-ai-1',
+        selectedChoiceIndex: 0,
+        isCorrect: true,
+        attemptedAt: daysAgoIso(2),
+      },
+      {
+        id: 'demo-attempt-2',
+        materialId: 'material-ai-intro-01',
+        questionId: 'quiz-ai-2',
+        selectedChoiceIndex: 0,
+        isCorrect: false,
+        attemptedAt: daysAgoIso(1),
+      },
+    ],
     settings: { ...defaultAppSettings },
   };
 }
