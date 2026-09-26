@@ -33,6 +33,11 @@ import {
 
 import { AppHeader } from '@/components/AppHeader';
 import { FilterSheet } from '@/components/home/FilterSheet';
+import {
+  FolderChips,
+  HomeDesktopHeader,
+  HomeDesktopOverview,
+} from '@/components/home/HomeDesktop';
 import { MaterialList } from '@/components/home/MaterialList';
 import { SubjectTabs, type SubjectTab } from '@/components/home/SubjectTabs';
 import {
@@ -114,17 +119,21 @@ export default function HomeScreen() {
     requestLens,
     savedMaterialIds,
     selectProject,
+    session,
     settings,
     toggleSavedMaterial,
     updateSettings,
   } = useAppStore();
   const { width: windowWidth } = useWindowDimensions();
-  const { columns, gridItemWidth, gutter } = useLayout();
-  // One 16:9 card per row is right on a phone and absurd on a tablet, where it
-  // becomes an 800pt-tall block of artwork with a title under it.
-  const cardWidth = columns > 1 ? gridItemWidth(columns) : undefined;
+  const { breakpoint, columns: layoutColumns, gutter, isTablet } = useLayout();
+  // A laptop or desktop window: no swipeable pager (there is no swipe), the
+  // folders become chips. Tablets keep the pager; both open the library as a
+  // card grid, which a phone's single column has no room for.
+  const wide = breakpoint === 'expanded';
 
-  const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<LibraryFilters>(() =>
+    isTablet ? { ...DEFAULT_FILTERS, view: 'card' } : DEFAULT_FILTERS,
+  );
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
   const pageIndexRef = useRef(0);
@@ -133,6 +142,16 @@ export default function HomeScreen() {
   // than the window; the window width is only the first guess.
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const pageWidth = measuredWidth || windowWidth;
+  // One 16:9 card per row is right on a phone and absurd on a tablet, where it
+  // becomes an 800pt-tall block of artwork with a title under it. The cell is
+  // cut from the measured column, which on a desktop is wider than the
+  // reading column the layout's own grid helper assumes.
+  const gridAvailable = pageWidth - gutter * 2;
+  const columns = wide ? (gridAvailable >= 880 ? 3 : 2) : layoutColumns;
+  const cardWidth =
+    columns > 1
+      ? Math.floor((gridAvailable - spacing.md * (columns - 1)) / columns)
+      : undefined;
   const previousPageWidth = useRef(pageWidth);
   /** How many pages the pager was last aligned for; see the effect below. */
   const previousPageCount = useRef(0);
@@ -455,6 +474,21 @@ export default function HomeScreen() {
   ).length;
   const showChecklist = !settings.homeChecklistDismissed && checklistDone < 3;
 
+  // The desktop overview: the whole library, whatever folder is selected.
+  const displayName = session?.user.name?.trim() || t('PREMIND 사용자');
+  const libraryReadyCount = materials.filter((material) => material.status === 'ready').length;
+  const libraryActiveCount = materials.filter((material) =>
+    ['imported', 'queued', 'transcribing', 'generating'].includes(material.status),
+  ).length;
+  const continueMaterial = useMemo(
+    () =>
+      sortMaterials(
+        materials.filter((material) => material.status === 'ready'),
+        'recent',
+      )[0],
+    [materials],
+  );
+
   // ---- Actions -----------------------------------------------------------
 
   const openMaterial = useCallback((material: StudyMaterial) => {
@@ -652,7 +686,7 @@ export default function HomeScreen() {
     try {
       await moveMaterial(material.id, projectId);
       const folder = projects.find((project) => project.id === projectId);
-      toast.show(t('{folder}(으)로 옮겼어요', { folder: folder?.title ?? t('폴더') }));
+      toast.show(t('{folder}(으)로 옮겼어요', { folder: folder?.title ?? t.ctx('inline', '폴더') }));
     } catch (error) {
       setNotice({
         title: t('옮기지 못했어요'),
@@ -768,9 +802,8 @@ export default function HomeScreen() {
     const pageMaterials = visibleMaterialsByPage.get(page.key) ?? [];
     const pageTotal = subjectMaterialsByPage.get(page.key)?.length ?? 0;
     const isAllPage = page.key === ALL_PAGE_KEY;
-    const header = (
-      <>
-        {isAllPage && showChecklist ? (
+    const checklist =
+      isAllPage && showChecklist ? (
           <Card
             accessibilityLabel={t('시작하기 3단계, {done}/3 완료', { done: checklistDone })}
             padding={false}
@@ -811,7 +844,8 @@ export default function HomeScreen() {
               />
             </View>
           </Card>
-        ) : null}
+      ) : null;
+    const toolbar = (
         <View style={styles.toolbar}>
           <AppText
             numberOfLines={1}
@@ -850,6 +884,45 @@ export default function HomeScreen() {
             {narrowed ? <View {...decorative} style={styles.sortDot} /> : null}
           </Pressable>
         </View>
+    );
+    const header = wide ? (
+      <View style={styles.wideHeader}>
+        <HomeDesktopHeader
+          materialCount={materials.length}
+          name={displayName}
+          onNotifications={() => router.push('/notifications')}
+          onSearch={() => router.push('/search')}
+          readyCount={libraryReadyCount}
+        />
+        {hasMaterial ? (
+          <HomeDesktopOverview
+            continueFolder={
+              continueMaterial
+                ? projectById.get(continueMaterial.projectId)?.title ?? t('폴더 없음')
+                : ''
+            }
+            continueMaterial={continueMaterial}
+            onOpen={openMaterial}
+            processing={libraryActiveCount}
+            ready={libraryReadyCount}
+            total={materials.length}
+          />
+        ) : null}
+        {checklist}
+        <View style={styles.wideFolders}>
+          <FolderChips
+            activeIndex={safePageIndex}
+            onAddPress={openProjectSheet}
+            onSelect={goToPage}
+            tabs={subjectTabs}
+          />
+          {toolbar}
+        </View>
+      </View>
+    ) : (
+      <>
+        {checklist}
+        {toolbar}
       </>
     );
     const empty = (
@@ -873,6 +946,7 @@ export default function HomeScreen() {
         columns={columns}
         empty={empty}
         evaluatingMaterialIds={evaluatingMaterialIds}
+        grouped={isTablet}
         gutter={gutter}
         header={header}
         materials={pageMaterials}
@@ -888,6 +962,19 @@ export default function HomeScreen() {
 
   return (
     <>
+      {wide ? (
+        <Screen padded={false} safeAreaEdges={['top', 'left', 'right']} wide>
+          <View
+            onLayout={(event) => {
+              const width = Math.round(event.nativeEvent.layout.width);
+              if (width > 0) setMeasuredWidth(width);
+            }}
+            style={styles.pagerHost}
+          >
+            {currentPage ? renderPage({ item: currentPage }) : null}
+          </View>
+        </Screen>
+      ) : (
       <Screen padded={false} safeAreaEdges={['top', 'left', 'right']}>
         <AppHeader
           brand
@@ -950,6 +1037,7 @@ export default function HomeScreen() {
           />
         </View>
       </Screen>
+      )}
 
       <FilterSheet
         filters={filters}
@@ -1305,6 +1393,14 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
     minWidth: 0,
+  },
+  wideHeader: {
+    gap: spacing.xl,
+  },
+  // Chips wrap on the left; the count and sort control stay on one line
+  // under them, so the grid's first row starts on a fixed edge.
+  wideFolders: {
+    gap: spacing.sm,
   },
   pagerHost: {
     flex: 1,

@@ -51,6 +51,12 @@ export const EN_COMMON: EnDict = {
 
   유튜브: 'YouTube',
   '유튜브 링크': 'YouTube link',
-  폴더: 'folder',
+  폴더: 'Folder',
+  // 문장 가운데 쓰는 자리("{folder}(으)로 옮겼어요" 에서 폴더 이름이 없을 때)
+  'inline|폴더': 'the folder',
   '폴더 없음': 'No folder',
+
+  // 사이드바 계정 칸(src/components/AppTabBar.tsx)
+  'PREMIND 사용자': 'PREMIND user',
+  '자료 추가': 'Add material',
 };

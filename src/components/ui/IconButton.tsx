@@ -17,6 +17,8 @@ import {
   sizes,
 } from '@/theme/tokens';
 
+import type { PressState } from './interaction';
+
 export type IconButtonVariant =
   | 'neutral'
   | 'soft'
@@ -80,6 +82,17 @@ const variantStyles: Record<IconButtonVariant, IconButtonVisuals> = {
   },
 };
 
+const hoverStyles: Record<IconButtonVariant, ViewStyle> = {
+  neutral: { backgroundColor: colors.hover, borderColor: colors.borderHover },
+  soft: { backgroundColor: colors.border, borderColor: colors.border },
+  ghost: { backgroundColor: colors.hover, borderColor: colors.hover },
+  danger: { opacity: 0.85 },
+  inverse: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.22)',
+  },
+};
+
 const visualSizes: Record<IconButtonSize, number> = {
   small: sizes.iconButton,
   medium: sizes.button,
@@ -116,12 +129,13 @@ export function IconButton({
         style,
       ]}
     >
-      {({ pressed }) => (
+      {({ pressed, hovered }: PressState) => (
         <View
           style={[
             styles.visual,
             visuals.container,
             { height: visualSize, width: visualSize },
+            hovered && !isDisabled && !pressed ? hoverStyles[variant] : null,
             pressed && !isDisabled ? styles.pressed : null,
           ]}
         >

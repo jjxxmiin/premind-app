@@ -9,7 +9,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, motion, radii, spacing } from '@/theme/tokens';
+import { colors, motion, radii, shadows, spacing } from '@/theme/tokens';
+
+import type { PressState } from './interaction';
 
 /**
  * `default` — white with a hairline border; the list/detail container.
@@ -90,7 +92,15 @@ export function Card({
       }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [baseStyle, pressed ? styles.pressed : null]}
+      style={({ pressed, hovered }: PressState) => [
+        baseStyle,
+        hovered && !pressed && !disabled && variant !== 'stage'
+          ? isSelected
+            ? styles.hoverSelected
+            : styles.hover
+          : null,
+        pressed ? styles.pressed : null,
+      ]}
     >
       {children}
     </Pressable>
@@ -110,6 +120,15 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.45,
+  },
+  // A pressable card lifts a hair on hover: the border darkens and the
+  // subtle shadow appears, which is how the web build says "this opens".
+  hover: {
+    borderColor: colors.borderHover,
+    ...shadows.subtle,
+  },
+  hoverSelected: {
+    ...shadows.subtle,
   },
   pressed: {
     opacity: 0.92,

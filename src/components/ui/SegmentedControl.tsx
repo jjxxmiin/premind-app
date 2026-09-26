@@ -18,6 +18,7 @@ import {
 } from '@/theme/tokens';
 
 import { AppText } from './AppText';
+import type { PressState } from './interaction';
 
 export interface SegmentOption<T extends string> {
   value: T;
@@ -63,10 +64,11 @@ export function SegmentedControl<T extends string>({
             disabled={option.disabled}
             key={option.value}
             onPress={() => onChange(option.value)}
-            style={({ pressed }) => [
+            style={({ pressed, hovered }: PressState) => [
               styles.segment,
               fullWidth ? styles.flexSegment : null,
               selected ? styles.selectedSegment : null,
+              hovered && !selected && !pressed && !option.disabled ? styles.hoverSegment : null,
               option.disabled ? styles.disabled : null,
               pressed && !option.disabled ? styles.pressed : null,
             ]}
@@ -116,12 +118,23 @@ const styles = StyleSheet.create({
     minHeight: sizes.segmentedControl - 6,
     paddingHorizontal: spacing.md,
   },
+  // Equal-width segments centre their label, so the side padding is only a
+  // floor against the neighbour. Kept small: four English labels
+  // ("Summary", "Transcript", ...) have to fit a 390pt phone, where 12 on
+  // each side left "Transc..." (2026-09-26). Korean looks the same either way.
   flexSegment: {
     flex: 1,
+    minWidth: 0,
+    paddingHorizontal: spacing.xs,
   },
   selectedSegment: {
     backgroundColor: colors.surface,
     ...shadows.subtle,
+  },
+  // Unselected segments sit on the grey track; hover lifts them halfway to
+  // the white of the selected one.
+  hoverSegment: {
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
   },
   disabled: {
     opacity: 0.4,

@@ -1,10 +1,15 @@
 import { Image } from 'expo-image';
 import { MoreHorizontal } from 'lucide-react-native';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { MediaArtwork } from '@/components/MediaArtwork';
-import { AppText, IconButton, ProgressBar, StatusBadge } from '@/components/ui';
+import {
+  AppText,
+  IconButton,
+  ProgressBar,
+  StatusBadge,
+} from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatMaterialLength, formatRelativeDate } from '@/lib/format';
 import { useT } from '@/lib/i18n';
@@ -42,6 +47,9 @@ export const MaterialRow = memo(function MaterialRow({
   divider = true,
 }: MaterialRowProps) {
   const t = useT();
+  // Hover is tracked for the whole row, so the wash runs under the menu
+  // column too instead of stopping short of it.
+  const [hovered, setHovered] = useState(false);
   const status = libraryStatusPresentation(material, isRunning, t);
   const thumbnail = youtubeThumbnail(material);
   // The 40pt icon well sits centred in its 44pt touch column; pulling the
@@ -49,13 +57,15 @@ export const MaterialRow = memo(function MaterialRow({
   const menuGutter = Math.max(gutter - spacing.xxs, spacing.xs);
 
   return (
-    <View style={[styles.row, divider ? styles.divider : null]}>
+    <View style={[styles.row, hovered ? styles.hovered : null, divider ? styles.divider : null]}>
       <View style={styles.head}>
         <Pressable
           accessibilityHint={t('자료를 열어요')}
           accessibilityLabel={`${material.title}, ${status.label}. ${status.detail}`}
           accessibilityRole="button"
           onPress={() => onPress(material)}
+          onHoverIn={() => setHovered(true)}
+          onHoverOut={() => setHovered(false)}
           style={({ pressed }) => [
             styles.main,
             { paddingLeft: gutter, paddingRight: onMorePress ? spacing.md : gutter },
@@ -148,8 +158,11 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingVertical: spacing.md,
   },
+  hovered: {
+    backgroundColor: colors.hover,
+  },
   pressed: {
-    backgroundColor: colors.backgroundSoft,
+    backgroundColor: colors.backgroundMuted,
   },
   copy: {
     flex: 1,

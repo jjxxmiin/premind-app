@@ -75,7 +75,7 @@ export default function SearchScreen() {
   );
 
   return (
-    <Screen padded={false}>
+    <Screen maxWidth={720} padded={false}>
       <AppHeader onBack={() => goBackOrReplace('/(tabs)')} title={t('검색')} />
       <View style={[styles.field, { paddingHorizontal: gutter }]}>
         <AuthField

@@ -14,6 +14,7 @@ import { decorative } from '@/lib/a11y';
 import {
   colors,
   motion,
+  palette,
   radii,
   sizes,
   spacing,
@@ -21,6 +22,7 @@ import {
 } from '@/theme/tokens';
 
 import { AppText } from './AppText';
+import type { PressState } from './interaction';
 
 /**
  * `primary` is the filled ink CTA — the default "go" of a screen.
@@ -132,6 +134,32 @@ const sizeTypography: Record<ButtonSize, TextStyle> = {
   large: typography.buttonLarge,
 };
 
+/** Web hover: one step toward the pressed colour, never a new hue. */
+const hoverStyles: Partial<Record<ButtonVariant, ViewStyle>> = {
+  primary: {
+    backgroundColor: colors.actionPressed,
+    borderColor: colors.actionPressed,
+  },
+  brand: {
+    backgroundColor: colors.brandStrong,
+    borderColor: colors.brandStrong,
+  },
+  secondary: {
+    backgroundColor: colors.border,
+    borderColor: colors.border,
+  },
+  outline: {
+    backgroundColor: colors.hover,
+    borderColor: colors.borderHover,
+  },
+  ghost: {
+    backgroundColor: colors.hover,
+  },
+  danger: {
+    borderColor: palette.negative400,
+  },
+};
+
 const pressedStyles: Partial<Record<ButtonVariant, ViewStyle>> = {
   primary: {
     backgroundColor: colors.actionPressed,
@@ -201,12 +229,13 @@ export function Button({
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
-      style={({ pressed }) => [
+      style={({ pressed, hovered }: PressState) => [
         styles.base,
         sizeStyles[size],
         visuals.container,
         fullWidth ? styles.fullWidth : null,
         style,
+        hovered && !isDisabled && !pressed ? hoverStyles[variant] : null,
         isDisabled ? styles.disabled : null,
         pressed && !isDisabled ? styles.pressed : null,
         pressed && !isDisabled ? pressedStyles[variant] : null,

@@ -13,6 +13,7 @@ import { decorative } from '@/lib/a11y';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 
 import { AppText } from './AppText';
+import type { PressState } from './interaction';
 
 export interface ChipProps
   extends Omit<PressableProps, 'children' | 'style'> {
@@ -159,8 +160,13 @@ export function Chip({
       disabled={isDisabled}
       hitSlop={6}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={({ pressed, hovered }: PressState) => [
         sharedStyle,
+        hovered && !pressed && !isDisabled
+          ? isSelected
+            ? styles.hoverSelected
+            : styles.hover
+          : null,
         pressed && !isDisabled ? styles.pressed : null,
       ]}
     >
@@ -234,6 +240,14 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.4,
+  },
+  hover: {
+    backgroundColor: colors.hover,
+    borderColor: colors.borderHover,
+  },
+  hoverSelected: {
+    backgroundColor: colors.actionPressed,
+    borderColor: colors.actionPressed,
   },
   pressed: {
     opacity: 0.7,

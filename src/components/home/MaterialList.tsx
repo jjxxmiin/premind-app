@@ -8,9 +8,10 @@ import {
   formatRelativeDate,
 } from '@/lib/format';
 import { useT } from '@/lib/i18n';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, radii, spacing } from '@/theme/tokens';
 import type { Project, StudyMaterial } from '@/types';
 
+import { MaterialCard } from './MaterialCard';
 import { MaterialRow } from './MaterialRow';
 import { libraryStatusPresentation, youtubeThumbnail, type LibraryView } from './library';
 
@@ -25,6 +26,12 @@ export interface MaterialListProps {
   gutter: number;
   columns: number;
   cardWidth?: number;
+  /**
+   * Draw the list view's rows as one bordered group (a card) instead of
+   * edge-to-edge rows. For wide windows, where a bare row would run the
+   * whole width with nothing to hold it.
+   */
+  grouped?: boolean;
   header: ReactElement;
   empty: ReactElement;
   onOpen: (material: StudyMaterial) => void;
@@ -46,6 +53,7 @@ export const MaterialList = memo(function MaterialList({
   gutter,
   columns,
   cardWidth,
+  grouped = false,
   header,
   empty,
   onOpen,
@@ -59,6 +67,20 @@ export const MaterialList = memo(function MaterialList({
       const isRunning = processingMaterialIds.includes(item.id);
       const isEvaluating = evaluatingMaterialIds.includes(item.id);
       const projectTitle = projectById.get(item.projectId)?.title ?? t('폴더 없음');
+
+      if (grid) {
+        return (
+          <MaterialCard
+            isEvaluating={isEvaluating}
+            isRunning={isRunning}
+            material={item}
+            onMorePress={onMore}
+            onPress={onOpen}
+            projectTitle={projectTitle}
+            style={cardWidth ? { width: cardWidth } : styles.fullCard}
+          />
+        );
+      }
 
       if (view === 'card') {
         const status = libraryStatusPresentation(item, isRunning, t);
@@ -83,23 +105,23 @@ export const MaterialList = memo(function MaterialList({
             progressLabel={status.detail}
             statusLabel={status.label}
             statusTone={status.tone}
-            style={grid && cardWidth ? { width: cardWidth } : styles.fullCard}
+            style={styles.fullCard}
             subtitle={projectTitle}
             thumbnailBackgroundColor={colors.backgroundSoft}
             thumbnailSource={thumbnail ? { uri: thumbnail } : undefined}
             title={item.title}
           />
         );
-        if (grid) return card;
         return (
           <View style={[styles.cardCell, { paddingHorizontal: gutter }]}>{card}</View>
         );
       }
 
-      return (
+      const last = index === materials.length - 1;
+      const row = (
         <MaterialRow
-          divider={index < materials.length - 1}
-          gutter={gutter}
+          divider={!last}
+          gutter={grouped ? spacing.gutter : gutter}
           isEvaluating={isEvaluating}
           isRunning={isRunning}
           material={item}
@@ -108,11 +130,25 @@ export const MaterialList = memo(function MaterialList({
           projectTitle={projectTitle}
         />
       );
+      if (!grouped) return row;
+      return (
+        <View
+          style={[
+            styles.groupRow,
+            { marginHorizontal: gutter },
+            index === 0 ? styles.groupFirst : null,
+            last ? styles.groupLast : null,
+          ]}
+        >
+          {row}
+        </View>
+      );
     },
     [
       cardWidth,
       evaluatingMaterialIds,
       grid,
+      grouped,
       gutter,
       materials.length,
       onMore,
@@ -170,6 +206,25 @@ const styles = StyleSheet.create({
   },
   fullCard: {
     width: '100%',
+  },
+  // The list view as one card on wide windows: side borders on every row,
+  // the top and bottom rows close the shape.
+  groupRow: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    overflow: 'hidden',
+  },
+  groupFirst: {
+    borderTopLeftRadius: radii.card,
+    borderTopRightRadius: radii.card,
+    borderTopWidth: 1,
+  },
+  groupLast: {
+    borderBottomLeftRadius: radii.card,
+    borderBottomRightRadius: radii.card,
+    borderBottomWidth: 1,
   },
   gridRow: {
     gap: spacing.md,
