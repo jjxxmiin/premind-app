@@ -52,6 +52,7 @@ export const EN_STUDY: EnDict = {
   '가장 최근 자료의 문제를 열어요': 'Opens the questions for your latest material',
   '문제 풀러 가기': 'Answer questions',
   '시작 전': 'Not started',
+  '최근 7일': 'Last 7 days',
   '첫 문제를 풀면 이해도가 시작돼요': 'Answer your first question to start your Mastery',
   '자료 {total}개 중 {studied}개를 공부했어요': "You've studied {studied} of {total} materials",
   '{term}{josa} 다시 볼 차례예요': 'Time to review {term}',

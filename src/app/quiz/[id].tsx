@@ -9,9 +9,10 @@ import {
   X,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
+import { SurfaceButton } from '@/components/mastery';
 import { ScoreRing } from '@/components/lens';
 import {
   AppText,
@@ -31,6 +32,7 @@ import {
 import { decorative } from '@/lib/a11y';
 import { formatSourcePosition } from '@/lib/format';
 import { useT } from '@/lib/i18n';
+import { useLayout } from '@/lib/layout';
 import { goBackOrReplace, quizReturnHref } from '@/lib/navigation';
 import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
@@ -95,6 +97,7 @@ export default function QuizScreen() {
   const [reportReason, setReportReason] = useState<ReportReasonId | null>(null);
   const [reportNote, setReportNote] = useState('');
   const toast = useToast();
+  const { isTablet } = useLayout();
 
   /**
    * The questions still in play. A reported one leaves the session at once —
@@ -240,7 +243,7 @@ export default function QuizScreen() {
           showsVerticalScrollIndicator={false}
           style={styles.scroll}
         >
-          <Card style={styles.scoreCard} variant="soft">
+          <Card style={styles.scoreCard}>
             {/* The score as a gauge, in the same ring the 이해도 탭 uses, so a
                 run's result and the number it moves look like one thing. */}
             <ScoreRing
@@ -320,23 +323,39 @@ export default function QuizScreen() {
             </Card>
           )}
         </ScrollView>
-        <View style={styles.bottomBar}>
+        {/* A phone stacks the two with 돌아가기 on top, under the thumb; a
+            wider window sets them side by side, the main one on the right. */}
+        <View style={[styles.bottomBar, isTablet ? styles.bottomBarRow : null]}>
+          {isTablet ? (
+            <Button
+              leftIcon={<RefreshCw color={colors.text} size={iconSizes.inline} />}
+              onPress={restart}
+              size="large"
+              style={styles.flex}
+              variant="secondary"
+            >
+              {t('다시 풀기')}
+            </Button>
+          ) : null}
           <Button
-            fullWidth
+            fullWidth={!isTablet}
             onPress={leaveQuiz}
             size="large"
+            style={isTablet ? styles.flex : null}
             variant="primary"
           >
             {t('돌아가기')}
           </Button>
-          <Button
-            fullWidth
-            leftIcon={<RefreshCw color={colors.text} size={iconSizes.inline} />}
-            onPress={restart}
-            variant="secondary"
-          >
-            {t('다시 풀기')}
-          </Button>
+          {isTablet ? null : (
+            <Button
+              fullWidth
+              leftIcon={<RefreshCw color={colors.text} size={iconSizes.inline} />}
+              onPress={restart}
+              variant="secondary"
+            >
+              {t('다시 풀기')}
+            </Button>
+          )}
         </View>
         <Toast bottom={TOAST_ABOVE_RESULT_BAR} message={toast.message} />
       </Screen>
@@ -396,18 +415,21 @@ export default function QuizScreen() {
             const correct = selectedIndex !== null && choiceIndex === question.correctChoiceIndex;
             const wrong = selected && !correct;
             return (
-              <Card
+              <SurfaceButton
+                accessibilityRole="button"
+                accessibilityState={{ disabled: selectedIndex !== null, selected }}
+                aria-pressed={selected}
                 disabled={selectedIndex !== null}
                 key={choice}
                 onPress={() => selectAnswer(choiceIndex)}
-                padding={false}
                 selected={selected}
+                selectedStyle={styles.choiceSelected}
                 style={[
                   styles.choice,
+                  selectedIndex !== null ? styles.choiceLocked : null,
                   correct ? styles.choiceCorrect : null,
                   wrong ? styles.choiceWrong : null,
                 ]}
-                variant="outlined"
               >
                 <View
                   style={[
@@ -437,7 +459,7 @@ export default function QuizScreen() {
                 <AppText style={styles.flex} variant={selected || correct ? 'bodyStrong' : 'body'}>
                   {choice}
                 </AppText>
-              </Card>
+              </SurfaceButton>
             );
           })}
         </View>
@@ -589,6 +611,11 @@ function ResultMetric({ label, value }: { label: string; value: number }) {
   );
 }
 
+/** The arrow cursor over a choice that can no longer be picked. */
+function webDefaultCursor(): ViewStyle {
+  return Platform.OS === 'web' ? ({ cursor: 'default' } as unknown as ViewStyle) : {};
+}
+
 /** Compact row height, per the layout rules. */
 const COMPACT_ROW_HEIGHT = 54;
 /** Toast clearances: high enough that the bottom bar cannot cover the notice. */
@@ -610,15 +637,19 @@ const styles = StyleSheet.create({
   choices: { gap: spacing.sm },
   choice: {
     alignItems: 'center',
+    borderColor: colors.borderStrong,
     borderRadius: radii.button,
     flexDirection: 'row',
     gap: spacing.md,
     minHeight: COMPACT_ROW_HEIGHT,
-    // The answered state must stay legible, so the disabled dim is cancelled
-    // here and the tinted correct / wrong styles carry the meaning instead.
-    opacity: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+  },
+  /** Answered: no pointer, and the tinted correct / wrong styles carry the meaning. */
+  choiceLocked: webDefaultCursor(),
+  choiceSelected: {
+    borderColor: colors.text,
+    borderWidth: 1.5,
   },
   choiceCorrect: {
     backgroundColor: colors.positiveSoft,
@@ -661,6 +692,7 @@ const styles = StyleSheet.create({
     minHeight: COMPACT_ROW_HEIGHT,
   },
   /** Hairline + 12pt vertical padding; the Screen owns the bottom inset. */
+  bottomBarRow: { flexDirection: 'row' },
   bottomBar: {
     backgroundColor: colors.background,
     borderTopColor: colors.border,
