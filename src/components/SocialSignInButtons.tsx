@@ -72,7 +72,7 @@ export function SocialSignInButtons({
 
       {disabled ? (
         <AppText align="center" tone="muted" variant="meta">
-          {t('필수 약관에 동의하면 간편 가입을 사용할 수 있어요.')}
+          {t('필수 항목에 동의하면 간편 가입을 사용할 수 있어요.')}
         </AppText>
       ) : null}
 

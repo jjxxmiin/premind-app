@@ -1170,6 +1170,10 @@ export default function MaterialDetailScreen() {
         </PanelFade>
         </View>
         </GestureDetector>
+        {/* 이용약관 제10조(인공지능 이용 고지): 대본, 요약, 마인드맵, 카드는 AI 가 만든 결과물이다. */}
+        <AppText style={styles.aiNote} tone="faint" variant="meta">
+          {t('AI가 만든 내용이에요. 틀릴 수 있어요.')}
+        </AppText>
         </View>
       </ScrollView>
 
@@ -1523,6 +1527,9 @@ function LensEntry({ material }: { material: StudyMaterial }) {
 }
 
 const styles = StyleSheet.create({
+  aiNote: {
+    marginTop: spacing.lg,
+  },
   /**
    * `minHeight: 0` lets the flex column actually bound the list. Without it
    * Android can size the ScrollView to its content and the tail is then

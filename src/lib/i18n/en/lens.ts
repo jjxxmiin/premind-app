@@ -6,6 +6,7 @@ export const EN_LENS: EnDict = {
   'speak|발표': 'Presentation',
   'speak|면접': 'Interview',
   '발표 평가': 'Presentation review',
+  'AI가 만든 평가예요. 틀릴 수 있으니 참고로만 봐 주세요.': 'This review is made by AI and may contain mistakes, so use it only as a reference.',
   '면접 연습': 'Interview practice',
 
   // ── 발표 홈 (PresentationHome) ─────────────────────────────────────────────

@@ -93,8 +93,8 @@ export const EN_ACCOUNT: EnDict = {
   '데모로 둘러보기': 'Try the demo',
   '예시 자료로 먼저 둘러볼 수 있어요': 'Look around with sample materials first',
   '이 빌드에서는 데모로만 둘러볼 수 있어요': 'This build only offers the demo',
-  '로그인하면 PREMIND 이용약관과 개인정보 처리방침에 동의한 것으로 봐요':
-    "By signing in, you agree to PREMIND's Terms of Service and Privacy Policy",
+  '만 14세 이상만 가입할 수 있어요. 로그인하면 PREMIND 이용약관과 개인정보 처리방침에 동의한 것으로 봐요':
+    "You must be 14 or older to sign up. By signing in, you agree to PREMIND's Terms of Service and Privacy Policy",
   '이 빌드에서는 로그인할 수 없어요. 데모로 둘러보거나 EXPO_PUBLIC_API_URL을 설정해 주세요.':
     "You can't sign in on this build. Try the demo or set EXPO_PUBLIC_API_URL.",
   '올바른 이메일 주소를 입력해 주세요.': 'Enter a valid email address.',
@@ -113,6 +113,7 @@ export const EN_ACCOUNT: EnDict = {
   '비밀번호 확인': 'Confirm password',
   '한 번 더 입력해 주세요': 'Enter it once more',
   '모두 동의해요': 'I agree to all',
+  '[필수] 만 14세 이상이에요': "[Required] I'm 14 or older",
   '[필수] 이용약관': '[Required] Terms of Service',
   '이용약관 보기': 'View Terms of Service',
   '[필수] 개인정보 처리방침': '[Required] Privacy Policy',
@@ -128,7 +129,7 @@ export const EN_ACCOUNT: EnDict = {
   '비밀번호가 서로 달라요.': "The passwords don't match.",
   '이 빌드에서는 가입할 수 없어요. EXPO_PUBLIC_API_URL이 설정된 빌드를 사용해 주세요.':
     "You can't sign up on this build. Use a build with EXPO_PUBLIC_API_URL set.",
-  '필수 약관에 동의해 주세요.': 'Please agree to the required terms.',
+  '필수 항목에 동의해 주세요.': 'Please check the required items.',
   '가입하지 못했어요. 잠시 후 다시 시도해 주세요.':
     "We couldn't create your account. Please try again in a moment.",
 
@@ -136,8 +137,8 @@ export const EN_ACCOUNT: EnDict = {
   '카카오로 계속하기': 'Continue with Kakao',
   '구글로 계속하기': 'Continue with Google',
   '간편 로그인': 'Quick sign-in',
-  '필수 약관에 동의하면 간편 가입을 사용할 수 있어요.':
-    'Agree to the required terms to use quick sign-up.',
+  '필수 항목에 동의하면 간편 가입을 사용할 수 있어요.':
+    'Check the required items to use quick sign-up.',
   '소셜 로그인에 실패했어요.': 'Social sign-in failed.',
   '로그인을 취소했어요.': 'Sign-in was cancelled.',
   '로그인을 준비하지 못했어요.': "We couldn't get sign-in ready.",
@@ -175,6 +176,7 @@ export const EN_ACCOUNT: EnDict = {
   'plan|없음': 'Not included',
   'plan|포함': 'Included',
   '결제 안내': 'Billing details',
+  환불규정: 'Refund Policy',
   '구독을 관리해요': 'Manage your subscription',
   '결제와 해지는 PREMIND 웹에서 진행돼요.': 'Payment and cancellation happen on the PREMIND web.',
   '결제와 해지는 {store} 구독에서 관리돼요.':

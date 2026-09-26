@@ -30,6 +30,8 @@ import {
 import {
   autoRenewLine,
   cancelLine,
+  REFUND_POLICY_URL,
+  refundLine,
   formatRenewalDate,
   manageSubscriptionUrl,
   priceCopy,
@@ -489,6 +491,19 @@ export default function SubscriptionScreen() {
             <AppText tone="muted" variant="body">
               {cancelLine(surface, locale)}
             </AppText>
+            {/* 전자상거래법 제17조 제6항: 청약철회 기준을 결제 전에 알린다(환불규정 제3조, 2026-09-26). */}
+            <AppText tone="faint" variant="meta">
+              {refundLine(locale)}{' '}
+              <AppText
+                accessibilityRole="link"
+                onPress={() => openUrl(REFUND_POLICY_URL)}
+                style={styles.refundLink}
+                tone="faint"
+                variant="meta"
+              >
+                {t('환불규정')}
+              </AppText>
+            </AppText>
           </Card>
         ) : null}
 
@@ -774,6 +789,9 @@ const styles = StyleSheet.create({
   },
   termsCard: {
     gap: spacing.sm,
+  },
+  refundLink: {
+    textDecorationLine: 'underline',
   },
   usageCard: {
     gap: spacing.sm,

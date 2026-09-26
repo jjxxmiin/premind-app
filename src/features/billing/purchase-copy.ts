@@ -141,6 +141,21 @@ export function cancelLine(surface: BillingSurface, locale: AppLocale = 'ko'): s
   }
 }
 
+/** 환불규정(premind.co.kr/refund) — 결제 버튼 앞에 알리는 청약철회 한 줄. */
+export const REFUND_POLICY_URL = 'https://premind.co.kr/refund';
+
+/**
+ * The withdrawal-and-refund sentence shown before paying (전자상거래법 제17조 제6항).
+ * Numbers and conditions follow 환불규정 제3조, 제5조 (2026-09-26): 7일 안에 유료로
+ * 쓰지 않았으면 전액, 그 뒤 중도 해지 환불은 이용한 만큼 빼고. 앱마켓 결제도 같은 기준(제5조의2).
+ */
+export function refundLine(locale: AppLocale = 'ko'): string {
+  if (locale === 'en') {
+    return "Within 7 days of payment, you get a full refund if you haven't used any paid features. After that, you can ask for a refund minus what you've used.";
+  }
+  return '결제일부터 7일 안에 유료 기능을 쓰지 않았다면 전액 환불받을 수 있어요. 그 뒤에는 이용한 만큼 빼고 환불을 요청할 수 있어요.';
+}
+
 /** "9월 20일". A date the store or the server could not give us says so. */
 export function formatRenewalDate(iso: string | null, locale: AppLocale = 'ko'): string | null {
   if (!iso) return null;

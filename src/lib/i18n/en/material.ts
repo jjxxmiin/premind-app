@@ -11,6 +11,7 @@ export const EN_MATERIAL: EnDict = {
   '대본': 'Transcript',
   '마인드맵': 'Mind map',
   '카드': 'Cards',
+  'AI가 만든 내용이에요. 틀릴 수 있어요.': 'Made by AI. It may contain mistakes.',
   '한눈에 보기': 'At a glance',
   '자세히': 'In detail',
   '문장을 길게 누르면 형광펜으로 칠해져요. 다시 누르면 지워져요.': 'Long-press a sentence to highlight it. Long-press again to clear it.',

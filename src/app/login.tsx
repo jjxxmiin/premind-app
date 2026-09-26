@@ -300,7 +300,7 @@ export default function LoginScreen() {
             ) : null}
 
             <AppText align="center" style={styles.legal} tone="faint" variant="badge">
-              {t('로그인하면 PREMIND 이용약관과 개인정보 처리방침에 동의한 것으로 봐요')}
+              {t('만 14세 이상만 가입할 수 있어요. 로그인하면 PREMIND 이용약관과 개인정보 처리방침에 동의한 것으로 봐요')}
             </AppText>
           </View>
         </KeyboardAvoidingView>

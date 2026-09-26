@@ -502,6 +502,10 @@ export default function QuizScreen() {
             </Button>
           </Card>
         ) : null}
+        {/* 이용약관 제10조(인공지능 이용 고지): 문제는 AI 가 강의에서 만든다. */}
+        <AppText tone="faint" variant="meta">
+          {t('AI가 만든 내용이에요. 틀릴 수 있어요.')}
+        </AppText>
       </ScrollView>
 
       <View style={styles.bottomBar}>

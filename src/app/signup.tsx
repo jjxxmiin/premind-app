@@ -68,6 +68,9 @@ export default function SignupScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [agreedPrivacy, setAgreedPrivacy] = useState(false);
+  // 이용약관 제5조, 개인정보처리방침 12: 만 14세 이상만 가입해요(2026-09-26 법무 검토).
+  // 간편 가입(카카오, 구글)도 이 확인을 거쳐야 버튼이 켜져요.
+  const [agedFourteen, setAgedFourteen] = useState(false);
   // A field's error appears once the user has left it (or tried to submit),
   // never while they are still halfway through typing it.
   const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
@@ -110,7 +113,7 @@ export default function SignupScreen() {
     return next;
   }, [confirm, email, name, password]);
 
-  const agreed = agreedTerms && agreedPrivacy;
+  const agreed = agedFourteen && agreedTerms && agreedPrivacy;
   const formValid = agreed && Object.keys(errors).length === 0;
   const returnToLogin = () => {
     if (busy) return;
@@ -133,6 +136,7 @@ export default function SignupScreen() {
   };
 
   const setAllAgreed = (value: boolean) => {
+    setAgedFourteen(value);
     setAgreedTerms(value);
     setAgreedPrivacy(value);
     setServerError(null);
@@ -163,7 +167,7 @@ export default function SignupScreen() {
       return;
     }
     if (!agreed) {
-      setServerError({ message: '필수 약관에 동의해 주세요.' });
+      setServerError({ message: '필수 항목에 동의해 주세요.' });
       return;
     }
 
@@ -349,6 +353,17 @@ export default function SignupScreen() {
                   onChange={setAllAgreed}
                 />
                 <View style={styles.hairline} />
+                <Checkbox
+                  checked={agedFourteen}
+                  compact
+                  disabled={busy}
+                  label={t('[필수] 만 14세 이상이에요')}
+                  onChange={(value) => {
+                    setAgedFourteen(value);
+                    setServerError(null);
+                    clearError();
+                  }}
+                />
                 <Checkbox
                   checked={agreedTerms}
                   compact

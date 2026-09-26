@@ -9,6 +9,8 @@ import {
   manageSubscriptionUrl,
   playSubscriptionUrl,
   priceCopy,
+  REFUND_POLICY_URL,
+  refundLine,
   renewalFact,
 } from './purchase-copy';
 
@@ -62,6 +64,13 @@ describe('policy sentences', () => {
     expect(cancelLine('play')).toContain('Google Play 구독에서 언제든 해지할 수 있어요');
     expect(cancelLine('appstore')).toContain('App Store 구독에서 언제든 해지할 수 있어요');
     expect(cancelLine('web')).toContain('PREMIND 웹');
+  });
+
+  it('states the 7-day withdrawal rule of the refund policy before paying', () => {
+    expect(refundLine()).toContain('결제일부터 7일 안에');
+    expect(refundLine()).toContain('전액 환불');
+    expect(refundLine('en')).toContain('7 days');
+    expect(REFUND_POLICY_URL).toBe('https://premind.co.kr/refund');
   });
 });
 

@@ -555,6 +555,10 @@ export default function LensReportScreen() {
                 {summaryBlock}
                 {detailsToggle}
                 {showDetails ? details : null}
+                {/* 이용약관 제10조(인공지능 이용 고지): 점수와 피드백은 AI 가 만든 참고 의견이다. */}
+                <AppText tone="faint" variant="meta">
+                  {t('AI가 만든 평가예요. 틀릴 수 있으니 참고로만 봐 주세요.')}
+                </AppText>
               </View>
               {wide ? (
                 <View style={styles.sideColumn}>
