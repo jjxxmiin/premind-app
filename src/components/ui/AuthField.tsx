@@ -1,5 +1,6 @@
 import { useState, type ReactNode, type Ref } from 'react';
 import {
+  Platform,
   StyleSheet,
   TextInput,
   View,
@@ -57,6 +58,7 @@ export function AuthField({
         style={[
           styles.inputShell,
           focused ? styles.inputShellFocused : null,
+          focused && Platform.OS === 'web' ? webFocusRing : null,
           error ? styles.inputShellInvalid : null,
           !editable ? styles.inputShellDisabled : null,
         ]}
@@ -77,7 +79,7 @@ export function AuthField({
           placeholderTextColor={colors.textFaint}
           ref={inputRef}
           selectionColor={colors.brand}
-          style={[styles.input, inputReset]}
+          style={[styles.input, inputReset, webFieldInput]}
         />
         {trailing}
       </View>
@@ -93,6 +95,19 @@ export function AuthField({
     </View>
   );
 }
+
+/**
+ * On the web the shell draws the focus: an ink border plus a soft brand ring.
+ * The browser's own outline on the inner input would sit inside the shell as a
+ * second, offset rectangle (it did, on the search screen), so it is dropped
+ * only here, where the shell's ring replaces it.
+ */
+const webFocusRing =
+  Platform.OS === 'web'
+    ? ({ boxShadow: `0 0 0 3px ${colors.focusRing}` } as unknown as object)
+    : null;
+const webFieldInput =
+  Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknown as object) : null;
 
 const styles = StyleSheet.create({
   fieldGroup: {

@@ -33,6 +33,12 @@ export interface ScreenProps {
    * full readable width just spreads a short line of content thin.
    */
   maxWidth?: number;
+  /**
+   * Use the wide column (`useLayout().wideMaxWidth`, 1200 on a desktop
+   * window) instead of the reading column. For two-column screens and card
+   * grids that have a use for the width; `maxWidth` may then go up to it.
+   */
+  wide?: boolean;
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
   scrollViewProps?: Omit<ScrollViewProps, 'contentContainerStyle' | 'style'>;
@@ -56,12 +62,14 @@ export function Screen({
   background = 'canvas',
   fullBleed = false,
   maxWidth,
+  wide = false,
   style,
   contentStyle,
   scrollViewProps,
   testID,
 }: PropsWithChildren<ScreenProps>) {
-  const { gutter, contentMaxWidth, isTablet } = useLayout();
+  const { gutter, contentMaxWidth, wideMaxWidth, isTablet } = useLayout();
+  const columnLimit = wide ? wideMaxWidth : contentMaxWidth;
   const backgroundColor = backgroundColors[background];
 
   // The column only exists on tablets. A phone screen is already a readable
@@ -80,7 +88,7 @@ export function Screen({
     <View
       style={[
         scroll ? styles.scrollColumn : styles.fillColumn,
-        { maxWidth: Math.min(maxWidth ?? contentMaxWidth, contentMaxWidth) },
+        { maxWidth: Math.min(maxWidth ?? columnLimit, columnLimit) },
       ]}
     >
       {children}

@@ -31,6 +31,13 @@ export interface Layout {
    * app did before this existed.
    */
   contentMaxWidth: number;
+  /**
+   * How wide a two-column or card-grid screen may get: 1200 on a laptop or
+   * desktop window, where a single 960 column leaves a third of the screen
+   * empty; the same as `contentMaxWidth` below that, where there is no second
+   * column to make room for.
+   */
+  wideMaxWidth: number;
   /** Cards per row for the card grids (library, quick actions, packages). */
   columns: number;
   /** Exact pixel width of one grid cell, gaps accounted for. */
@@ -58,6 +65,7 @@ export function resolveLayout(width: number, height: number): Layout {
         ? spacing.xl
         : spacing.gutter;
   const contentMaxWidth = breakpoint === 'expanded' ? 960 : 760;
+  const wideMaxWidth = breakpoint === 'expanded' ? 1200 : contentMaxWidth;
   const columns = breakpoint === 'expanded' ? 3 : breakpoint === 'medium' ? 2 : 1;
 
   return {
@@ -68,6 +76,7 @@ export function resolveLayout(width: number, height: number): Layout {
     isLandscape: width > height,
     gutter,
     contentMaxWidth,
+    wideMaxWidth,
     columns,
     gridItemWidth: (count: number, gap: number = spacing.md) => {
       const available =

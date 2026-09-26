@@ -28,3 +28,4 @@ export * from './Skeleton';
 export * from './TextArea';
 export * from './Toast';
 export * from './Wordmark';
+export * from './interaction';

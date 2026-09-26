@@ -214,4 +214,11 @@ export const EN_HOME: EnDict = {
   '서버 원본 스트리밍 설정이 지연되고 있어요.': 'Setting up streaming from the server is taking a while.',
   '서버 원본 스트리밍을 설정하지 못했어요.': "We couldn't set up streaming from the server.",
   '갱신할 미디어 세션이 없어요.': 'There is no media session to refresh.',
+
+  // ── 데스크톱 홈(src/components/home/HomeDesktop.tsx) ─────────────────────
+  '안녕하세요, {name}님': 'Hi, {name}',
+  '자료 {n}개 중 {ready}개의 마인드팩이 준비돼 있어요': 'Mind Packs ready: {ready} of {n}',
+  '자료를 추가하면 마인드팩을 만들어 드려요': "Add a material and we'll make a Mind Pack from it",
+  '이어서 보기': 'Continue',
+  '이어서 보기, {title}': 'Continue, {title}',
 };

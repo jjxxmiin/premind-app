@@ -11,10 +11,10 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 
-import { AppText } from '@/components/ui';
+import { AppText, type PressState } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { useT } from '@/lib/i18n';
-import { colors, iconSizes, motion, sizes, spacing } from '@/theme/tokens';
+import { colors, iconSizes, motion, radii, sizes, spacing } from '@/theme/tokens';
 
 /**
  * The OS reduce-motion preference, read once and followed while mounted.
@@ -184,7 +184,11 @@ export function SubjectTabs({
               key={tab.key}
               onLayout={recordLayout(tab.key)}
               onPress={() => onSelect(index)}
-              style={({ pressed }) => [styles.tab, pressed ? styles.pressed : null]}
+              style={({ pressed, hovered }: PressState) => [
+                styles.tab,
+                hovered && !pressed && !selected ? styles.tabHover : null,
+                pressed ? styles.pressed : null,
+              ]}
             >
               <AppText
                 numberOfLines={1}
@@ -312,6 +316,10 @@ const styles = StyleSheet.create({
     minHeight: sizes.minimumTouchTarget,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+  },
+  tabHover: {
+    backgroundColor: colors.hover,
+    borderRadius: radii.input,
   },
   tabLabel: {
     flexShrink: 1,

@@ -20,6 +20,7 @@ import {
 } from '@/theme/tokens';
 
 import { AppText } from './AppText';
+import type { PressState } from './interaction';
 
 export interface ListRowProps extends Omit<ViewProps, 'style'> {
   title: string;
@@ -125,8 +126,9 @@ export function ListRow({
       accessibilityState={{ disabled, selected }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={({ pressed, hovered }: PressState) => [
         sharedStyle,
+        hovered && !pressed && !disabled && !selected ? styles.hover : null,
         pressed && !disabled ? styles.pressed : null,
       ]}
     >
@@ -159,8 +161,11 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.4,
   },
+  hover: {
+    backgroundColor: colors.hover,
+  },
   pressed: {
-    backgroundColor: colors.backgroundSoft,
+    backgroundColor: colors.backgroundMuted,
   },
   leading: {
     alignItems: 'center',

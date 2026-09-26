@@ -104,6 +104,12 @@ export const colors = {
   stageBorder: palette.stage700,
   stageText: palette.mist50,
   stageMuted: palette.mist400,
+  /** Web hover wash for quiet rows, ghost buttons and menu items. */
+  hover: palette.canvasSoft,
+  /** Hover wash on something already sitting on `backgroundSoft`. */
+  hoverStrong: palette.canvasMuted,
+  /** Border of a hovered card or outlined control. */
+  borderHover: '#C9CCD3',
   overlay: 'rgba(17, 17, 20, 0.48)',
   overlaySoft: 'rgba(17, 17, 20, 0.08)',
   focusRing: 'rgba(226, 90, 28, 0.28)',
@@ -171,6 +177,8 @@ export const sizes = {
   mobileGutter: 20,
   mobileHeader: 56,
   desktopSidebar: 256,
+  /** The expanded-breakpoint sidebar (AppTabBar). */
+  sidebar: 232,
   compactSidebar: 68,
   buttonSmall: 36,
   button: 44,
