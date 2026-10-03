@@ -50,6 +50,10 @@ type Notifications = typeof import('./notifications');
 function load(): Notifications {
   let module: Notifications | null = null;
   jest.isolateModules(() => {
+    // This isolated registry also creates a fresh locale store, outside the
+    // suite-wide reset. Keep notification copy independent of the host locale.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('../lib/i18n/locale-store').resetLocaleForTests('ko');
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     module = require('./notifications') as Notifications;
   });

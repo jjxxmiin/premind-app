@@ -176,6 +176,13 @@ export default function ProfileScreen() {
           ) : null}
         </Surface>
 
+        {!demoAccount ? (
+          <GroupCard>
+            <SettingsRow title={t('로그인 계정 관리')} description={t('이메일, Google, 카카오 연결 상태를 관리해요.')}
+              onPress={() => router.push('/login-accounts')} />
+          </GroupCard>
+        ) : null}
+
         <GroupCard>
           <SettingsRow
             // 영어를 못 읽는 사람도, 한국어를 못 읽는 사람도 찾게 두 말로(한 줄).

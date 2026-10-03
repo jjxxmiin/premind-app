@@ -1,46 +1,57 @@
-# store/ — Google Play 등록용 에셋
+# Google Play 등록용 이미지
 
-2026-09-07 기준. 웹 빌드(`npx expo start --web --port 8099`)를 360x640 뷰포트, 3배 배율로 캡처해 만든 파일이라 실제 안드로이드 기기 캡처와 글꼴 힌팅, 상태 표시줄이 다를 수 있어요. 기기 캡처로 바꿀 때는 같은 파일 이름으로 덮어쓰고 `scripts`에 적힌 순서로 다시 프레이밍하면 돼요.
+2026-10-01 갱신. 앱의 새 연필 쥔 P 심볼과 현재 홈, 복습, 추가, 연습, MY 화면을 기준으로 만들었어요.
+이 폴더의 변경과 AAB 빌드만으로 Play 등록정보가 바뀌지는 않아요. 콘솔에 이미지와 새 릴리스를 각각 제출해야 해요.
 
-## 파일과 콘솔 위치
+## 제출할 파일
 
-| 파일 | 크기 | Play Console 위치 |
+| 파일 | 크기 | 용도 |
 | --- | --- | --- |
-| `listing-ko.md` | 텍스트 | 스토어 설정 > 기본 스토어 등록정보 > 한국어. 앱 이름, 간단한 설명(80자), 자세한 설명(4000자)을 그대로 붙여 넣어요. 카테고리, 태그, 연락처, 개인정보 처리방침 URL, 심사 메모 문구도 이 파일에 있어요. |
-| `feature-graphic.png` | 1024x500 | 기본 스토어 등록정보 > 그래픽 > 그래픽 이미지. 흰 배경에 잉크색 PREMIND 워드마크, 태그라인, 얇은 브랜드 라인. |
-| `app-icon-512.png` | 512x512 | 기본 스토어 등록정보 > 그래픽 > 앱 아이콘. `assets/brand/app-icon.png`를 줄인 것이라 앱 아이콘을 바꾸면 다시 만들어야 해요. |
-| `screenshots/01-home.png` … `08-record.png` | 1080x1920 | 원본 캡처. 프레이밍 없이 그대로 올려도 되고, 아래 framed 버전을 올려도 돼요. 둘 중 하나만 올리세요. |
-| `screenshots/framed/01-home.png` … `08-record.png` | 1080x1920 | 기본 스토어 등록정보 > 그래픽 > 휴대전화 스크린샷. 위 220px 캡션 밴드(흰 배경, 잉크 글자, 얇은 브랜드 라인) 아래에 캡처를 축소해 넣은 버전. 이 순서대로 올리면 돼요. |
+| `app-icon-512.png` | 512×512 | Play 등록 아이콘. `assets/brand/app-icon.png`를 그대로 축소해요. |
+| `feature-graphic.png` | 1024×500 | 새 심볼, 워드마크와 제품 설명을 넣은 그래픽 이미지 |
+| `screenshots/framed/01-home.png` | 1080×1920 | 내 자료를 한곳에 |
+| `screenshots/framed/02-material-summary.png` | 1080×1920 | 핵심만 담은 요약 |
+| `screenshots/framed/03-material-mindmap.png` | 1080×1920 | 한눈에 보는 마인드맵 |
+| `screenshots/framed/04-chat.png` | 1080×1920 | 내 자료를 근거로 질문 |
+| `screenshots/framed/05-mastery.png` | 1080×1920 | 다시 볼 곳을 찾아 복습 |
+| `screenshots/framed/06-lens.png` | 1080×1920 | 발표를 연습하고 평가 |
+| `screenshots/framed/07-report.png` | 1080×1920 | 근거와 함께 보는 피드백 |
+| `screenshots/framed/09-interview.png` | 1080×1920 | 면접도 차근차근 연습 |
 
-Play 휴대전화 스크린샷 요건: 2장 이상 8장 이하, PNG 또는 JPEG, 각 변 320px 이상 3840px 이하, 가로세로 비율 16:9 또는 9:16. 여기 있는 8장은 모두 1080x1920(9:16)이라 그대로 통과해요.
+위 8장을 순서대로 사용해요. 프레임 없는 원본은 `screenshots/`에 있어요.
+`08-record.png`도 현재 화면으로 갱신하지만, 브라우저 전용 녹음 안내가 있어 **Play 제출 목록에서 제외**했어요.
+캡처는 같은 Expo 소스의 한국어 웹 데모(360×640, 3배 배율)이며 실제 Android 기기 캡처는 아니에요.
+현재 스토어 설명은 `listing-ko.md`, 생성 정보와 정확한 제출 파일 목록은 `assets-manifest.json`에 있어요.
 
-## 스크린샷 순서와 캡션
+## 다시 생성하기
 
-| 번호 | 화면 | 경로 | 캡션 |
-| --- | --- | --- | --- |
-| 01 | 홈(내 자료실) | `/` | 녹음 한 번으로 마인드팩 |
-| 02 | 마인드팩 요약 탭 | `/material/material-ai-intro-01?tab=summary` | 핵심만 담은 요약 |
-| 03 | 마인드팩 마인드맵 탭 | `/material/material-ai-intro-01?tab=mindmap` (맵이 보이도록 스크롤) | 한눈에 보는 마인드맵 |
-| 04 | 질문 | `/chat/material-ai-intro-01` | 대본을 근거로 질문 |
-| 05 | 이해도 탭 | `/mastery` (문제 5개 중 1개를 틀린 뒤 캡처해서 "과적합을 다시 볼 차례예요"가 보여요) | 자료별 이해도 |
-| 06 | 평가 탭 | `/lens` | 내 발표 채점 |
-| 07 | 발표 평가 결과 | `/report/material-ai-intro-01` | 먼저 고칠 것 하나 |
-| 08 | 녹음 | `/record` | 탭 한 번으로 녹음 |
+```bash
+npm ci
+npx playwright install chromium
+EXPO_NO_DOTENV=1 EXPO_PUBLIC_API_URL= EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB= EXPO_PUBLIC_ENABLE_KAKAO_AUTH=false npx expo export --platform web --clear --output-dir dist/store-preview
+PREMIND_PREVIEW_ROOT=dist/store-preview PREMIND_PREVIEW_PORT=18197 npm run preview:web
+```
 
-체크리스트(`docs/release-checklist.md`)는 홈, 녹음, 마인드팩, 평가 4장이면 충분하다고 하니 줄이고 싶으면 01, 08, 02, 06만 올려도 돼요.
+다른 터미널에서 실행해요.
 
-주의: 08은 웹 빌드 캡처라 화면 아래에 "녹음 중에도 원본을 브라우저에 저장해 두어…"라는 웹 전용 안내가 보여요. 안드로이드에서는 이 문장이 다르게 나오므로, 가능하면 기기에서 다시 캡처해 교체하는 것을 권해요. 그 전까지는 08을 빼고 7장만 올려도 괜찮아요.
+```bash
+node scripts/refresh-store-assets.mjs
+```
 
-## 다시 만들기
+이미 설치된 Chrome을 쓰려면 `PREMIND_CHROMIUM_PATH`에 실행 파일 경로를 지정해요.
+다른 로컬 포트는 `PREMIND_STORE_PREVIEW_URL`로 지정할 수 있어요.
+스크립트는 새 브라우저 프로필에서 데모에 로그인하고 API 요청을 차단해요.
+앱 화면을 실제로 캡처하며, 로고를 새로 그리지 않고 원본을 사용해요.
 
-캡처와 프레이밍에 쓴 스크립트는 이 세션의 스크래치 디렉터리에 있었고 저장소에는 넣지 않았어요. 다시 만들 때의 절차는 다음과 같아요.
+## Android 업데이트
 
-1. 웹 개발 서버를 `http://localhost:8099`에 띄워요.
-2. playwright-core(`node_modules`)로 Chrome(`/usr/bin/google-chrome`)을 열고 뷰포트 360x640, `deviceScaleFactor: 3`으로 위 경로를 캡처해요. `/login`에서 "데모로 둘러보기"를 누르면 데모 자료가 들어와요. 05는 `/quiz/material-ai-intro-01`에서 문제를 다 풀되 3번(과적합)을 일부러 틀린 뒤 캡처해요.
-3. Pillow(`python3 -c "import PIL"`)로 프레이밍해요. 캡션 밴드 220px, 캡처는 1700px 높이로 축소해 아래에 붙이고, 글꼴은 `assets/fonts/Pretendard-Bold.ttf` 66px, 글자색 `#17171B`, 브랜드 라인 `#E25A1C` 56x4px. 그래픽 이미지는 `assets/brand/wordmark.png`의 알파를 마스크로 써서 잉크색으로 채우고 태그라인은 `Pretendard-Medium.ttf` 38px이에요.
-
-`sharp`는 `node_modules`에 없어서 Node 대신 Pillow를 썼어요.
-
-## 문구 규칙
-
-`docs/design-system.md`의 카피 규칙을 따랐어요. 해요체, 마인드팩/폴더/자료/대본/요약/문제/질문/이해도/평가 용어만 사용, 과목/학습팩/프로젝트/공부방/강의자/학생 금지, 가운뎃점 없음. 결제, 가격, 구독 구매, 웹 결제 안내는 Play 정책 때문에 어디에도 넣지 않았어요. 문구를 고칠 때도 이 규칙을 지켜 주세요.
+이번 소스 버전은 `1.0.3`, Android `versionCode 6`예요.
+서명된 제출 파일은 `dist/android/premind-1.0.3-release.aab`, 설치 확인용은 같은 폴더의 `.apk`예요.
+이 버전은 구글/카카오 로그인 버튼을 실제 텍스트와 SVG 아이콘을 사용하는 공통 컴포넌트로 교체했어요.
+기존 `1.0.2` AAB에는 이 수정이 없으므로 새 AAB를 제출해야 해요.
+Play Console에서 현재 사용된 versionCode를 확인하고, 6이 이미 사용됐다면 더 큰 값으로 다시 빌드해야 해요.
+스토어 아이콘과 스크린샷은 기본 스토어 등록정보에 별도로 올려야 해요.
+제출용 8장에는 로그인 화면이 없어, 이번 버튼 수정 때문에 이미지를 다시 만들 필요는 없어요.
+`premind-1.0.3-play-assets.zip`은 기존 최신 이미지에 이 버전의 안내를 함께 묶은 파일이에요.
+이미 새 아이콘과 이미지를 등록했다면 재업로드는 필요 없고, 아직 옛 이미지라면 이 묶음으로 교체하세요.
+Play 업로드 인증과 실제 출시 상태는 로컬 빌드 성공만으로 확인할 수 없어요.

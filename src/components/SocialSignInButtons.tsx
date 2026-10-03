@@ -1,8 +1,9 @@
-import { Image } from 'expo-image';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
-import { AppText, Button } from '@/components/ui';
+import { AppText } from '@/components/ui/AppText';
+import { Button } from '@/components/ui/Button';
 import {
   SocialSignInCancelled,
   useAvailableProviders,
@@ -14,18 +15,39 @@ import { decorative } from '@/lib/a11y';
 import { useT } from '@/lib/i18n';
 import { colors, radii, spacing } from '@/theme/tokens';
 
-const googleLogo = require('../../assets/social/google-g.png');
-const kakaoLoginButton = require('../../assets/social/kakao-login-medium-wide.png');
+/** Vector paths supplied by Google's HTML sign-in button configurator. */
+function GoogleSymbol() {
+  return (
+    <Svg {...decorative} height={18} width={18} viewBox="0 0 48 48">
+      <Path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+      <Path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+      <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+      <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+    </Svg>
+  );
+}
+
+/** Unmodified symbol path from Kakao's official login-complete-ko.svg. */
+function KakaoSymbol() {
+  return (
+    <Svg {...decorative} height={18} width={18} viewBox="61.5225 16.5225 12.9555 12.9555">
+      <Path
+        fill="#000000"
+        d="M68.001 16.5225C64.4222 16.5225 61.5225 19.0037 61.5225 22.0641C61.5225 24.0312 62.7219 25.7596 64.5292 26.7423L63.9181 29.2113C63.8954 29.285 63.9132 29.364 63.9619 29.4184C63.9975 29.457 64.0461 29.478 64.0931 29.478C64.1337 29.478 64.1742 29.464 64.2082 29.4341L66.834 27.5144C67.2117 27.5723 67.6007 27.6039 67.9994 27.6039C71.5767 27.6039 74.478 25.1226 74.478 22.0623C74.478 19.002 71.5783 16.5225 68.001 16.5225Z"
+      />
+    </Svg>
+  );
+}
 
 const presentation: Record<AuthProvider, { label: string; background: string; border: string; text: string }> = {
   kakao: {
-    label: '카카오로 계속하기',
+    label: '카카오 로그인',
     background: '#FEE500',
     border: '#FEE500',
-    text: '#191600',
+    text: 'rgba(0, 0, 0, 0.85)',
   },
   google: {
-    label: '구글로 계속하기',
+    label: '구글 로그인',
     background: colors.surface,
     border: colors.borderStrong,
     text: colors.text,
@@ -46,8 +68,7 @@ export interface SocialSignInButtonsProps {
  * Kakao is listed first: this is a Korean product, and it is the account most
  * of its users already have.
  *
- * The surface colours and image assets are the official provider treatments:
- * Kakao's supplied full-width button and Google's supplied G mark on white.
+ * Both providers use the shared Button, native labels and vector marks.
  */
 export function SocialSignInButtons({
   disabled = false,
@@ -155,46 +176,11 @@ function ProviderButton({
     }
   };
 
-  if (provider === 'kakao') {
-    return (
-      <Pressable
-        accessibilityLabel={label}
-        accessibilityRole="button"
-        accessibilityState={{ busy, disabled: busy || disabled }}
-        disabled={busy || disabled}
-        onPress={() => void start()}
-        style={({ pressed }) => [
-          styles.kakaoButton,
-          pressed ? styles.pressed : null,
-          busy ? styles.busy : null,
-          disabled ? styles.busy : null,
-        ]}
-      >
-        <Image
-          {...decorative}
-          contentFit="contain"
-          source={kakaoLoginButton}
-          style={styles.kakaoImage}
-        />
-        {busy ? (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator color="#191600" size="small" />
-          </View>
-        ) : null}
-      </Pressable>
-    );
-  }
-
   return (
     <Button
       fullWidth
       leftIcon={
-        <Image
-          {...decorative}
-          contentFit="contain"
-          source={googleLogo}
-          style={styles.googleLogo}
-        />
+        provider === 'kakao' ? <KakaoSymbol /> : <GoogleSymbol />
       }
       loading={busy}
       disabled={disabled || busy}
@@ -204,6 +190,7 @@ function ProviderButton({
         { backgroundColor: look.background, borderColor: look.border },
       ]}
       textStyle={{ color: look.text }}
+      interactionStyle={{ backgroundColor: look.background, borderColor: look.border }}
       variant="secondary"
     >
       {label}
@@ -229,41 +216,5 @@ const styles = StyleSheet.create({
   socialButton: {
     borderRadius: radii.button,
     borderWidth: 1,
-  },
-  googleLogo: {
-    height: 18,
-    width: 18,
-  },
-  kakaoButton: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    backgroundColor: '#FEE500',
-    borderRadius: 12,
-    height: 45,
-    justifyContent: 'center',
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  kakaoImage: {
-    height: 45,
-    maxWidth: 300,
-    width: '100%',
-  },
-  loadingOverlay: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(254, 229, 0, 0.82)',
-    bottom: 0,
-    justifyContent: 'center',
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-  },
-  pressed: {
-    opacity: 0.78,
-    transform: [{ scale: 0.995 }],
-  },
-  busy: {
-    opacity: 0.72,
   },
 });

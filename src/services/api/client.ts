@@ -78,6 +78,13 @@ function detailCode(payload: unknown): string | null {
 
 /** Social providers this app knows how to start a flow for. */
 export type AuthProvider = 'google' | 'kakao';
+export type LoginMethod = AuthProvider | 'email';
+export interface LoginConnection {
+  provider: LoginMethod;
+  connected: boolean;
+  email: string | null;
+  canUnlink: boolean;
+}
 
 export interface KakaoCodeProof {
   state: string;
@@ -624,12 +631,12 @@ export class PremindApiClient {
    * side that may decide what it proves, because it is the only side that can
    * ask Google or Kakao whether it is real.
    */
-  async startKakaoSignIn(codeChallenge: string): Promise<{
+  async startKakaoSignIn(codeChallenge: string, platform: 'app' | 'web' = 'app'): Promise<{
     authorizationUrl: string; state: string;
   }> {
     const payload = record(await this.request<unknown>('/api/auth/oauth/kakao/start', {
       method: 'POST', headers: this.jsonHeaders(),
-      body: JSON.stringify({ code_challenge: codeChallenge }),
+      body: JSON.stringify({ code_challenge: codeChallenge, platform }),
     }));
     const authorizationUrl = payload.authorization_url;
     const state = payload.state;
@@ -663,15 +670,57 @@ export class PremindApiClient {
   }
 
   /** Which social sign-ins the server can actually complete. */
-  async getAuthProviders(): Promise<AuthProvider[]> {
+  async getAuthProviders(platform: 'app' | 'web' = 'app'): Promise<AuthProvider[]> {
     const payload = await this.request<unknown>('/api/auth/providers');
     const providers = record(payload).providers;
     return Array.isArray(providers)
       ? providers.filter(
           (value): value is AuthProvider => value === 'google'
-            || (value === 'kakao' && record(payload).kakao_code_flow === true),
+            || (value === 'kakao' && record(payload).kakao_code_flow === true
+              && (platform !== 'web' || record(payload).kakao_web_code_flow === true)),
         )
       : [];
+  }
+
+  private loginConnections(payload: unknown): LoginConnection[] {
+    const methods = record(payload).methods;
+    if (!Array.isArray(methods) || methods.length !== 3) throw new ApiError('로그인 연결 상태를 확인하지 못했어요.');
+    const result = methods.map((value) => {
+      const method = record(value);
+      if (!['email', 'google', 'kakao'].includes(String(method.provider))
+        || typeof method.connected !== 'boolean' || typeof method.can_unlink !== 'boolean'
+        || !(method.email === null || typeof method.email === 'string')) {
+        throw new ApiError('로그인 연결 상태를 확인하지 못했어요.');
+      }
+      return { provider: method.provider as LoginMethod, connected: method.connected,
+        email: method.email as string | null, canUnlink: method.can_unlink };
+    });
+    if (new Set(result.map((item) => item.provider)).size !== 3) throw new ApiError('로그인 연결 상태를 확인하지 못했어요.');
+    return result;
+  }
+
+  async getLoginConnections(accessToken: string): Promise<LoginConnection[]> {
+    return this.loginConnections(await this.request('/api/auth/connections', { headers: this.authorization(accessToken) }));
+  }
+
+  async linkLoginConnection(accessToken: string, provider: AuthProvider, token: string, proof?: KakaoCodeProof): Promise<LoginConnection[]> {
+    return this.loginConnections(await this.request(`/api/auth/connections/${provider}`, {
+      method: 'POST', headers: this.jsonHeaders(accessToken),
+      body: JSON.stringify(provider === 'kakao'
+        ? { code: token, state: proof?.state, code_verifier: proof?.codeVerifier } : { token }),
+    }));
+  }
+
+  async addEmailLogin(accessToken: string, password: string): Promise<LoginConnection[]> {
+    return this.loginConnections(await this.request('/api/auth/connections/email', {
+      method: 'PUT', headers: this.jsonHeaders(accessToken), body: JSON.stringify({ password }),
+    }));
+  }
+
+  async unlinkLoginConnection(accessToken: string, provider: LoginMethod): Promise<LoginConnection[]> {
+    return this.loginConnections(await this.request(`/api/auth/connections/${provider}`, {
+      method: 'DELETE', headers: this.authorization(accessToken),
+    }));
   }
 
   async refresh(

@@ -1,10 +1,12 @@
 export const KAKAO_APP_REDIRECT = 'premind://oauth/kakao';
+export const KAKAO_WEB_CALLBACK_PATH = '/app/oauth/kakao.html';
 
 export function parseKakaoCallback(
-  callbackUrl: string, expectedState: string,
+  callbackUrl: string, expectedState: string, redirectUri = KAKAO_APP_REDIRECT,
 ): { cancelled: true } | { cancelled: false; code: string } {
   const url = new URL(callbackUrl);
-  if (url.protocol !== 'premind:' || url.hostname !== 'oauth' || url.pathname !== '/kakao'
+  const redirect = new URL(redirectUri);
+  if (url.protocol !== redirect.protocol || url.host !== redirect.host || url.pathname !== redirect.pathname
     || url.username || url.password || url.port
     || !expectedState || url.searchParams.getAll('state').length !== 1
     || url.searchParams.get('state') !== expectedState) {

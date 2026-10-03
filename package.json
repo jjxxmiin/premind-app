@@ -1,6 +1,6 @@
 {
   "name": "premind-mobile",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "private": true,
   "main": "expo-router/entry",
   "engines": {
@@ -20,6 +20,7 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "export:web": "expo export --platform web",
+    "export:web:production": "node scripts/export-web-production.mjs",
     "build:android": "bash scripts/build-android.sh"
   },
   "dependencies": {
@@ -75,6 +76,8 @@
     "eslint": "^9.39.5",
     "eslint-config-expo": "^57.0.2",
     "jest-expo": "^57.0.5",
+    "playwright": "^1.63.0",
+    "sharp": "^0.35.5",
     "typescript": "~6.0.3"
   }
 }

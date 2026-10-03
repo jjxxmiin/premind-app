@@ -2,6 +2,37 @@ import type { EnDict } from '../core';
 
 /** 영어 사전 — account 영역. 키는 화면의 한국어 문장 그대로. */
 export const EN_ACCOUNT: EnDict = {
+  '로그인 계정 관리': 'Login methods',
+  '이메일, Google, 카카오 연결 상태를 관리해요.': 'Manage your email, Google and Kakao login methods.',
+  '연결한 방법으로 같은 계정에 로그인해요. 강의, 노트, 구독은 그대로 유지돼요.': 'Use any linked method to sign in to the same account. Your lectures, notes and subscription stay with you.',
+  '실제 계정으로 로그인한 뒤 사용할 수 있어요.': 'Sign in to a real account to use this feature.',
+  '연결 상태를 불러오고 있어요.': 'Loading login methods.',
+  '연결 상태를 불러오지 못했어요.': 'Could not load your login methods.',
+  '연결 상태를 변경하지 못했어요.': 'Could not update your login methods.',
+  '로그인 계정을 연결했어요.': 'Login method linked.',
+  '로그인 계정 연결을 해제했어요.': 'Login method unlinked.',
+  '로그인 수단은 최소 하나 남겨야 해요. 다른 회원 계정에 연결된 소셜 계정은 연결할 수 없어요.': 'Keep at least one login method. A social account linked to another member cannot be linked here.',
+  '연결을 해제할까요?': 'Unlink this login method?',
+  '이 방법으로는 로그인할 수 없게 돼요. 자료와 구독은 삭제되지 않아요.': 'You will no longer be able to sign in this way. Your materials and subscription will not be deleted.',
+  '연결 해제': 'Unlink',
+  '연결하기': 'Link',
+  '연결됨': 'Linked',
+  '연결 안 됨': 'Not linked',
+  '이메일 로그인 연결': 'Set up email login',
+  '새 비밀번호': 'New password',
+  '영문과 숫자를 포함해 8자 이상 입력해 주세요.': 'Use at least 8 characters, including a letter and a number.',
+  '이 환경에서는 연결을 지원하지 않아요.': 'Linking is not supported in this environment.',
+  '유일한 로그인 수단이에요. 다른 방법을 먼저 연결해 주세요.': 'This is your only login method. Link another method first.',
+  '로그인한 계정이 바뀌었어요. 연결을 다시 시도해 주세요.': 'The signed-in account changed. Please try linking again.',
+  '다른 회원 계정에 이미 연결된 소셜 계정이에요.': 'This social account is already linked to another member.',
+  '이미 다른 소셜 계정이 연결되어 있어요. 연결을 해제한 뒤 다시 시도해 주세요.': 'A different social account is already linked. Unlink it before trying again.',
+  '이미 연결된 소셜 계정이에요. 연결 상태를 다시 확인해 주세요.': 'This social account is already linked. Check your login methods again.',
+  '로그인 수단은 최소 하나 남아 있어야 해요. 다른 방법을 먼저 연결해 주세요.': 'Keep at least one login method. Link another method first.',
+  '이메일 로그인이 이미 연결되어 있어요.': 'Email login is already set up.',
+  '소셜 계정 연결이 아직 준비되지 않았어요.': 'Social account linking is not available yet.',
+  '이미 가입된 이메일이에요. 기존 방식으로 로그인한 뒤 프로필의 로그인 계정 관리에서 소셜 계정을 연결해 주세요.': 'This email is already registered. Sign in using your existing method, then link your social account under Profile → Login methods.',
+  '이미 가입된 이메일이에요. 기존 방식으로 로그인한 뒤 프로필의 로그인 계정 관리에서 Google 계정을 연결해 주세요.': 'This email is already registered. Sign in using your existing method, then link your Google account under Profile → Login methods.',
+  '이미 가입된 이메일이에요. 기존 방식으로 로그인한 뒤 프로필의 로그인 계정 관리에서 카카오 계정을 연결해 주세요.': 'This email is already registered. Sign in using your existing method, then link your Kakao account under Profile → Login methods.',
   // ── 2026-09-26 웹 구독 해지 ──
   '구독 해지': 'Cancel subscription',
   '{date}까지 쓰고 그 뒤로 결제되지 않아요': "Use it until {date}. You won't be charged after that",
@@ -135,7 +166,9 @@ export const EN_ACCOUNT: EnDict = {
 
   // ── Social sign-in ───────────────────────────────────────────────────────
   '카카오로 계속하기': 'Continue with Kakao',
+  '카카오 로그인': 'Login with Kakao',
   '구글로 계속하기': 'Continue with Google',
+  '구글 로그인': 'Sign in with Google',
   '간편 로그인': 'Quick sign-in',
   '필수 항목에 동의하면 간편 가입을 사용할 수 있어요.':
     'Check the required items to use quick sign-up.',

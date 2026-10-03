@@ -5,6 +5,14 @@ it('accepts only the callback for the pending login', () => {
   expect(parseKakaoCallback('premind://oauth/kakao?state=pending&code=one-use', 'pending'))
     .toEqual({ cancelled: false, code: 'one-use' });
 });
+it('accepts a web callback only for its exact expected origin and path', () => {
+  const redirect = 'https://premind.co.kr/app/oauth/kakao.html';
+  expect(parseKakaoCallback(`${redirect}?state=pending&code=one-use`, 'pending', redirect))
+    .toEqual({ cancelled: false, code: 'one-use' });
+  for (const base of ['https://evil.test/app/oauth/kakao.html', 'https://premind.co.kr/other', 'http://premind.co.kr/app/oauth/kakao.html']) {
+    expect(() => parseKakaoCallback(`${base}?state=pending&code=x`, 'pending', redirect)).toThrow();
+  }
+});
 it.each([
   'premind://oauth/kakao?state=other&code=x',
   'https://evil.test/oauth/kakao?state=pending&code=x',

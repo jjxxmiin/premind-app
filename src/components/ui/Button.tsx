@@ -48,6 +48,8 @@ export interface ButtonProps
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   style?: StyleProp<ViewStyle>;
+  /** Optional hover/press palette override, e.g. an external sign-in brand. */
+  interactionStyle?: StyleProp<ViewStyle>;
   /** Overrides the label colour for buttons wearing an external brand's palette. */
   textStyle?: StyleProp<TextStyle>;
 }
@@ -191,6 +193,7 @@ export function Button({
   rightIcon,
   disabled = false,
   style,
+  interactionStyle,
   textStyle,
   accessibilityLabel,
   ...props
@@ -239,6 +242,7 @@ export function Button({
         isDisabled ? styles.disabled : null,
         pressed && !isDisabled ? styles.pressed : null,
         pressed && !isDisabled ? pressedStyles[variant] : null,
+        (hovered || pressed) && !isDisabled ? interactionStyle : null,
       ]}
     >
       {content}

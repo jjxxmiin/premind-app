@@ -10,5 +10,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       iosUrlScheme: `com.googleusercontent.apps.${iosClientId.replace('.apps.googleusercontent.com', '')}`,
     }]);
   }
-  return { ...config, name: config.name ?? 'PREMIND', slug: config.slug ?? 'premind', plugins };
+  return {
+    ...config, name: config.name ?? 'PREMIND', slug: config.slug ?? 'premind', plugins,
+    experiments: {
+      ...config.experiments,
+      ...(process.env.PREMIND_WEB_BASE_URL ? { baseUrl: process.env.PREMIND_WEB_BASE_URL } : {}),
+    },
+  };
 };

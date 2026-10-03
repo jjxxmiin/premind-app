@@ -662,6 +662,23 @@ describe('the default fetcher', () => {
 });
 
 describe('social login transport', () => {
+  const methods = { methods: [
+    { provider: 'email', connected: true, email: 'owner@example.test', can_unlink: false },
+    { provider: 'google', connected: false, email: null, can_unlink: false },
+    { provider: 'kakao', connected: false, email: null, can_unlink: false },
+  ] };
+  it('links Kakao with the current bearer session and code proof, not a sign-in request', async () => {
+    const fetcher = fetchReturning(mockResponse(methods));
+    const result = await clientWith(fetcher).linkLoginConnection('current-token', 'kakao', 'one-use', { state: 'state', codeVerifier: 'verifier' });
+    expect(fetcher.mock.calls[0]?.[0]).toBe('https://api.premind.test/api/auth/connections/kakao');
+    expect(new Headers(fetcher.mock.calls[0]?.[1]?.headers).get('Authorization')).toBe('Bearer current-token');
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ code: 'one-use', state: 'state', code_verifier: 'verifier' });
+    expect(result[0]).toEqual({ provider: 'email', connected: true, email: 'owner@example.test', canUnlink: false });
+  });
+  it('rejects malformed connection status instead of enabling an unsafe unlink action', async () => {
+    const fetcher = fetchReturning(mockResponse({ methods: [methods.methods[0], methods.methods[0], methods.methods[0]] }));
+    await expect(clientWith(fetcher).getLoginConnections('token')).rejects.toThrow('연결 상태');
+  });
   it('exchanges a Kakao code with its proof and persists the normal session shape', async () => {
     const fetcher = fetchReturning(mockResponse(TOKEN_PAIR));
     const session = await clientWith(fetcher).signInWithProvider('kakao', 'code', {
@@ -684,5 +701,18 @@ describe('social login transport', () => {
   it('rejects an untrusted browser destination returned by the server', async () => {
     const fetcher = fetchReturning(mockResponse({ authorization_url: 'https://evil.test', state: 'state' }));
     await expect(clientWith(fetcher).startKakaoSignIn('challenge')).rejects.toThrow('로그인 주소');
+  });
+  it('hides web Kakao until the server advertises its web callback capability', async () => {
+    const fetcher = fetchReturning(mockResponse({ providers: ['google', 'kakao'], kakao_code_flow: true }));
+    expect(await clientWith(fetcher).getAuthProviders('web')).toEqual(['google']);
+  });
+  it('enables web Kakao when both code flow capabilities are present', async () => {
+    const fetcher = fetchReturning(mockResponse({ providers: ['google', 'kakao'], kakao_code_flow: true, kakao_web_code_flow: true }));
+    expect(await clientWith(fetcher).getAuthProviders('web')).toEqual(['google', 'kakao']);
+  });
+  it('starts web Kakao with a platform selector, never an arbitrary redirect', async () => {
+    const fetcher = fetchReturning(mockResponse({ authorization_url: 'https://kauth.kakao.com/oauth/authorize', state: 'signed' }));
+    await clientWith(fetcher).startKakaoSignIn('challenge', 'web');
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ code_challenge: 'challenge', platform: 'web' });
   });
 });

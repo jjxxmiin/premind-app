@@ -3,14 +3,13 @@ import * as Crypto from 'expo-crypto';
 
 import { useGoogleAuthentication, isGoogleSignInSupported } from './use-google-auth';
 import { parseKakaoCallback, KAKAO_APP_REDIRECT } from './kakao-callback';
+import { authenticateKakaoWeb } from './kakao-web-auth';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { apiClient, type AuthProvider } from '@/services/api/client';
 import { useAppStore } from '@/state/app-store';
-
-WebBrowser.maybeCompleteAuthSession();
 
 /**
  * Keys live in the build, never in the source.
@@ -45,7 +44,7 @@ const googleClientIdForPlatform = Platform.select({
 export const localProviders: AuthProvider[] = [
   ...(googleClientIdForPlatform && googleClientIds.web && isGoogleSignInSupported()
     ? (['google'] as const) : []),
-  ...(Platform.OS !== 'web' && kakaoRestKey && kakaoLegalNoticeEnabled
+  ...(kakaoRestKey && kakaoLegalNoticeEnabled
     ? (['kakao'] as const) : []),
 ];
 
@@ -70,7 +69,7 @@ export function useAvailableProviders(): AuthProvider[] {
     }
     let cancelled = false;
     apiClient
-      .getAuthProviders()
+      .getAuthProviders(Platform.OS === 'web' ? 'web' : 'app')
       .then((providers) => {
         if (!cancelled) {
           setServerProviders(providers);
@@ -97,9 +96,13 @@ export function useAvailableProviders(): AuthProvider[] {
 }
 
 /** Google returns an ID token whose audience is the configured WEB client ID. */
+export function useGoogleIdentity(): () => Promise<string | null> {
+  return useGoogleAuthentication(googleClientIds);
+}
+
 export function useGoogleSignIn(): () => Promise<void> {
   const { signInWithProvider } = useAppStore();
-  const authenticate = useGoogleAuthentication(googleClientIds);
+  const authenticate = useGoogleIdentity();
   return useCallback(async () => {
     const token = await authenticate();
     if (!token) throw new SocialSignInCancelled();
@@ -108,9 +111,13 @@ export function useGoogleSignIn(): () => Promise<void> {
 }
 
 /** The secret and token exchange stay on the server; only a PKCE code returns. */
-export function useKakaoSignIn(): () => Promise<void> {
-  const { signInWithProvider } = useAppStore();
+export function useKakaoIdentity(): () => Promise<{ code: string; state: string; codeVerifier: string }> {
   return useCallback(async () => {
+    if (Platform.OS === 'web') {
+      const result = await authenticateKakaoWeb((challenge) => apiClient.startKakaoSignIn(challenge, 'web'));
+      if (!result) throw new SocialSignInCancelled();
+      return result;
+    }
     const request = new AuthSession.AuthRequest({
       clientId: kakaoRestKey ?? '',
       redirectUri: KAKAO_APP_REDIRECT,
@@ -135,8 +142,15 @@ export function useKakaoSignIn(): () => Promise<void> {
     if (result.type !== 'success') throw new SocialSignInCancelled();
     const callback = parseKakaoCallback(result.url, start.state);
     if (callback.cancelled) throw new SocialSignInCancelled();
-    await signInWithProvider('kakao', callback.code, {
-      state: start.state, codeVerifier: request.codeVerifier,
-    });
-  }, [signInWithProvider]);
+    return { code: callback.code, state: start.state, codeVerifier: request.codeVerifier };
+  }, []);
+}
+
+export function useKakaoSignIn(): () => Promise<void> {
+  const { signInWithProvider } = useAppStore();
+  const authenticate = useKakaoIdentity();
+  return useCallback(async () => {
+    const result = await authenticate();
+    await signInWithProvider('kakao', result.code, result);
+  }, [authenticate, signInWithProvider]);
 }

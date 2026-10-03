@@ -3,6 +3,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DefaultTheme, router, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as WebBrowser from 'expo-web-browser';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import { useEffect, useMemo, useRef } from 'react';
@@ -17,6 +18,10 @@ import {
 import { colors, fontFamilies } from '@/theme/tokens';
 import { hydrateLocale } from '@/lib/i18n';
 import { captureInitialReturnTo, takeReturnTo } from '@/lib/return-to';
+
+// Complete provider callbacks before protected routes redirect an already
+// signed-in account away from /login (account linking opens that same URL).
+WebBrowser.maybeCompleteAuthSession();
 
 // Before the router rewrites a signed-out visitor's address to /login.
 captureInitialReturnTo();
@@ -127,6 +132,7 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
           <Stack.Screen name="signup" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn}>
+          <Stack.Screen name="login-accounts" />
           <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
           <Stack.Screen name="capture" options={{ presentation: 'modal' }} />
           <Stack.Screen name="record" options={{ gestureEnabled: false }} />

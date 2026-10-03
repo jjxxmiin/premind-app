@@ -8,6 +8,9 @@ export function isGoogleSignInSupported(): boolean { return true; }
 export function useGoogleAuthentication(ids: { web?: string }): () => Promise<string | null> {
   const [, , promptAsync] = Google.useAuthRequest({
     webClientId: ids.web, clientId: ids.web,
+    // Stable callback independent of whether login started on /login or /signup.
+    redirectUri: typeof window === 'undefined' ? undefined
+      : `${window.location.origin}${process.env.EXPO_PUBLIC_WEB_BASE_PATH ?? ''}/login`,
     responseType: AuthSession.ResponseType.IdToken,
     scopes: ['openid', 'profile', 'email'],
   });

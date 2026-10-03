@@ -2,7 +2,7 @@
   "expo": {
     "name": "PREMIND",
     "slug": "premind",
-    "version": "1.0.1",
+    "version": "1.0.4",
     "orientation": "default",
     "icon": "./assets/brand/app-icon.png",
     "scheme": "premind",
@@ -14,7 +14,7 @@
         "NSMicrophoneUsageDescription": "발표와 강의를 녹음해 마인드팩을 만들 수 있도록 마이크 접근을 허용해 주세요.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "1"
+      "buildNumber": "3"
     },
     "android": {
       "package": "kr.co.premind.premind",
@@ -23,7 +23,7 @@
         "foregroundImage": "./assets/brand/adaptive-foreground.png"
       },
       "predictiveBackGestureEnabled": true,
-      "versionCode": 4,
+      "versionCode": 7,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
