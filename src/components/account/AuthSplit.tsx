@@ -8,17 +8,15 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import type { PropsWithChildren } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { AppText } from '@/components/ui';
+import { AppText, Wordmark } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 
-const wordmarkSource = require('../../../assets/brand/wordmark.png');
 const WORDMARK_WIDTH = 132;
-const WORDMARK_HEIGHT = WORDMARK_WIDTH / (1315 / 341);
 
 export type AuthSplitTopic = 'study' | 'interview';
 
@@ -79,14 +77,7 @@ function BrandPanel({ topic }: { topic: AuthSplitTopic }) {
   const { title, points } = panels[topic];
   return (
     <View style={styles.panel}>
-      <Image
-        {...decorative}
-        accessibilityIgnoresInvertColors
-        resizeMode="contain"
-        source={wordmarkSource}
-        style={styles.wordmark}
-        tintColor={colors.textInverse}
-      />
+      <Wordmark inverse width={WORDMARK_WIDTH} />
       <View style={styles.panelBody}>
         <AppText style={styles.panelTitle} tone="inverse" variant="display">
           {t(title)}
@@ -130,10 +121,6 @@ const styles = StyleSheet.create({
     maxWidth: 640,
     paddingHorizontal: spacing.massive,
     paddingVertical: spacing.huge,
-  },
-  wordmark: {
-    height: WORDMARK_HEIGHT,
-    width: WORDMARK_WIDTH,
   },
   panelBody: {
     gap: spacing.xxl,

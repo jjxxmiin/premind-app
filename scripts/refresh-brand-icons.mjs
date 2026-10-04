@@ -32,6 +32,9 @@ for (const [path, markHeight] of [
     .png()
     .toFile(path);
 }
+// The mark alone, cut tight, for the in-app logo before the wordmark
+// (src/components/ui/Wordmark.tsx). Its aspect ratio lives there too.
+await sharp(mark).resize({ height: 512 }).removeAlpha().png().toFile('assets/brand/symbol.png');
 await sharp('assets/brand/app-icon.png').resize(512).png().toFile('store/app-icon-512.png');
 await sharp('assets/brand/app-icon.png').resize(180).png().toFile('public/apple-touch-icon.png');
 console.log('Launcher, adaptive, splash, store and web icons generated from icon-source.png.');

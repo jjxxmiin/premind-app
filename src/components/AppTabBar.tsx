@@ -1,11 +1,10 @@
-import { Image } from 'expo-image';
 import type { Tabs } from 'expo-router';
 import { ChevronRight, Plus } from 'lucide-react-native';
 import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppText, type PressState } from '@/components/ui';
+import { AppText, Wordmark, type PressState } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
@@ -102,12 +101,7 @@ function SideBar({ state, descriptors, navigation }: AppTabBarProps) {
 
   return (
     <SafeAreaView edges={['top', 'bottom', 'left']} style={styles.side}>
-      <Image
-        accessibilityLabel="PREMIND"
-        contentFit="contain"
-        source={require('../../assets/brand/wordmark.png')}
-        style={styles.sideWordmark}
-      />
+      <Wordmark style={styles.sideWordmark} width={110} />
 
       {create ? (
         <Pressable
@@ -267,10 +261,8 @@ const styles = StyleSheet.create({
     width: SIDEBAR_WIDTH,
   },
   sideWordmark: {
-    height: 22,
     marginBottom: spacing.xl,
     marginLeft: spacing.sm,
-    width: 110,
   },
   addButton: {
     alignItems: 'center',

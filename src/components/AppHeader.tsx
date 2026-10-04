@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { ChevronLeft, X } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -9,6 +8,7 @@ import { colors, sizes, spacing } from '@/theme/tokens';
 
 import { AppText } from './ui/AppText';
 import { IconButton } from './ui/IconButton';
+import { Wordmark } from './ui/Wordmark';
 
 export interface AppHeaderProps {
   title?: string;
@@ -68,12 +68,7 @@ export function AppHeader({
   ) : null;
 
   const copy = showWordmark ? (
-    <Image
-      accessibilityLabel="PREMIND"
-      contentFit="contain"
-      source={require('../../assets/brand/wordmark.png')}
-      style={styles.wordmark}
-    />
+    <Wordmark width={92} />
   ) : title ? (
     <View
       style={[
@@ -185,9 +180,5 @@ const styles = StyleSheet.create({
   },
   titleBlockCentered: {
     alignItems: 'center',
-  },
-  wordmark: {
-    height: 22,
-    width: 92,
   },
 });

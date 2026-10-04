@@ -7,24 +7,37 @@ import {
 } from 'react-native';
 
 import { decorative } from '@/lib/a11y';
-import { sizes } from '@/theme/tokens';
+import { colors, sizes, spacing } from '@/theme/tokens';
 
 const WORDMARK_ASPECT_RATIO = 1315 / 341;
 const wordmarkSource = require('../../../assets/brand/wordmark.png');
+// The app icon's pencil-P, cut tight on white (scripts/refresh-brand-icons.mjs).
+const symbolSource = require('../../../assets/brand/symbol.png');
+const SYMBOL_ASPECT_RATIO = 351 / 512;
+// A little taller than the wordmark image, so the mark reads at the lettering's
+// cap height plus the pencil tip.
+const SYMBOL_SCALE = 1.2;
+// On a dark panel the mark sits on a white rounded tile, like the app icon.
+const TILE_SCALE = 1.25;
+const TILE_RADIUS = 0.24;
 
 export interface WordmarkProps {
+  /** Width of the PREMIND lettering; the icon tile sits before it. */
   width?: number;
+  /** White lettering for a dark or brand-colored panel. */
+  inverse?: boolean;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
 /**
- * The brand guide requires the wordmark to stay at least 90px wide. Use the
- * standalone symbol asset for smaller placements rather than shrinking this.
+ * The in-app logo: the app icon followed by the PREMIND wordmark (2026-10-04).
+ * The brand guide requires the lettering to stay at least 90px wide.
  */
 export function Wordmark({
   width: requestedWidth = 120,
+  inverse = false,
   accessibilityLabel = 'PREMIND',
   style,
   testID,
@@ -33,28 +46,53 @@ export function Wordmark({
     ? Math.max(requestedWidth, sizes.wordmarkMinimumWidth)
     : 120;
   const height = width / WORDMARK_ASPECT_RATIO;
+  const symbolHeight = Math.round(height * SYMBOL_SCALE);
+  const symbol = (
+    <Image
+      {...decorative}
+      accessibilityIgnoresInvertColors
+      resizeMode="contain"
+      source={symbolSource}
+      style={{ height: symbolHeight, width: symbolHeight * SYMBOL_ASPECT_RATIO }}
+    />
+  );
+  const tile = Math.round(symbolHeight * TILE_SCALE);
 
   return (
     <View
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="image"
-      style={[style, { height, width }]}
+      style={[styles.row, style]}
       testID={testID}
     >
+      {inverse ? (
+        <View style={[styles.tile, { borderRadius: tile * TILE_RADIUS, height: tile, width: tile }]}>
+          {symbol}
+        </View>
+      ) : (
+        symbol
+      )}
       <Image
         {...decorative}
         accessibilityIgnoresInvertColors
         resizeMode="contain"
         source={wordmarkSource}
-        style={styles.image}
+        style={{ height, width }}
+        tintColor={inverse ? colors.textInverse : undefined}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  image: {
-    height: '100%',
-    width: '100%',
+  row: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  tile: {
+    alignItems: 'center',
+    backgroundColor: colors.textInverse,
+    justifyContent: 'center',
   },
 });
