@@ -26,6 +26,12 @@ export interface MaterialListProps {
    * edge-to-edge rows, for a grey page.
    */
   grouped?: boolean;
+  /**
+   * Direction D: the list sits in a white sheet over a dark top. The header
+   * lays out its own dark hero and sheet edge (no padding added here), every
+   * row is white, and a white footer fills the rest of the page.
+   */
+  sheet?: boolean;
   header: ReactElement;
   empty: ReactElement;
   onOpen: (material: StudyMaterial) => void;
@@ -48,6 +54,7 @@ export const MaterialList = memo(function MaterialList({
   columns,
   cardWidth,
   grouped = false,
+  sheet = false,
   header,
   empty,
   onOpen,
@@ -97,6 +104,7 @@ export const MaterialList = memo(function MaterialList({
           </View>
         );
       }
+      if (sheet) return <View style={styles.sheetRow}>{row}</View>;
       if (!grouped || columns === 1) return row;
       return (
         <View
@@ -123,6 +131,7 @@ export const MaterialList = memo(function MaterialList({
       onOpen,
       processingMaterialIds,
       projectById,
+      sheet,
       t,
       view,
     ],
@@ -133,15 +142,17 @@ export const MaterialList = memo(function MaterialList({
       columnWrapperStyle={
         grid ? [styles.gridRow, { paddingHorizontal: gutter }] : undefined
       }
-      contentContainerStyle={styles.content}
+      contentContainerStyle={sheet ? styles.sheetContent : styles.content}
       data={materials}
       // numColumns cannot change on a mounted list; remount when it does.
       key={grid ? `grid-${columns}` : view}
       keyExtractor={keyExtractor}
       keyboardShouldPersistTaps="handled"
-      ListEmptyComponent={empty}
+      ListEmptyComponent={sheet ? <View style={styles.sheetRow}>{empty}</View> : empty}
+      ListFooterComponent={sheet ? <View style={styles.sheetFill} /> : null}
+      ListFooterComponentStyle={sheet ? styles.sheetFooter : undefined}
       ListHeaderComponent={header}
-      ListHeaderComponentStyle={[styles.header, { paddingHorizontal: gutter }]}
+      ListHeaderComponentStyle={sheet ? undefined : [styles.header, { paddingHorizontal: gutter }]}
       nestedScrollEnabled
       numColumns={grid ? columns : 1}
       renderItem={renderItem}
@@ -163,6 +174,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: spacing.xxl,
   },
+  sheetContent: { flexGrow: 1 },
+  sheetRow: { backgroundColor: colors.background },
+  sheetFooter: { backgroundColor: colors.background, flexGrow: 1 },
+  sheetFill: { minHeight: spacing.xxl },
   // Strip → toolbar 12; toolbar → first row 12 (the row adds its own 12
   // vertical padding, so the header contributes nothing below).
   header: {

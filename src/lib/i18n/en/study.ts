@@ -268,4 +268,7 @@ export const EN_STUDY: EnDict = {
   '이 개념의 꼭 기억할 내용을 펼쳐요.': 'Opens the key points under this concept.',
   '이전 카드': 'Previous card',
   '다음 카드': 'Next card',
+  '이 쪽 크게 보기': 'View this page large',
+  '글자를 찾지 못한 문서예요.': 'No text was found in this document.',
+  '읽은 쪽이 없어요': 'No pages were read',
 };

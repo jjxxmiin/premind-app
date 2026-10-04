@@ -47,9 +47,6 @@ export const EN_MATERIAL: EnDict = {
   '켬': 'on',
   '끔': 'off',
   '구간': 'Sections',
-  '쪽 전체 내용을 다시 보여줘요.': 'Shows the full text of each page again.',
-  '쪽마다 한 줄 요약만 보여줘요.': 'Shows only a one-line summary per page.',
-  '쪽 요약 {state}': 'Page summaries {state}',
   '쪽 요약': 'Page summaries',
   '대본 전체를 다시 보여줘요.': 'Shows the whole transcript again.',
   '칠한 문장이 있는 줄만 보여줘요.': 'Shows only lines with highlighted sentences.',
@@ -220,4 +217,8 @@ export const EN_MATERIAL: EnDict = {
   '재생하다가 멈췄어요. 다시 시도하거나 유튜브에서 보세요.': 'Playback stopped. Try again or watch on YouTube.',
   '이 영상을 앱 안에서 열지 못했어요. 다시 시도하거나 유튜브에서 보세요. 대본과 요약은 그대로 볼 수 있어요.': "We couldn't open this video in the app. Try again or watch on YouTube. The transcript and summary are still here.",
   '영상이 열리지 않아요. 다시 시도하거나 유튜브에서 보세요. 대본과 요약은 그대로 볼 수 있어요.': "The video won't open. Try again or watch on YouTube. The transcript and summary are still here.",
+  // Direction D 마인드팩 (2026-10-04)
+  'AI 요약': 'AI summary',
+  '시험에 나올 부분은?': 'What will be on the exam?',
+  '핵심만 쉽게 설명해 줘': 'Explain the key points simply',
 };

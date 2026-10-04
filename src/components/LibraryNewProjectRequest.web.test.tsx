@@ -55,7 +55,14 @@ jest.mock('@/components/AppHeader', () => ({
 }));
 jest.mock('@/components/MediaArtwork', () => ({ MediaArtwork: () => null }));
 jest.mock('@/components/home/MaterialList', () => ({
-  MaterialList: () => <button data-testid="material-page-action" type="button">자료 열기</button>,
+  // The header is rendered: since direction D (2026-10-04) the folder tabs
+  // live in each page's sheet header rather than above the pager.
+  MaterialList: ({ header }: { header: ReactNode }) => (
+    <>
+      {header}
+      <button data-testid="material-page-action" type="button">자료 열기</button>
+    </>
+  ),
 }));
 jest.mock('@/components/ui', () => {
   const Passthrough = ({ children }: PropsWithChildren) => <>{children}</>;
@@ -64,6 +71,8 @@ jest.mock('@/components/ui', () => {
   return {
     ActivityWaveform: () => null,
     AnimatedReveal: Passthrough,
+    // Direction D's dark home turns the status bar light; nothing to render here.
+    useLightStatusBar: () => null,
     AppText: Container,
     AuthField: () => null,
     BottomSheetModal: ({

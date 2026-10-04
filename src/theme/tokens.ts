@@ -170,6 +170,8 @@ export const radii = {
   card: 16,
   hero: 20,
   floating: 20,
+  /** The white sheet that rises over a dark top (2026-10-04, direction D). */
+  sheet: 28,
   full: 999,
 } as const;
 

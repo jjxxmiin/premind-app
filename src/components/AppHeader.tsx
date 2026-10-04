@@ -61,7 +61,7 @@ export function AppHeader({
       iconSize={24}
       label={t('뒤로')}
       onPress={onBack}
-      variant={inverse ? 'inverse' : 'ghost'}
+      variant={inverse ? 'stage' : 'ghost'}
     />
   ) : onClose ? (
     <IconButton
@@ -69,12 +69,12 @@ export function AppHeader({
       iconSize={22}
       label={t('닫기')}
       onPress={onClose}
-      variant={inverse ? 'inverse' : 'ghost'}
+      variant={inverse ? 'stage' : 'ghost'}
     />
   ) : null;
 
   const copy = showWordmark ? (
-    <Wordmark width={92} />
+    <Wordmark inverse={inverse} width={92} />
   ) : title ? (
     <View
       style={[

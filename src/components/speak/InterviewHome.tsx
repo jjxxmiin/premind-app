@@ -7,7 +7,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { AllowanceCard } from '@/components/interview/AllowanceCard';
 import { InterviewSessionRow } from '@/components/interview/InterviewSessionRow';
 import { SpeakColumns, SpeakFrame } from '@/components/speak/SpeakColumns';
-import { AppText, BottomSheetModal, Button, Card, IconButton, ListRow, Screen, SectionHeader, Skeleton, StatusBadge } from '@/components/ui';
+import { AppText, BottomSheetModal, Button, Card, IconButton, ListRow, SectionHeader, Skeleton, StageScreen, StatusBadge } from '@/components/ui';
 import { installBackupSync } from '@/features/interview/backup-sync';
 import { resolveSessionSource } from '@/features/interview/session-source';
 import type { InterviewSession } from '@/features/interview/types';
@@ -15,7 +15,6 @@ import { useInterviewAccount } from '@/features/interview/use-interview-account'
 import { useInterviewSessions } from '@/features/interview/use-interview-sessions';
 import { answeredQuestionCount, lastActivity, sessionDestination } from '@/features/interview/view-model';
 import { useT } from '@/lib/i18n';
-import { useLayout } from '@/lib/layout';
 import { colors, iconSizes, spacing } from '@/theme/tokens';
 
 const START_WAYS = [
@@ -26,7 +25,6 @@ const START_WAYS = [
 
 export function InterviewHome({ switcher }: { readonly switcher?: ReactNode }) {
   const t = useT();
-  const { gutter } = useLayout();
   const account = useInterviewAccount();
   const { sessions } = useInterviewSessions();
   const [sheet, setSheet] = useState<'start' | 'menu' | null>(null);
@@ -82,11 +80,14 @@ export function InterviewHome({ switcher }: { readonly switcher?: ReactNode }) {
   );
 
   return (
-    <Screen fullBleed padded={false} safeAreaEdges={['top', 'left', 'right']} scroll>
+    // Direction D: the title and the 발표/면접 switch on the dark top.
+    <StageScreen
+      header={<AppHeader inverse large title={t('연습')} right={<IconButton icon={Menu} label={t('면접 메뉴')} onPress={() => setSheet('menu')} variant="stage" />} />}
+      hero={switcher}
+      sheetStyle={styles.sheet}
+    >
       <SpeakFrame>
-        <AppHeader large title={t('연습')} right={<IconButton icon={Menu} label={t('면접 메뉴')} onPress={() => setSheet('menu')} />} />
-        <View style={[styles.content, { paddingHorizontal: gutter }]}>
-          {switcher}
+        <View style={styles.content}>
           {resume ? hero : <SpeakColumns main={hero} side={secondary} />}
           {view?.recent ? (
             <View style={styles.section}>
@@ -112,12 +113,14 @@ export function InterviewHome({ switcher }: { readonly switcher?: ReactNode }) {
           </>}
         </Card>
       </BottomSheetModal>
-    </Screen>
+    </StageScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
+  /** The sheet is the page here; the frame inside it keeps its own gaps. */
+  sheet: { gap: spacing.none, paddingTop: spacing.xl },
+  content: { gap: spacing.xl },
   section: { gap: spacing.md },
   copy: { gap: spacing.sm },
   actions: { flexDirection: 'row', gap: spacing.sm },

@@ -23,14 +23,17 @@ export function SpeakTabs<T extends string>({
   options,
   onChange,
   testID,
+  stage = false,
 }: {
   value: T;
   options: readonly SpeakTab<T>[];
   onChange: (value: T) => void;
   testID?: string;
+  /** On the dark top of direction D: a dark track, the chosen pill still white. */
+  stage?: boolean;
 }) {
   return (
-    <View accessibilityRole="tablist" style={styles.track} testID={testID}>
+    <View accessibilityRole="tablist" style={[styles.track, stage ? styles.trackStage : null]} testID={testID}>
       {options.map((option) => {
         const selected = option.value === value;
         const Icon = option.icon;
@@ -47,19 +50,24 @@ export function SpeakTabs<T extends string>({
             pressScale={0.96}
             style={({ hovered, focused }: PressState) => [
               styles.pill,
-              selected ? styles.pillOn : hovered ? styles.pillHover : null,
+              selected ? styles.pillOn : hovered ? (stage ? styles.pillHoverStage : styles.pillHover) : null,
               focused && Platform.OS === 'web' ? styles.focus : null,
             ]}
           >
             {Icon ? (
               <Icon
                 {...decorative}
-                color={selected ? colors.brand : colors.textMuted}
+                color={selected ? colors.brand : stage ? colors.stageMuted : colors.textMuted}
                 size={iconSizes.inline}
                 strokeWidth={2.2}
               />
             ) : null}
-            <AppText numberOfLines={1} tone={selected ? 'default' : 'muted'} variant="label">
+            <AppText
+              numberOfLines={1}
+              style={!selected && stage ? styles.labelStage : undefined}
+              tone={selected ? 'default' : 'muted'}
+              variant="label"
+            >
               {option.label}
             </AppText>
           </Tappable>
@@ -98,6 +106,9 @@ const styles = StyleSheet.create({
   pillHover: {
     backgroundColor: colors.hoverStrong,
   },
+  trackStage: { backgroundColor: colors.stageRaised },
+  pillHoverStage: { backgroundColor: 'rgba(255,255,255,0.08)' },
+  labelStage: { color: colors.stageMuted },
   focus: {
     outlineColor: colors.focusRing,
     outlineStyle: 'solid',

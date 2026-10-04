@@ -24,7 +24,9 @@ export type IconButtonVariant =
   | 'soft'
   | 'ghost'
   | 'danger'
-  | 'inverse';
+  | 'inverse'
+  /** A bare white glyph on a dark top (direction D): no box around it. */
+  | 'stage';
 export type IconButtonSize = 'small' | 'medium' | 'large';
 
 export interface IconButtonProps
@@ -80,6 +82,13 @@ const variantStyles: Record<IconButtonVariant, IconButtonVisuals> = {
     },
     color: colors.stageText,
   },
+  stage: {
+    container: {
+      backgroundColor: colors.transparent,
+      borderColor: colors.transparent,
+    },
+    color: colors.textInverse,
+  },
 };
 
 const hoverStyles: Record<IconButtonVariant, ViewStyle> = {
@@ -91,6 +100,7 @@ const hoverStyles: Record<IconButtonVariant, ViewStyle> = {
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderColor: 'rgba(255,255,255,0.22)',
   },
+  stage: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: colors.transparent },
 };
 
 const visualSizes: Record<IconButtonSize, number> = {

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { memo, useCallback, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   type LayoutChangeEvent,
@@ -38,7 +38,23 @@ export interface DocumentPagesProps {
   pageImage?: (page: number) => PageImageSource | undefined;
   /** Opens that page large. Receives the page number, counting from 1. */
   onOpenPage: (page: number) => void;
+  /**
+   * The page on screen, by position in `segments`, when the screen keeps it:
+   * the 쪽 요약 under the strip turns with it (2026-10-04, "책 읽듯").
+   * Uncontrolled when left out.
+   */
+  index?: number;
+  onIndexChange?: (index: number) => void;
+  /**
+   * Pinned above the tabs: a shorter card (a 16:9 slide fills it; a PDF page
+   * shows small, tap for full screen) and no "문서 보기" heading.
+   */
+  compact?: boolean;
 }
+
+/** A compact strip's card: a 16:9 slide fits edge to edge. */
+const COMPACT_ASPECT = 0.56;
+const COMPACT_MAX_HEIGHT = 220;
 
 /**
  * How tall a page card is, as a fraction of its width. Between A4 upright
@@ -76,10 +92,16 @@ export function DocumentPages({
   segments,
   pageImage,
   onOpenPage,
+  index,
+  onIndexChange,
+  compact = false,
 }: DocumentPagesProps) {
   const t = useT();
   const [width, setWidth] = useState(0);
-  const [current, setCurrent] = useState(0);
+  const [ownIndex, setOwnIndex] = useState(0);
+  const current = index ?? ownIndex;
+  /** The page this strip last showed, so an outside change is told from its own. */
+  const shown = useRef(current);
   const trackRef = useRef<FlatList<TranscriptSegment>>(null);
   const { isTablet } = useLayout();
 
@@ -89,15 +111,33 @@ export function DocumentPages({
 
   const pageWidth = width > 0 ? width - PEEK : 0;
   const step = pageWidth + spacing.md;
-  const pageHeight = Math.min(pageWidth * PAGE_ASPECT, MAX_PAGE_HEIGHT);
+  const pageHeight = compact
+    ? Math.min(pageWidth * COMPACT_ASPECT, COMPACT_MAX_HEIGHT)
+    : Math.min(pageWidth * PAGE_ASPECT, MAX_PAGE_HEIGHT);
+
+  const settle = (next: number) => {
+    shown.current = next;
+    if (onIndexChange) onIndexChange(next);
+    else setOwnIndex(next);
+  };
+
+  // Turned from outside (the 쪽 요약's arrows or swipe): bring the strip along.
+  useEffect(() => {
+    if (step <= 0 || current === shown.current) return;
+    shown.current = current;
+    trackRef.current?.scrollToOffset({ offset: current * step, animated: true });
+  }, [current, step]);
 
   // React skips the render when the page has not changed, so a scroll frame
   // costs one division until the position actually moves (the web build has
   // no momentum-end event to wait for).
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (step <= 0) return;
-    const index = Math.round(event.nativeEvent.contentOffset.x / step);
-    setCurrent(Math.max(0, Math.min(segments.length - 1, index)));
+    const next = Math.max(
+      0,
+      Math.min(segments.length - 1, Math.round(event.nativeEvent.contentOffset.x / step)),
+    );
+    if (next !== shown.current) settle(next);
   };
 
   const renderPage = useCallback<ListRenderItem<TranscriptSegment>>(
@@ -118,9 +158,9 @@ export function DocumentPages({
    * window gets arrows next to the page count. A phone keeps the swipe alone.
    */
   const showArrows = Platform.OS === 'web' && isTablet && segments.length > 1;
-  const goTo = (index: number) => {
-    const next = Math.max(0, Math.min(segments.length - 1, index));
-    setCurrent(next);
+  const goTo = (target: number) => {
+    const next = Math.max(0, Math.min(segments.length - 1, target));
+    settle(next);
     trackRef.current?.scrollToOffset({ offset: next * step, animated: true });
   };
 
@@ -129,9 +169,11 @@ export function DocumentPages({
   return (
     <View onLayout={handleLayout} style={styles.block}>
       <View style={styles.head}>
-        <AppText accessibilityRole="header" variant="heading">
-          {t('문서 보기')}
-        </AppText>
+        {compact ? <View /> : (
+          <AppText accessibilityRole="header" variant="heading">
+            {t('문서 보기')}
+          </AppText>
+        )}
         <View style={styles.headTrailing}>
           <AppText
             accessibilityLiveRegion="polite"

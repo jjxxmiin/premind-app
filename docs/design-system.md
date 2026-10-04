@@ -27,7 +27,9 @@ Everything below is enforced by `src/theme/tokens.ts` and the primitives in
 
 Rules:
 
-- The screen is white. Do not tint whole screens; tint a tile.
+- A pushed sub-screen is white. Tab roots and the 마인드팩 screen follow
+  Direction D (dark top, white sheet) below. Otherwise do not tint whole
+  screens; tint a tile.
 - The accent appears in: the active tab, a live/recording state, a
   `StatusBadge tone="brand"`, and the `Button variant="brand"` on the one
   screen whose job is the product's core action (start recording). Everywhere
@@ -166,11 +168,37 @@ finishes. The bottom bar holds an "이 자료에 물어보기" pill
 playback; every timestamp seeks. YouTube materials play through the YouTube
 player and otherwise behave identically.
 
+## Direction D (2026-10-04, CEO "D로 가")
+
+The CEO picked D from four mockups (canvas "PREMIND 앱 개편 시안"): C's dark
+top and rising white sheet, with B's start box, pastel cards and chat input.
+
+- **Dark top, white sheet.** Every tab root (홈, 복습, 연습, MY) and the
+  마인드팩 screen are `StageScreen` / `colors.stage` on top with the screen's
+  one big thing — greeting and start box, the 이해도 number, the player or a
+  document's pages, the 발표/면접 switch, who is signed in — and a white sheet
+  (`radii.sheet` 28, rounded top) holding everything else. Pushed sub-screens
+  (올리기, 녹음 설정, 구독, 알림 …) stay white.
+- **Status bar** is light while a dark-top screen is focused
+  (`useLightStatusBar`); the root keeps it dark for everything else.
+- **On the dark top**: `AppHeader inverse`, icons `IconButton variant="stage"`
+  (a bare white glyph, no box), the wordmark `inverse`, a switch `SpeakTabs
+  stage`. Cards that sat on the old grey canvas use `backgroundSoft` on the
+  white sheet so their edges still show.
+- **홈**: the start box takes a pasted YouTube link (send opens the YouTube
+  dialog pre-filled) or 녹음 (accent), 파일, 링크. The sheet holds the folder
+  tabs, 오늘의 복습 (lavender 문제, sky 암기 카드), then the list.
+- **복습**: the number at 60pt with the last seven days as check-ins on the
+  dark top; a coach bubble with the day's one button opens the sheet.
+- **마인드팩**: underline tabs (`UnderlineTabs`) on the sheet's edge, an
+  "AI 요약" label on the summary, two question chips that open 질문 with the
+  question asked, and the ask box at the bottom ending in a send button.
+
 ## 2026-10-04 upgrade (wrtn reference)
 
 - **Tab headers**: only 홈 shows the wordmark (icon + PREMIND). Every other tab
-  root says where you are with `AppHeader large title` (복습, 연습, MY) —
-  left-aligned at `pageTitle` size. No big title inside the body.
+  root says where you are with `AppHeader inverse large title` (복습, 연습, MY)
+  on the dark top. No big title inside the body.
 - **홈 first screen** (phone, 전체 page, once there is a 자료): greeting →
   three start tiles (녹음 with the accent, 파일, 유튜브) → one 이어서 보기 row →
   the list. It scrolls away with the list (`HomeStart`).
@@ -178,10 +206,13 @@ player and otherwise behave identically.
   문서 sage; YouTube keeps its real thumbnail.
 - **One switch per screen**: a screen already led by a switch (연습's 발표/면접)
   stacks its sections instead of adding a second segmented control.
-- **Read a card at a time**: 요약 (한눈에 보기, then one card per 구간) and 대본
-  (one card per 구간, per page for a document, per 5 minutes otherwise) are
-  turned by swipe or the arrows in `CardPager`; at either end the swipe moves
-  on to the next tab. A filtered 대본 (search, 중요만, 형광펜) stays one list.
+- **A document reads like a book**: its pages stay pinned above the tabs
+  (short cards, tap for full screen), and its 대본 tab is **쪽 요약** — the
+  summary of the page on screen. The page strip, the arrows and a swipe on the
+  panel turn both together; past the last page the swipe changes tab. The full
+  extracted text is no longer listed (slow, unreadable for a 100-page deck). A
+  document never shows a clock: positions are pages, and the 강의 흐름 timeline
+  and 중요한 순간 are left out. A lecture's 요약 and 대본 stay one scroll.
 - **Mind map by depth**: the map opens on the 자료 and its 개념; a 개념 with
   points (marked "›") becomes the hub when tapped, with a path back above.
 - **Long lists are virtualised**: document pages and the page viewer mount

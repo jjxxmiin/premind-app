@@ -12,7 +12,7 @@ import {
   Button,
   Dialog,
   IconButton,
-  Screen,
+  StageScreen,
   SettingsRow,
   Wordmark,
 } from '@/components/ui';
@@ -120,29 +120,25 @@ export default function ProfileScreen() {
   };
 
   return (
-    <Screen
-      background="soft"
-      contentStyle={styles.screenContent}
-      maxWidth={720}
-      padded={false}
-      safeAreaEdges={['top', 'left', 'right']}
-      scroll
-      scrollViewProps={{ showsVerticalScrollIndicator: false }}
-    >
-      <AppHeader
-        large
-        title={t('MY')}
-        right={
-          <IconButton
-            icon={Bell}
-            label={t('알림')}
-            onPress={() => router.push('/notifications')}
-          />
-        }
-      />
-
-      <View style={styles.content}>
-        <Surface style={styles.profileCard} tone="raised">
+    // Direction D: who is signed in on the dark top, the settings in the sheet.
+    <StageScreen
+      header={
+        <AppHeader
+          inverse
+          large
+          title={t('MY')}
+          right={
+            <IconButton
+              icon={Bell}
+              label={t('알림')}
+              onPress={() => router.push('/notifications')}
+              variant="stage"
+            />
+          }
+        />
+      }
+      hero={
+        <View style={styles.profileCard}>
           <View
             accessibilityLabel={`${displayName}, ${session?.user.email ?? ''}`}
             style={styles.profileRow}
@@ -154,7 +150,7 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.profileCopy}>
               <View style={styles.nameRow}>
-                <AppText numberOfLines={1} style={styles.name} variant="heading">
+                <AppText numberOfLines={1} style={[styles.name, styles.nameStage]} variant="heading">
                   {displayName}
                 </AppText>
               </View>
@@ -170,12 +166,14 @@ export default function ProfileScreen() {
               fullWidth
               loading={loggingOut}
               onPress={() => void handleLogout()}
-              variant="primary"
+              variant="brand"
             >
               {t('로그인하기')}
             </Button>
           ) : null}
-        </Surface>
+        </View>
+      }
+    >
 
         {!demoAccount ? (
           <GroupCard>
@@ -255,7 +253,6 @@ export default function ProfileScreen() {
             </AppText>
           </View>
         ) : null}
-      </View>
 
       <BottomSheetModal
         onClose={() => setDialog(null)}
@@ -330,7 +327,7 @@ export default function ProfileScreen() {
           ) : null}
         </View>
       </Dialog>
-    </Screen>
+    </StageScreen>
   );
 }
 
@@ -342,7 +339,7 @@ export default function ProfileScreen() {
 function GroupCard({ children }: PropsWithChildren) {
   const rows = Children.toArray(children).filter(isValidElement);
   return (
-    <Surface padding={0} tone="raised">
+    <Surface padding={0} tone="soft">
       <View style={styles.groupRows}>
         {rows.map((row, index) => (
           <Fragment key={row.key ?? index}>
@@ -356,17 +353,10 @@ function GroupCard({ children }: PropsWithChildren) {
 }
 
 const styles = StyleSheet.create({
-  screenContent: {
-    paddingBottom: spacing.xxl,
-  },
-  content: {
-    gap: spacing.xl,
-    paddingHorizontal: spacing.gutter,
-    paddingTop: spacing.sm,
-  },
   profileCard: {
     gap: spacing.gutter,
   },
+  nameStage: { color: colors.textInverse },
   profileRow: {
     alignItems: 'center',
     flexDirection: 'row',

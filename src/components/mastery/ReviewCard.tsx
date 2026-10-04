@@ -77,7 +77,8 @@ export function ReviewCard({ material, onPress, summary }: Omit<MaterialMasteryR
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    // A quiet fill on the 복습 tab's white sheet (direction D, 2026-10-04).
+    backgroundColor: colors.backgroundSoft,
     borderRadius: radii.hero,
     flex: 1,
     gap: spacing.md,

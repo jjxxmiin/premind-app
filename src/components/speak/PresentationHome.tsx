@@ -22,7 +22,7 @@ import {
   Dialog,
   EmptyState,
   IconButton,
-  Screen,
+  StageScreen,
 } from "@/components/ui";
 import { decorative } from "@/lib/a11y";
 import { formatMaterialLength, formatRelativeDate } from "@/lib/format";
@@ -36,7 +36,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
   const t = useT();
   const { evaluatingMaterialIds, materials, projects, requestLens } =
     useAppStore();
-  const { breakpoint, gutter } = useLayout();
+  const { breakpoint } = useLayout();
   const wide = breakpoint === "expanded";
   const compact = breakpoint === "compact";
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -118,15 +118,11 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
   );
 
   return (
-    <Screen
-      fullBleed
-      padded={false}
-      safeAreaEdges={["top", "left", "right"]}
-      scroll
-      scrollViewProps={{ showsVerticalScrollIndicator: false }}
-    >
-      <SpeakFrame>
+    // Direction D: the title and the 발표/면접 switch on the dark top.
+    <StageScreen
+      header={
         <AppHeader
+          inverse
           large
           title={t("연습")}
           right={
@@ -134,12 +130,16 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
               icon={Bell}
               label={t("알림")}
               onPress={() => router.push("/notifications")}
+              variant="stage"
             />
           }
         />
-
-        <View style={[styles.content, { paddingHorizontal: gutter }]}>
-          <AnimatedReveal>{top}</AnimatedReveal>
+      }
+      hero={<AnimatedReveal>{top}</AnimatedReveal>}
+      sheetStyle={styles.sheet}
+    >
+      <SpeakFrame>
+        <View style={styles.content}>
           {wide ? (
             <SpeakColumns
               main={<AnimatedReveal>{hero}</AnimatedReveal>}
@@ -212,7 +212,7 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
         title={t(failure?.title ?? "평가를 시작하지 못했어요")}
         visible={failure !== null}
       />
-    </Screen>
+    </StageScreen>
   );
 }
 
@@ -296,10 +296,10 @@ function CandidateRow({
 }
 
 const styles = StyleSheet.create({
+  /** The sheet is the page here; the frame inside it keeps its own gaps. */
+  sheet: { gap: spacing.none, paddingTop: spacing.xl },
   content: {
     gap: spacing.xl,
-    paddingBottom: spacing.xxl,
-    paddingTop: spacing.xs,
   },
   top: {
     gap: spacing.lg,

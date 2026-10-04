@@ -50,6 +50,7 @@ export default function SpeakScreen() {
     <SpeakTabs<SpeakMode>
       onChange={(next) => router.setParams({ mode: next })}
       options={options}
+      stage
       testID="speak-mode"
       value={mode}
     />

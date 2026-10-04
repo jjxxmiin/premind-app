@@ -37,7 +37,7 @@ import {
 } from '@/components/home/HomeDesktop';
 import { MaterialList } from '@/components/home/MaterialList';
 import { LibraryPage } from '@/components/home/LibraryPage';
-import { HomeStart } from '@/components/home/HomeStart';
+import { HomeHero, TodayReview } from '@/components/home/HomeStart';
 import { LibraryWelcome } from '@/components/home/LibraryWelcome';
 import { SubjectTabs, type SubjectTab } from '@/components/home/SubjectTabs';
 import {
@@ -50,7 +50,6 @@ import {
 } from '@/components/home/library';
 import {
   AppText,
-  AnimatedReveal,
   AuthField,
   BottomSheetModal,
   Button,
@@ -62,6 +61,7 @@ import {
   IconButton,
   ListRow,
   Screen,
+  useLightStatusBar,
 } from '@/components/ui';
 import { decorative } from '@/lib/a11y';
 import { formatMaterialLength } from '@/lib/format';
@@ -459,6 +459,7 @@ export default function HomeScreen() {
 
   // The desktop greeting and 이어서 보기: the whole library, whatever folder is selected.
   const displayName = session?.user.name?.trim() || t('PREMIND 사용자');
+  const statusBar = useLightStatusBar();
   const continueMaterial = useMemo(
     () =>
       sortMaterials(
@@ -513,6 +514,13 @@ export default function HomeScreen() {
       setPendingDialog('youtube');
       return;
     }
+    setYoutubeDialogVisible(true);
+  };
+
+  /** The hero's box: whatever was typed goes into the YouTube dialog to confirm. */
+  const openYoutubeWith = (text: string) => {
+    setYoutubeUrl(text);
+    setYoutubeError(null);
     setYoutubeDialogVisible(true);
   };
 
@@ -777,7 +785,7 @@ export default function HomeScreen() {
   );
   const showEmptyAction = filters.status === 'all' && !filters.savedOnly;
 
-  const filterButton = (
+  const filterButton = (variant?: 'stage') => (
     <IconButton
       accessibilityHint={t('정렬, 상태, 보기 방식을 바꿔요')}
       active={narrowed}
@@ -788,14 +796,15 @@ export default function HomeScreen() {
           : t('정렬과 필터')
       }
       onPress={() => setFilterSheetVisible(true)}
+      variant={variant}
     />
   );
 
   const renderPage = ({ item: page }: { item: SubjectPage }) => {
     const pageMaterials = visibleMaterialsByPage.get(page.key) ?? [];
-    // The 전체 page opens with the start tiles; they already offer every way
-    // to add, so its heading drops the 자료 추가 link.
-    const showStart = !wide && hasMaterial && page.key === ALL_PAGE_KEY;
+    // Direction D: the 전체 page opens with the dark hero, whose box already
+    // offers every way to add, so its heading drops the 자료 추가 link.
+    const showStart = !wide && page.key === ALL_PAGE_KEY;
     const listHeading = hasMaterial ? (
       <View style={styles.listHeading}>
         <AppText tone="muted" variant="meta">
@@ -831,26 +840,46 @@ export default function HomeScreen() {
               tabs={subjectTabs}
             />
           </View>
-          {filterButton}
+          {filterButton()}
         </View>
         {listHeading}
       </View>
     ) : (
       <View>
         {showStart ? (
-          <HomeStart
-            continueFolder={
-              continueMaterial ? projectById.get(continueMaterial.projectId)?.title : undefined
-            }
-            continueMaterial={continueMaterial}
-            name={session?.user.name?.trim() ?? ''}
-            onImport={openImport}
-            onOpen={openMaterial}
-            onRecord={openRecording}
-            onYoutube={openYoutubeDialog}
-          />
+          <View style={{ paddingHorizontal: gutter }}>
+            <HomeHero
+              name={session?.user.name?.trim() ?? ''}
+              onImport={openImport}
+              onLink={openYoutubeWith}
+              onRecord={openRecording}
+            />
+          </View>
         ) : null}
-        {listHeading}
+        {/* The white sheet rises over the dark top; the folders live in it. */}
+        <View style={styles.sheetTop}>
+          <SubjectTabs
+            activeIndex={safePageIndex}
+            gutter={gutter}
+            onAddPress={openProjectSheet}
+            onSelect={goToPage}
+            tabs={subjectTabs}
+          />
+          <View style={[styles.sheetHead, { paddingHorizontal: gutter }]}>
+            {showStart && hasMaterial ? (
+              <TodayReview
+                material={continueMaterial}
+                onCards={(material) =>
+                  router.push({ pathname: '/cards/[id]', params: { id: material.id } })
+                }
+                onQuiz={(material) =>
+                  router.push({ pathname: '/quiz/[id]', params: { id: material.id } })
+                }
+              />
+            ) : null}
+            {listHeading}
+          </View>
+        </View>
       </View>
     );
     const empty = !hasMaterial && showEmptyAction ? (
@@ -877,6 +906,7 @@ export default function HomeScreen() {
           grouped
           gutter={gutter}
           header={header}
+          sheet={!wide}
           materials={pageMaterials}
           onMore={openMaterialMenu}
           onOpen={openMaterial}
@@ -904,35 +934,29 @@ export default function HomeScreen() {
           </View>
         </Screen>
       ) : (
-      <Screen padded={false} safeAreaEdges={['top', 'left', 'right']}>
+      <Screen background="stage" padded={false} safeAreaEdges={['top', 'left', 'right']}>
+        {statusBar}
         <AppHeader
           brand
+          inverse
           right={
             <>
-              {filterButton}
+              {filterButton('stage')}
               <IconButton
                 icon={Search}
                 label={t('검색')}
                 onPress={() => router.push('/search')}
+                variant="stage"
               />
               <IconButton
                 icon={Bell}
                 label={t('알림')}
                 onPress={() => router.push('/notifications')}
+                variant="stage"
               />
             </>
           }
         />
-
-        <AnimatedReveal distance={6}>
-          <SubjectTabs
-            activeIndex={safePageIndex}
-            gutter={gutter}
-            onAddPress={openProjectSheet}
-            onSelect={goToPage}
-            tabs={subjectTabs}
-          />
-        </AnimatedReveal>
 
         <View
           onLayout={(event) => {
@@ -1320,6 +1344,17 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
     minWidth: 0,
+  },
+  /** Direction D: the white sheet's rounded top edge, over the dark screen. */
+  sheetTop: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: radii.sheet,
+    borderTopRightRadius: radii.sheet,
+    paddingTop: spacing.md,
+  },
+  sheetHead: {
+    gap: spacing.xl,
+    paddingTop: spacing.lg,
   },
   wideHeader: {
     gap: spacing.xl,

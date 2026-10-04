@@ -6,11 +6,12 @@ import { StyleSheet, View } from 'react-native';
 import { AppHeader } from '@/components/AppHeader';
 import { Carousel } from '@/components/app';
 import {
-  MasteryHero,
+  CoachCard,
   MaterialMasteryRow,
   MaterialMasteryTile,
   PressFace,
   ReviewCard,
+  StageScore,
   TileGrid,
   studyStreak,
 } from '@/components/mastery';
@@ -21,7 +22,7 @@ import {
   EmptyMasteryArtwork,
   EmptyState,
   IconButton,
-  Screen,
+  StageScreen,
 } from '@/components/ui';
 import { confusionSpots, type ConfusionSpot } from '@/lib/confusion-spots';
 import { formatSourcePosition } from '@/lib/format';
@@ -72,7 +73,7 @@ export default function MasteryScreen() {
     resolveConfusion,
     studyNotes,
   } = useAppStore();
-  const { breakpoint, columns, gutter, isTablet } = useLayout();
+  const { breakpoint, columns, isTablet } = useLayout();
   /** Desktop: the sidebar carries the wordmark, so the bell sits beside the title. */
   const wide = breakpoint === 'expanded';
   const [expanded, setExpanded] = useState(false);
@@ -193,42 +194,30 @@ export default function MasteryScreen() {
   const visibleRows = expanded ? rest : rest.slice(0, VISIBLE_ROWS);
   const hiddenCount = rest.length - visibleRows.length;
 
+  // Direction D (2026-10-04): the 이해도 number and the week on the dark top,
+  // the day's next step and the materials in the white sheet.
   return (
-    <Screen
-      background="soft"
-      padded={false}
-      safeAreaEdges={['top', 'left', 'right']}
-      scroll
-      scrollViewProps={{ showsVerticalScrollIndicator: false }}
+    <StageScreen
+      header={
+        wide ? null : (
+          <AppHeader
+            inverse
+            large
+            right={
+              <IconButton
+                icon={Bell}
+                label={t('알림')}
+                onPress={() => router.push('/notifications')}
+                variant="stage"
+              />
+            }
+            title={t('복습')}
+          />
+        )
+      }
+      hero={<StageScore days={days} score={score} streak={streak} />}
+      sheetStyle={wide ? styles.contentWide : null}
     >
-      {wide ? null : (
-        <AppHeader
-          large
-          title={t('복습')}
-          right={
-            <IconButton
-              icon={Bell}
-              label={t('알림')}
-              onPress={() => router.push('/notifications')}
-            />
-          }
-        />
-      )}
-
-      <View style={[styles.content, { paddingHorizontal: gutter }, wide ? styles.contentWide : null]}>
-        {/* 본문 안 큰 제목은 없다(2026-09-26 CEO "제목 없어도 될듯"). 폰은 2026-10-04 부터 머리 막대에
-            로고 대신 탭 이름("복습")을 둔다. 데스크톱은 머리 막대가 없어 알림 종만 오른쪽에 둔다. */}
-        {wide ? (
-          <View style={styles.titleRow}>
-            <View style={styles.flexSpacer} />
-            <IconButton
-              icon={Bell}
-              label={t('알림')}
-              onPress={() => router.push('/notifications')}
-            />
-          </View>
-        ) : null}
-
         {mastery.length === 0 ? (
           <AnimatedReveal delay={40}>
             <View style={styles.emptyFace}>
@@ -249,14 +238,7 @@ export default function MasteryScreen() {
         ) : (
           <>
             <AnimatedReveal delay={40}>
-              <MasteryHero
-                actionLabel={actionLabel}
-                days={days}
-                next={copy.detail || copy.title}
-                onAction={startToday}
-                score={score}
-                streak={streak}
-              />
+              <CoachCard actionLabel={actionLabel} message={copy.detail || copy.title} onAction={startToday} />
             </AnimatedReveal>
 
             {review.length ? (
@@ -354,8 +336,7 @@ export default function MasteryScreen() {
             ) : null}
           </>
         )}
-      </View>
-    </Screen>
+    </StageScreen>
   );
 }
 
@@ -411,20 +392,12 @@ function ConfusionSpotCard({
 }
 
 const styles = StyleSheet.create({
-  flexSpacer: { flex: 1 },
-  /** Header → title 8; between blocks 32; last block → end 40. */
-  content: {
-    gap: spacing.xxl,
-    paddingBottom: spacing.xxxl,
-    paddingTop: spacing.sm,
-  },
-  /** No header bar on a desktop: the title starts where the home's greeting does. */
+  /** No header bar on a desktop: the sheet starts where the home's greeting does. */
   contentWide: { paddingTop: spacing.xl },
-  titleRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   section: { gap: spacing.md },
   stack: { gap: spacing.sm },
   emptyFace: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.backgroundSoft,
     borderRadius: radii.hero,
     paddingVertical: spacing.lg,
   },
@@ -432,7 +405,7 @@ const styles = StyleSheet.create({
   spot: { flex: 1 },
   /** Right padding leaves the foot's right end to the check laid over it. */
   spotBody: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.backgroundSoft,
     borderRadius: radii.card,
     flex: 1,
     gap: spacing.xs,
