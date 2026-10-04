@@ -15,14 +15,11 @@ import {
   Button,
   Card,
   ListRow,
-  SegmentedControl,
 } from '@/components/ui';
 import { formatRelativeDate } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
-
-type ReportView = 'recent' | 'trend';
 
 export function PresentationOverview({
   home,
@@ -36,7 +33,6 @@ export function PresentationOverview({
   readonly onOpen: (material: StudyMaterial) => void;
 }) {
   const t = useT();
-  const [view, setView] = useState<ReportView>('recent');
   const [historyOpen, setHistoryOpen] = useState(false);
   const { latest, history, rows } = home;
   const running = rows.find((material) => evaluatingIds.includes(material.id));
@@ -69,24 +65,14 @@ export function PresentationOverview({
           {t('전체 {n}개', { n: rows.length })}
         </Button>
       </View>
-      {history.length >= 2 ? (
-        <SegmentedControl
-          onChange={setView}
-          options={[
-            { value: 'recent', label: t('최근 평가') },
-            { value: 'trend', label: t('변화 추이') },
-          ]}
-          value={view}
-        />
-      ) : null}
       {running ? (
         <Card padding={false}>
           <LensEvaluatingRow last material={running} projectTitle={projectTitle(running)} />
         </Card>
       ) : null}
-      {view === 'trend' && history.length >= 2 ? (
-        <ScoreTrend entries={history} />
-      ) : latest?.lensReport ? (
+      {/* 최근 평가와 변화 추이는 한 화면에 차례로(2026-10-04): 위 발표/면접 알약과 겹쳐 두 겹
+          스위치로 보이던 세그먼트를 걷어냈다. 추이는 평가가 둘 이상일 때만. */}
+      {latest?.lensReport ? (
         <LatestReportCard
           onPress={() => onOpen(latest)}
           projectTitle={projectTitle(latest)}
@@ -94,6 +80,14 @@ export function PresentationOverview({
           title={latest.title}
           updatedAt={lensEvaluatedAt(latest)}
         />
+      ) : null}
+      {history.length >= 2 ? (
+        <View style={styles.trend}>
+          <AppText accessibilityRole="header" variant="heading">
+            {t('변화 추이')}
+          </AppText>
+          <ScoreTrend entries={history} />
+        </View>
       ) : null}
       <BottomSheetModal
         onClose={() => setHistoryOpen(false)}
@@ -131,6 +125,10 @@ export function PresentationOverview({
 const styles = StyleSheet.create({
   section: {
     gap: spacing.md,
+  },
+  trend: {
+    gap: spacing.md,
+    marginTop: spacing.md,
   },
   heading: {
     alignItems: 'center',

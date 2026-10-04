@@ -17,8 +17,13 @@ export interface AppHeaderProps {
   /** Renders a close glyph instead of a back chevron (modals, flows). */
   onClose?: () => void;
   right?: ReactNode;
-  /** Shows the wordmark on the left instead of a title. Tab roots only. */
+  /** Shows the wordmark on the left instead of a title. The home tab only. */
   brand?: boolean;
+  /**
+   * A tab root's page name (복습, 연습, MY): left-aligned at page-title size,
+   * so each tab says where you are instead of repeating the wordmark.
+   */
+  large?: boolean;
   inverse?: boolean;
   /**
    * Titles are centred by default, like a native navigation bar. Tab roots
@@ -40,6 +45,7 @@ export function AppHeader({
   onClose,
   right,
   brand = false,
+  large = false,
   inverse = false,
   align,
   divider = false,
@@ -48,7 +54,7 @@ export function AppHeader({
   const { breakpoint } = useLayout();
   // The sidebar already carries the wordmark on laptop and desktop windows.
   const showWordmark = brand && breakpoint !== 'expanded';
-  const alignment = align ?? (brand || subtitle ? 'left' : 'center');
+  const alignment = align ?? (brand || large || subtitle ? 'left' : 'center');
   const leading = onBack ? (
     <IconButton
       icon={ChevronLeft}
@@ -81,7 +87,7 @@ export function AppHeader({
         align={alignment}
         numberOfLines={1}
         tone={inverse ? 'inverse' : 'default'}
-        variant="heading"
+        variant={large ? 'pageTitle' : 'heading'}
       >
         {title}
       </AppText>

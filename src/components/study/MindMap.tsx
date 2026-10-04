@@ -1,4 +1,4 @@
-import { Network } from 'lucide-react-native';
+import { ChevronLeft, Network } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
   Pressable,
@@ -12,6 +12,7 @@ import {
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import {
+  AnimatedReveal,
   AppText,
   BottomSheetModal,
   Button,
@@ -22,7 +23,7 @@ import {
 import { decorative } from '@/lib/a11y';
 import { formatSourcePosition } from '@/lib/format';
 import { tr, useT } from '@/lib/i18n';
-import { colors, palette, radii, spacing } from '@/theme/tokens';
+import { colors, iconSizes, palette, radii, spacing } from '@/theme/tokens';
 import type { StudyConcept } from '@/types';
 
 import {
@@ -78,11 +79,14 @@ function nodeFill(node: MindMapNode): string {
  * A concept's own term is the sheet title; a key point is a whole sentence, so
  * it becomes the body under the glossary name instead of a heading-sized line.
  */
-function sheetTitle(node: MindMapNode): string {
+/** What the detail sheet needs: a laid-out node, or the focused concept itself. */
+type SheetNode = Pick<MindMapNode, 'kind' | 'fullLabel' | 'description' | 'sourceStartMs' | 'difficulty'>;
+
+function sheetTitle(node: SheetNode): string {
   return node.kind === 'concept' ? node.fullLabel : tr('꼭 기억할 내용');
 }
 
-function sheetBody(node: MindMapNode): string {
+function sheetBody(node: SheetNode): string {
   if (node.kind !== 'concept') return node.fullLabel;
   return node.description ?? tr('이 개념은 아직 설명이 없어요.');
 }
@@ -101,6 +105,12 @@ function sheetBody(node: MindMapNode): string {
  * the curves. Nothing is ever wider than half the panel, so the canvas is
  * exactly the panel width and the page scroll and tab swipe stay the only
  * gestures in it — no pan, no zoom, nothing off the screen.
+ *
+ * One depth at a time (2026-10-04, CEO "클릭하면 뎁스 넘어가듯"): the map
+ * opens on the 자료 and its 개념 only. A 개념 that has 꼭 기억할 내용 under it
+ * carries a "›"; tapping it makes that 개념 the hub with its points around
+ * it, and a path above the map ("자료 › 개념") steps back. Tapping the hub, a
+ * point, or a 개념 with nothing under it opens the explanation sheet.
  */
 export function MindMap({
   title,
@@ -114,13 +124,66 @@ export function MindMap({
   const { width: windowWidth } = useWindowDimensions();
   const [width, setWidth] = useState(Math.max(240, windowWidth - spacing.gutter * 2));
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [focusId, setFocusId] = useState<string | null>(null);
 
   const nodes = useMemo(() => mindMapNodesFor(concepts, keyPoints), [concepts, keyPoints]);
-  const layout = useMemo(
-    () => computeMindMapLayout({ width, title, nodes, keyPoints }),
-    [keyPoints, nodes, title, width],
-  );
-  const selected = layout.nodes.find((node) => node.id === selectedId) ?? null;
+  /** The 꼭 기억할 내용 that name each 개념: what opens when it is tapped. */
+  const pointsByConcept = useMemo(() => {
+    const byId = new Map<string, string[]>();
+    for (const node of nodes) {
+      if (node.kind !== 'concept') continue;
+      const needle = node.label.trim().toLocaleLowerCase('ko-KR');
+      const points = needle
+        ? keyPoints.filter((point) => point.toLocaleLowerCase('ko-KR').includes(needle))
+        : [];
+      if (points.length) byId.set(node.id, points);
+    }
+    return byId;
+  }, [keyPoints, nodes]);
+  const focus = focusId ? nodes.find((node) => node.id === focusId) ?? null : null;
+
+  const layout = useMemo(() => {
+    if (focus) {
+      const focusPoints = pointsByConcept.get(focus.id) ?? [];
+      return computeMindMapLayout({
+        width,
+        title: focus.label,
+        nodes: focusPoints.map((point, index) => ({
+          id: `${focus.id}-point-${index}`,
+          kind: 'point' as const,
+          label: point,
+          description: point,
+        })),
+      });
+    }
+    return computeMindMapLayout({
+      width,
+      title,
+      nodes: nodes.map((node) =>
+        pointsByConcept.has(node.id) ? { ...node, label: `${node.label} ›` } : node,
+      ),
+    });
+  }, [focus, nodes, pointsByConcept, title, width]);
+
+  const FOCUS_SHEET = '__focus__';
+  const selected: SheetNode | null =
+    selectedId === FOCUS_SHEET && focus
+      ? {
+          kind: 'concept',
+          fullLabel: focus.label,
+          description: focus.description,
+          sourceStartMs: focus.sourceStartMs,
+          difficulty: focus.difficulty,
+        }
+      : layout.nodes.find((node) => node.id === selectedId) ?? null;
+
+  const pressNode = (node: MindMapNode) => {
+    if (!focus && pointsByConcept.has(node.id)) {
+      setFocusId(node.id);
+      return;
+    }
+    setSelectedId(node.id);
+  };
 
   if (!nodes.length) {
     return (
@@ -148,6 +211,29 @@ export function MindMap({
 
   return (
     <View onLayout={handleLayout} style={[styles.container, style]}>
+      {focus ? (
+        <Pressable
+          accessibilityHint={t('처음 마인드맵으로 돌아가요.')}
+          accessibilityLabel={t('{title}로 돌아가기', { title })}
+          accessibilityRole="button"
+          onPress={() => setFocusId(null)}
+          style={({ pressed }) => [styles.crumbs, pressed ? styles.pressed : null]}
+          testID="mind-map-back"
+        >
+          <ChevronLeft {...decorative} color={colors.textMuted} size={iconSizes.inline} strokeWidth={2} />
+          <AppText numberOfLines={1} style={styles.crumbRoot} tone="muted" variant="label">
+            {title}
+          </AppText>
+          <AppText tone="faint" variant="label">
+            ›
+          </AppText>
+          <AppText numberOfLines={1} style={styles.crumbLeaf} variant="label">
+            {focus.label}
+          </AppText>
+        </Pressable>
+      ) : null}
+      {/* Keyed by depth, so stepping in or out replays the reveal. */}
+      <AnimatedReveal distance={8} key={focus?.id ?? 'root'}>
       <View style={{ height: layout.height, width: layout.width }}>
         {/* The linework sits under the nodes, so every join disappears under
             the card it feeds rather than stopping short of it. */}
@@ -191,8 +277,12 @@ export function MindMap({
 
         {/* The hub repeats the 자료 title the header already announces, so it
             carries no heading role of its own — it is here to anchor the map. */}
-        <View
-          style={[
+        <Pressable
+          accessibilityHint={focus ? t('설명과 근거 시점을 보여 줘요.') : undefined}
+          accessibilityRole={focus ? 'button' : undefined}
+          disabled={!focus}
+          onPress={() => setSelectedId(FOCUS_SHEET)}
+          style={({ pressed }) => [
             styles.node,
             styles.root,
             {
@@ -202,6 +292,7 @@ export function MindMap({
               top: layout.root.y,
               width: layout.root.width,
             },
+            pressed ? styles.pressed : null,
           ]}
         >
           {layout.root.lines.map((line, index) => (
@@ -215,11 +306,15 @@ export function MindMap({
               {line}
             </AppText>
           ))}
-        </View>
+        </Pressable>
 
         {layout.nodes.map((node) => (
           <Pressable
-            accessibilityHint={t('설명과 근거 시점을 보여 줘요.')}
+            accessibilityHint={
+              !focus && pointsByConcept.has(node.id)
+                ? t('이 개념의 꼭 기억할 내용을 펼쳐요.')
+                : t('설명과 근거 시점을 보여 줘요.')
+            }
             accessibilityLabel={
               node.difficulty
                 ? `${node.fullLabel}, ${t(DIFFICULTY_META[node.difficulty].label)}`
@@ -227,7 +322,7 @@ export function MindMap({
             }
             accessibilityRole="button"
             key={node.id}
-            onPress={() => setSelectedId(node.id)}
+            onPress={() => pressNode(node)}
             style={({ pressed }) => [
               styles.node,
               node.level === 'leaf' ? styles.leaf : styles.branch,
@@ -256,8 +351,9 @@ export function MindMap({
           </Pressable>
         ))}
       </View>
+      </AnimatedReveal>
 
-      {concepts.length ? (
+      {concepts.length && !focus ? (
         <View style={styles.legend}>
           {DIFFICULTY_ORDER.map((difficulty) => (
             <View key={difficulty} style={styles.legendItem}>
@@ -337,4 +433,14 @@ const styles = StyleSheet.create({
     width: 10,
   },
   sheetBody: { gap: spacing.md },
+  crumbs: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: spacing.xs,
+    maxWidth: '100%',
+    minHeight: 32,
+  },
+  crumbRoot: { flexShrink: 1 },
+  crumbLeaf: { flexShrink: 2 },
 });

@@ -57,7 +57,7 @@ export function InterviewHome({ switcher }: { readonly switcher?: ReactNode }) {
         <AppText tone="muted" variant="body">
           {resume
             ? t('질문 {total}개 중 {done}개 답변했어요.', { total: source?.questions.length ?? 0, done: answeredQuestionCount(resume) })
-            : t('질문을 고르고 소리 내어 답해 보세요. AI 피드백으로 보완할 점을 확인해요.')}
+            : t('질문을 고르고 소리 내어 답해 보세요')}
         </AppText>
       </View>
       <View style={styles.actions}>
@@ -67,7 +67,7 @@ export function InterviewHome({ switcher }: { readonly switcher?: ReactNode }) {
       </Button>
       {resume ? <Button onPress={() => setSheet('start')} size="large" variant="secondary">{t('새 연습')}</Button> : null}
       </View>
-      <AppText tone="muted" variant="meta">{t(demo ? '기본 연습 무료 · 데모 모드' : '기본 연습은 무료예요. AI 피드백은 시작 전에 이용 횟수를 확인해요.')}</AppText>
+      <AppText tone="muted" variant="meta">{t('기본 연습은 무료예요')}</AppText>
       {resume && !demo ? <AllowanceCard allowance={allowance} compact /> : null}
     </Card>
   );
@@ -84,7 +84,7 @@ export function InterviewHome({ switcher }: { readonly switcher?: ReactNode }) {
   return (
     <Screen fullBleed padded={false} safeAreaEdges={['top', 'left', 'right']} scroll>
       <SpeakFrame>
-        <AppHeader brand right={<IconButton icon={Menu} label={t('면접 메뉴')} onPress={() => setSheet('menu')} />} />
+        <AppHeader large title={t('연습')} right={<IconButton icon={Menu} label={t('면접 메뉴')} onPress={() => setSheet('menu')} />} />
         <View style={[styles.content, { paddingHorizontal: gutter }]}>
           {switcher}
           {resume ? hero : <SpeakColumns main={hero} side={secondary} />}

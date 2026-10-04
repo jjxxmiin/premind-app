@@ -203,7 +203,8 @@ export default function MasteryScreen() {
     >
       {wide ? null : (
         <AppHeader
-          brand
+          large
+          title={t('복습')}
           right={
             <IconButton
               icon={Bell}
@@ -215,8 +216,8 @@ export default function MasteryScreen() {
       )}
 
       <View style={[styles.content, { paddingHorizontal: gutter }, wide ? styles.contentWide : null]}>
-        {/* 큰 제목 없음(2026-09-26 CEO "제목 없어도 될듯"): 어느 화면인지는 탭 바, 사이드바가 말한다.
-            데스크톱은 머리 막대가 없어 알림 종만 오른쪽에 둔다. */}
+        {/* 본문 안 큰 제목은 없다(2026-09-26 CEO "제목 없어도 될듯"). 폰은 2026-10-04 부터 머리 막대에
+            로고 대신 탭 이름("복습")을 둔다. 데스크톱은 머리 막대가 없어 알림 종만 오른쪽에 둔다. */}
         {wide ? (
           <View style={styles.titleRow}>
             <View style={styles.flexSpacer} />

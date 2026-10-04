@@ -115,7 +115,7 @@ export default function SearchScreen() {
           ) : (
             <EmptyState
               compact
-              description={t('자료 제목과 파일 이름, 폴더 이름에서 찾아요. 대본은 자료를 연 뒤 그 안에서 검색해요.')}
+              description={t('제목, 파일 이름, 폴더에서 찾아요')}
               icon={Search}
               title={t('무엇을 찾을까요?')}
             />

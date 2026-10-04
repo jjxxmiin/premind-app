@@ -130,7 +130,8 @@ export default function ProfileScreen() {
       scrollViewProps={{ showsVerticalScrollIndicator: false }}
     >
       <AppHeader
-        brand
+        large
+        title={t('MY')}
         right={
           <IconButton
             icon={Bell}

@@ -70,7 +70,7 @@ it('opens an older report from full history while the home remains bounded', asy
   expect(screen.queryByText('발표 1')).toBeNull();
 });
 
-it('switches between the latest report and its trend in one content area', async () => {
+it('shows the latest report and, under it, the trend — no switch between them', async () => {
   const materials = [reportMaterial('첫 발표', 1), reportMaterial('최근 발표 자료', 2)];
   await render(
     <PresentationOverview
@@ -81,12 +81,10 @@ it('switches between the latest report and its trend in one content area', async
     />,
   );
 
-  await fireEvent.press(screen.getByRole('tab', { name: '변화 추이' }));
-
-  expect(screen.queryByText('최근 발표 자료')).toBeNull();
-  expect(screen.getByLabelText(/^평가 추이, 2번/)).toBeOnTheScreen();
-
-  await fireEvent.press(screen.getByRole('tab', { name: '최근 평가' }));
+  // The 연습 tab already has the 발표/면접 switch on top; a second segmented
+  // control under it read as two rows of tabs (2026-10-04).
+  expect(screen.queryByRole('tab', { name: '변화 추이' })).toBeNull();
   expect(screen.getByText('최근 발표 자료')).toBeOnTheScreen();
-  expect(screen.queryByLabelText(/^평가 추이, 2번/)).toBeNull();
+  expect(screen.getByText('변화 추이')).toBeOnTheScreen();
+  expect(screen.getByLabelText(/^평가 추이, 2번/)).toBeOnTheScreen();
 });

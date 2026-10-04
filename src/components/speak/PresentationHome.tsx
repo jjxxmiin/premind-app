@@ -78,9 +78,6 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
           <AppText variant={compact ? "pageTitle" : "heroTitle"}>
             {t(latest ? "한 번 더 말해 볼까요?" : "발표를 들려주세요")}
           </AppText>
-          <AppText tone="muted" variant="meta">
-            {t("내 발표를 녹음하고, 다음에 고칠 부분을 찾아요.")}
-          </AppText>
           <Button
             leftIcon={
               <FolderOpen color={colors.text} size={iconSizes.inline} />
@@ -130,7 +127,8 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
     >
       <SpeakFrame>
         <AppHeader
-          brand
+          large
+          title={t("연습")}
           right={
             <IconButton
               icon={Bell}

@@ -38,6 +38,12 @@ export interface UseTabSwipeOptions<T> {
   value: T;
   onChange: (next: T) => void;
   enabled?: boolean;
+  /**
+   * Offered the swipe first: a panel of cards turns its own card and returns
+   * true. At its first or last card it returns false and the tab changes, so
+   * one gesture walks through the cards and on into the next tab.
+   */
+  onSwipe?: (translationX: number) => boolean;
 }
 
 /**
@@ -48,7 +54,7 @@ export interface UseTabSwipeOptions<T> {
  * root inside scroll content is at best inert and at worst a second touch
  * arbiter fighting the ScrollView.
  */
-export function useTabSwipe<T>({ tabs, value, onChange, enabled = true }: UseTabSwipeOptions<T>) {
+export function useTabSwipe<T>({ tabs, value, onChange, enabled = true, onSwipe }: UseTabSwipeOptions<T>) {
   // Rebuilt when the tab changes; GestureDetector swaps the gesture in place.
   return useMemo(
     () =>
@@ -59,9 +65,10 @@ export function useTabSwipe<T>({ tabs, value, onChange, enabled = true }: UseTab
         .failOffsetY([-FAIL_OFFSET_Y, FAIL_OFFSET_Y])
         .runOnJS(true)
         .onEnd((event) => {
+          if (onSwipe?.(event.translationX)) return;
           const next = nextTabForSwipe(tabs, value, event.translationX);
           if (next !== null) onChange(next);
         }),
-    [enabled, onChange, tabs, value],
+    [enabled, onChange, onSwipe, tabs, value],
   );
 }

@@ -262,4 +262,10 @@ export const EN_STUDY: EnDict = {
   },
   '괜찮아요, 틀린 곳을 다시 들으면 금방 늘어요':
     "That's okay. Replaying the parts you missed helps fast",
+  // Mind map depth and 요약/대본 cards (2026-10-04)
+  '처음 마인드맵으로 돌아가요.': 'Goes back to the whole mind map.',
+  '{title}로 돌아가기': 'Back to {title}',
+  '이 개념의 꼭 기억할 내용을 펼쳐요.': 'Opens the key points under this concept.',
+  '이전 카드': 'Previous card',
+  '다음 카드': 'Next card',
 };

@@ -169,9 +169,13 @@ export default function NotificationsScreen() {
                       <AppText numberOfLines={1} tone="soft" variant="meta">
                         {material.title}
                       </AppText>
-                      <AppText numberOfLines={2} tone="muted" variant="meta">
-                        {item.description}
-                      </AppText>
+                      {/* A finished pack says nothing its title has not; the others
+                          say why it stopped or what a tap will do. */}
+                      {material.status !== 'ready' ? (
+                        <AppText numberOfLines={2} tone="muted" variant="body">
+                          {item.description}
+                        </AppText>
+                      ) : null}
                       <View style={styles.footerRow}>
                         <AppText tone="faint" variant="badge">
                           {formatRelativeDate(material.updatedAt)}

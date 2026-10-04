@@ -4,7 +4,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { decorative } from '@/lib/a11y';
 import { useT } from '@/lib/i18n';
 import type { MaterialKind, MaterialStatus } from '@/types';
-import { colors, radii, spacing } from '@/theme/tokens';
+import { colors, materialKindColors, radii, spacing } from '@/theme/tokens';
 
 import { AppText } from './ui/AppText';
 
@@ -20,9 +20,10 @@ interface MediaArtworkProps {
 const WAVEFORM = [10, 18, 26, 14, 22, 32, 18, 12, 24, 16, 28, 12] as const;
 
 /**
- * The thumbnail for a recording. A flat grey tile with a kind glyph; a small
- * waveform when there is room, and an "AI 정리 중" caption while processing.
- * Deliberately not illustrated, so a list of thirty rows stays calm.
+ * The thumbnail for a recording. A flat tile washed by kind (녹음, 영상, 문서
+ * each their own pale colour) with the kind glyph; a small waveform when
+ * there is room, and an "AI 정리 중" caption while processing. Deliberately
+ * not illustrated, so a list of thirty rows stays calm.
  */
 export function MediaArtwork({ kind, status, label, compact = false, style }: MediaArtworkProps) {
   const t = useT();
@@ -31,11 +32,13 @@ export function MediaArtwork({ kind, status, label, compact = false, style }: Me
   const processing = status && !['ready', 'failed', 'imported'].includes(status);
   const failed = status === 'failed';
   const ready = status === 'ready';
+  const tone = materialKindColors[kind === 'video' || kind === 'document' ? kind : 'audio'];
 
   return (
     <View
       style={[
         styles.container,
+        { backgroundColor: tone.fill },
         compact ? styles.compact : null,
         failed ? styles.failed : null,
         style,
@@ -44,7 +47,7 @@ export function MediaArtwork({ kind, status, label, compact = false, style }: Me
       <View style={[styles.iconDisc, compact ? styles.iconDiscCompact : null]}>
         <Icon
           {...decorative}
-          color={failed ? colors.negative : ready ? colors.brand : colors.text}
+          color={failed ? colors.negative : tone.glyph}
           size={compact ? 20 : 26}
           strokeWidth={1.8}
         />

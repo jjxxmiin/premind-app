@@ -1,8 +1,10 @@
 import { Image } from 'expo-image';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { useRef, useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import {
+  FlatList,
   type LayoutChangeEvent,
+  type ListRenderItem,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Platform,
@@ -16,7 +18,7 @@ import { AppText, IconButton } from '@/components/ui';
 import { pageNumberOf } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, radii, spacing } from '@/theme/tokens';
 import type { TranscriptSegment } from '@/types';
 
 /** Where one rendered page lives, and the header that fetches it. */
@@ -51,8 +53,6 @@ const PAGE_ASPECT = 0.78;
 const MAX_PAGE_HEIGHT = 460;
 /** How much of the neighbouring page peeks in, hinting that it scrolls. */
 const PEEK = 32;
-/** The page-number pill: `sizes.badge` tall, then the gap under it. */
-const BADGE_BLOCK = 22 + spacing.sm;
 
 /**
  * The pages of an uploaded document, where a video would have its player.
@@ -66,6 +66,11 @@ const BADGE_BLOCK = 22 + spacing.sm;
  * A slide deck (.pptx) has no page raster to render without a full office
  * suite behind the server, so those fall back to the extracted text, one card
  * per page. Both are numbered identically: card N is page N is `page: N`.
+ *
+ * Virtualised (2026-10-04): a 100-page deck mounted all 100 cards — and for a
+ * PDF fetched and decoded all 100 images — at once, and swiping stuttered.
+ * Only the pages around the one on screen are mounted now, and the cards are
+ * memoised so the moving "3 / 100쪽" label never re-renders them.
  */
 export function DocumentPages({
   segments,
@@ -75,7 +80,7 @@ export function DocumentPages({
   const t = useT();
   const [width, setWidth] = useState(0);
   const [current, setCurrent] = useState(0);
-  const trackRef = useRef<ScrollView>(null);
+  const trackRef = useRef<FlatList<TranscriptSegment>>(null);
   const { isTablet } = useLayout();
 
   const handleLayout = (event: LayoutChangeEvent) => {
@@ -85,24 +90,28 @@ export function DocumentPages({
   const pageWidth = width > 0 ? width - PEEK : 0;
   const step = pageWidth + spacing.md;
   const pageHeight = Math.min(pageWidth * PAGE_ASPECT, MAX_PAGE_HEIGHT);
-  /**
-   * How many lines of page text fit, for the decks with no image. Clipping by
-   * height alone cuts the last line through the middle of its glyphs, which
-   * reads as a rendering fault rather than as a page continuing;
-   * `numberOfLines` ends it on a clean line with an ellipsis instead.
-   */
-  const lines = Math.max(
-    3,
-    Math.floor(
-      (pageHeight - spacing.lg * 2 - BADGE_BLOCK) / typography.body.lineHeight,
-    ),
-  );
 
+  // React skips the render when the page has not changed, so a scroll frame
+  // costs one division until the position actually moves (the web build has
+  // no momentum-end event to wait for).
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (step <= 0) return;
     const index = Math.round(event.nativeEvent.contentOffset.x / step);
     setCurrent(Math.max(0, Math.min(segments.length - 1, index)));
   };
+
+  const renderPage = useCallback<ListRenderItem<TranscriptSegment>>(
+    ({ item }) => (
+      <PageCard
+        height={pageHeight}
+        onOpenPage={onOpenPage}
+        pageImage={pageImage}
+        segment={item}
+        width={pageWidth}
+      />
+    ),
+    [onOpenPage, pageHeight, pageImage, pageWidth],
+  );
 
   /**
    * A mouse has no sideways swipe, so the web build on a tablet-or-wider
@@ -112,7 +121,7 @@ export function DocumentPages({
   const goTo = (index: number) => {
     const next = Math.max(0, Math.min(segments.length - 1, index));
     setCurrent(next);
-    trackRef.current?.scrollTo({ x: next * step, animated: true });
+    trackRef.current?.scrollToOffset({ offset: next * step, animated: true });
   };
 
   if (segments.length === 0) return null;
@@ -157,84 +166,105 @@ export function DocumentPages({
       </View>
 
       {pageWidth > 0 ? (
-        <ScrollView
+        <FlatList
           contentContainerStyle={styles.track}
+          data={segments}
           decelerationRate="fast"
+          getItemLayout={(_data, index) => ({ index, length: step, offset: step * index })}
           horizontal
+          initialNumToRender={2}
+          keyExtractor={(segment) => segment.id}
+          maxToRenderPerBatch={2}
           onScroll={handleScroll}
           ref={trackRef}
-          scrollEventThrottle={16}
+          removeClippedSubviews={Platform.OS === 'android'}
+          renderItem={renderPage}
+          scrollEventThrottle={32}
           showsHorizontalScrollIndicator={false}
           snapToAlignment="start"
           snapToInterval={step}
           testID="document-pages"
-        >
-          {segments.map((segment) => {
-            const page = pageNumberOf(segment.startMs);
-            const image = pageImage?.(page);
-            return (
-              <Pressable
-                accessibilityHint={t('이 쪽을 크게 봐요.')}
-                accessibilityLabel={t('{n}쪽', { n: page })}
-                accessibilityRole="button"
-                key={segment.id}
-                onPress={() => onOpenPage(page)}
-                style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
-                  styles.page,
-                  image ? styles.pageImageCard : styles.pageTextCard,
-                  { width: pageWidth, height: pageHeight },
-                  hovered ? styles.pageHovered : null,
-                  pressed ? styles.pressed : null,
-                ]}
-              >
-                {image ? (
-                  <>
-                    <Image
-                      accessibilityIgnoresInvertColors
-                      // The whole page, never cropped: a diagram cut off at
-                      // the margin is worse than one shown small.
-                      contentFit="contain"
-                      contentPosition="top center"
-                      source={image}
-                      style={styles.pageImage}
-                      testID={`document-page-image-${page}`}
-                      transition={120}
-                    />
-                    <View style={[styles.pageBadge, styles.pageBadgeFloating]}>
-                      <AppText tone="muted" variant="badge">
-                        {t('{n}쪽', { n: page })}
-                      </AppText>
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <View style={styles.pageBadge}>
-                      <AppText tone="muted" variant="badge">
-                        {t('{n}쪽', { n: page })}
-                      </AppText>
-                    </View>
-                    <AppText
-                      // Whatever does not fit is what the 대본 is for.
-                      ellipsizeMode="tail"
-                      numberOfLines={lines}
-                      style={[
-                        styles.pageText,
-                        { maxHeight: lines * typography.body.lineHeight },
-                      ]}
-                      variant="body"
-                    >
-                      {segment.text}
-                    </AppText>
-                  </>
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+          windowSize={5}
+        />
       ) : null}
     </View>
   );
 }
+
+/**
+ * One page card. Memoised so a change of position (the "3 / 100쪽" label)
+ * does not re-render the pages already on screen.
+ */
+const PageCard = memo(function PageCard({
+  segment,
+  width,
+  height,
+  pageImage,
+  onOpenPage,
+}: {
+  segment: TranscriptSegment;
+  width: number;
+  height: number;
+  pageImage?: (page: number) => PageImageSource | undefined;
+  onOpenPage: (page: number) => void;
+}) {
+  const t = useT();
+  const page = pageNumberOf(segment.startMs);
+  const image = pageImage?.(page);
+  return (
+    <Pressable
+      accessibilityHint={t('이 쪽을 크게 봐요.')}
+      accessibilityLabel={t('{n}쪽', { n: page })}
+      accessibilityRole="button"
+      onPress={() => onOpenPage(page)}
+      style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
+        styles.page,
+        image ? styles.pageImageCard : styles.pageTextCard,
+        { width, height },
+        hovered ? styles.pageHovered : null,
+        pressed ? styles.pressed : null,
+      ]}
+    >
+      {image ? (
+        <>
+          <Image
+            accessibilityIgnoresInvertColors
+            // The whole page, never cropped: a diagram cut off at
+            // the margin is worse than one shown small.
+            contentFit="contain"
+            contentPosition="top center"
+            source={image}
+            style={styles.pageImage}
+            testID={`document-page-image-${page}`}
+            transition={120}
+          />
+          <View style={[styles.pageBadge, styles.pageBadgeFloating]}>
+            <AppText tone="muted" variant="badge">
+              {t('{n}쪽', { n: page })}
+            </AppText>
+          </View>
+        </>
+      ) : (
+        <>
+          <View style={styles.pageBadge}>
+            <AppText tone="muted" variant="badge">
+              {t('{n}쪽', { n: page })}
+            </AppText>
+          </View>
+          {/* The whole page, scrolled inside the card (2026-10-04): a slide's
+              text cut off with "…" read as text the app had lost. */}
+          <ScrollView
+            nestedScrollEnabled
+            showsVerticalScrollIndicator
+            style={styles.pageText}
+          >
+            <AppText variant="body">{segment.text}</AppText>
+          </ScrollView>
+        </>
+      )}
+    </Pressable>
+  );
+});
 
 const styles = StyleSheet.create({
   block: { gap: spacing.md },

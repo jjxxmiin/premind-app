@@ -166,6 +166,27 @@ finishes. The bottom bar holds an "이 자료에 물어보기" pill
 playback; every timestamp seeks. YouTube materials play through the YouTube
 player and otherwise behave identically.
 
+## 2026-10-04 upgrade (wrtn reference)
+
+- **Tab headers**: only 홈 shows the wordmark (icon + PREMIND). Every other tab
+  root says where you are with `AppHeader large title` (복습, 연습, MY) —
+  left-aligned at `pageTitle` size. No big title inside the body.
+- **홈 first screen** (phone, 전체 page, once there is a 자료): greeting →
+  three start tiles (녹음 with the accent, 파일, 유튜브) → one 이어서 보기 row →
+  the list. It scrolls away with the list (`HomeStart`).
+- **Thumbnails by kind**: `materialKindColors` — 녹음 apricot, 영상 sky,
+  문서 sage; YouTube keeps its real thumbnail.
+- **One switch per screen**: a screen already led by a switch (연습's 발표/면접)
+  stacks its sections instead of adding a second segmented control.
+- **Read a card at a time**: 요약 (한눈에 보기, then one card per 구간) and 대본
+  (one card per 구간, per page for a document, per 5 minutes otherwise) are
+  turned by swipe or the arrows in `CardPager`; at either end the swipe moves
+  on to the next tab. A filtered 대본 (search, 중요만, 형광펜) stays one list.
+- **Mind map by depth**: the map opens on the 자료 and its 개념; a 개념 with
+  points (marked "›") becomes the hub when tapped, with a path back above.
+- **Long lists are virtualised**: document pages and the page viewer mount
+  only the pages near the screen; never `map` a 100-item horizontal strip.
+
 ## Components and when to use them
 
 - `Card` — `default` (white + hairline) contains lists; `soft` (grey fill)

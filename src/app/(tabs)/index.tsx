@@ -37,6 +37,7 @@ import {
 } from '@/components/home/HomeDesktop';
 import { MaterialList } from '@/components/home/MaterialList';
 import { LibraryPage } from '@/components/home/LibraryPage';
+import { HomeStart } from '@/components/home/HomeStart';
 import { LibraryWelcome } from '@/components/home/LibraryWelcome';
 import { SubjectTabs, type SubjectTab } from '@/components/home/SubjectTabs';
 import {
@@ -792,14 +793,19 @@ export default function HomeScreen() {
 
   const renderPage = ({ item: page }: { item: SubjectPage }) => {
     const pageMaterials = visibleMaterialsByPage.get(page.key) ?? [];
+    // The 전체 page opens with the start tiles; they already offer every way
+    // to add, so its heading drops the 자료 추가 link.
+    const showStart = !wide && hasMaterial && page.key === ALL_PAGE_KEY;
     const listHeading = hasMaterial ? (
       <View style={styles.listHeading}>
         <AppText tone="muted" variant="meta">
           {t('자료 {n}개', { n: pageMaterials.length })}
         </AppText>
-        <Button onPress={() => setUploadSheetVisible(true)} size="small" variant="ghost">
-          {t('자료 추가')}
-        </Button>
+        {showStart ? null : (
+          <Button onPress={() => setUploadSheetVisible(true)} size="small" variant="ghost">
+            {t('자료 추가')}
+          </Button>
+        )}
       </View>
     ) : null;
     const header = wide ? (
@@ -830,7 +836,22 @@ export default function HomeScreen() {
         {listHeading}
       </View>
     ) : (
-      <View>{listHeading}</View>
+      <View>
+        {showStart ? (
+          <HomeStart
+            continueFolder={
+              continueMaterial ? projectById.get(continueMaterial.projectId)?.title : undefined
+            }
+            continueMaterial={continueMaterial}
+            name={session?.user.name?.trim() ?? ''}
+            onImport={openImport}
+            onOpen={openMaterial}
+            onRecord={openRecording}
+            onYoutube={openYoutubeDialog}
+          />
+        ) : null}
+        {listHeading}
+      </View>
     );
     const empty = !hasMaterial && showEmptyAction ? (
       <LibraryWelcome onAdd={() => setUploadSheetVisible(true)} />

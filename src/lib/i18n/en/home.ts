@@ -121,8 +121,7 @@ export const EN_HOME: EnDict = {
   '검색어 지우기': 'Clear search',
   '다른 말로 다시 찾아보세요': 'Try different words',
   '검색 결과가 없어요': 'No results',
-  '자료 제목과 파일 이름, 폴더 이름에서 찾아요. 대본은 자료를 연 뒤 그 안에서 검색해요.':
-    'Searches material titles, file names and folder names. To search a transcript, open the material and search inside it.',
+  '제목, 파일 이름, 폴더에서 찾아요': 'Search titles, file names and folders',
   '무엇을 찾을까요?': 'What are you looking for?',
   '“{query}” 검색 결과 {n}개': { one: '{n} result for “{query}”', other: '{n} results for “{query}”' },
 
@@ -216,4 +215,7 @@ export const EN_HOME: EnDict = {
   '안녕하세요, {name}님': 'Hi, {name}',
   '이어서 보기': 'Continue',
   '이어서 보기, {title}': 'Continue, {title}',
+  // HomeStart (2026-10-04)
+  안녕하세요: 'Hi',
+  파일: 'File',
 };

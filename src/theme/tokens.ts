@@ -372,6 +372,17 @@ export const motion = {
   },
 } as const;
 
+/**
+ * The library thumbnail's wash and glyph per kind (2026-10-04): a list of
+ * recordings, videos and documents tells them apart at a glance. Pale washes
+ * from the illustration family, so thirty rows still read calm.
+ */
+export const materialKindColors = {
+  audio: { fill: palette.apricotSoft, glyph: palette.accent500 },
+  video: { fill: palette.skySoft, glyph: chartColors[3] },
+  document: { fill: palette.sageSoft, glyph: palette.positive500 },
+} as const;
+
 /** Stable proportions and colour washes for illustration-led surfaces. */
 export const illustration = {
   /** Native ratio of the HD microphone cutout; prevents contain-fit downscaling. */

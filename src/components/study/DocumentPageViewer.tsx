@@ -1,10 +1,13 @@
 import { Image } from 'expo-image';
 import { FileText, ListTree, X } from 'lucide-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import {
+  FlatList,
+  type ListRenderItem,
   Modal,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -48,6 +51,9 @@ export interface DocumentPageViewerProps {
  *
  * A page with no rendered image — a slide deck — shows its text here instead,
  * scrollable in full rather than clipped as the strip has to clip it.
+ *
+ * Virtualised like the strip (2026-10-04): only the page on screen and its
+ * neighbours are mounted, and the list opens directly on the tapped page.
  */
 export function DocumentPageViewer({
   page,
@@ -59,7 +65,6 @@ export function DocumentPageViewer({
   const t = useT();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const scrollRef = useRef<ScrollView>(null);
 
   /**
    * The page number of each slide, in order.
@@ -80,23 +85,14 @@ export function DocumentPageViewer({
   };
 
   const [current, setCurrent] = useState(page);
+  const initialIndex = indexOfPage(page);
 
-  useEffect(() => {
-    // The list is laid out when the modal opens, so the jump to the tapped
-    // page has to wait for that frame or it lands on page 1.
-    const timer = setTimeout(
-      () =>
-        scrollRef.current?.scrollTo({
-          x: indexOfPage(page) * width,
-          animated: false,
-        }),
-      0,
-    );
-    return () => clearTimeout(timer);
-    // `indexOfPage` reads `pageNumbers`, which only changes with `segments`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageNumbers, width]);
+  const renderSlide = useCallback<ListRenderItem<TranscriptSegment>>(
+    ({ item }) => <Slide pageImage={pageImage} segment={item} width={width} />,
+    [pageImage, width],
+  );
 
+  // Only re-renders when the page changes; the slides are memoised.
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (width <= 0) return;
     const index = Math.round(event.nativeEvent.contentOffset.x / width);
@@ -133,58 +129,23 @@ export function DocumentPageViewer({
           <View style={styles.iconButton} />
         </View>
 
-        <ScrollView
+        <FlatList
+          data={segments}
+          getItemLayout={(_data, index) => ({ index, length: width, offset: width * index })}
           horizontal
+          initialNumToRender={1}
+          initialScrollIndex={initialIndex}
+          keyExtractor={(segment) => segment.id}
+          maxToRenderPerBatch={2}
           onScroll={handleScroll}
           pagingEnabled
-          ref={scrollRef}
-          scrollEventThrottle={16}
+          removeClippedSubviews={Platform.OS === 'android'}
+          renderItem={renderSlide}
+          scrollEventThrottle={32}
           showsHorizontalScrollIndicator={false}
           testID="page-viewer-pages"
-        >
-          {segments.map((segment) => {
-            const number = pageNumberOf(segment.startMs);
-            const image = pageImage?.(number);
-            return (
-              <View key={segment.id} style={[styles.slide, { width }]}>
-                {image ? (
-                  <Image
-                    accessibilityIgnoresInvertColors
-                    accessibilityLabel={t('{n}쪽', { n: number })}
-                    contentFit="contain"
-                    source={image}
-                    style={styles.image}
-                    transition={120}
-                  />
-                ) : (
-                  <ScrollView
-                    contentContainerStyle={styles.textPage}
-                    showsVerticalScrollIndicator={false}
-                    style={styles.textScroll}
-                  >
-                    <View style={styles.textBadge}>
-                      <FileText
-                        {...decorative}
-                        color={colors.textMuted}
-                        size={iconSizes.inline}
-                        strokeWidth={2}
-                      />
-                      <AppText tone="muted" variant="badge">
-                        {t('{n}쪽', { n: number })}
-                      </AppText>
-                    </View>
-                    {segment.summary ? (
-                      <AppText tone="muted" variant="meta">
-                        {segment.summary}
-                      </AppText>
-                    ) : null}
-                    <AppText variant="body">{segment.text}</AppText>
-                  </ScrollView>
-                )}
-              </View>
-            );
-          })}
-        </ScrollView>
+          windowSize={3}
+        />
 
         <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
           <Chip
@@ -198,6 +159,59 @@ export function DocumentPageViewer({
     </Modal>
   );
 }
+
+/** One page, full width: the rendered image, or the page text scrollable in full. */
+const Slide = memo(function Slide({
+  segment,
+  width,
+  pageImage,
+}: {
+  segment: TranscriptSegment;
+  width: number;
+  pageImage?: (page: number) => PageImageSource | undefined;
+}) {
+  const t = useT();
+  const number = pageNumberOf(segment.startMs);
+  const image = pageImage?.(number);
+  return (
+    <View style={[styles.slide, { width }]}>
+      {image ? (
+        <Image
+          accessibilityIgnoresInvertColors
+          accessibilityLabel={t('{n}쪽', { n: number })}
+          contentFit="contain"
+          source={image}
+          style={styles.image}
+          transition={120}
+        />
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.textPage}
+          showsVerticalScrollIndicator={false}
+          style={styles.textScroll}
+        >
+          <View style={styles.textBadge}>
+            <FileText
+              {...decorative}
+              color={colors.textMuted}
+              size={iconSizes.inline}
+              strokeWidth={2}
+            />
+            <AppText tone="muted" variant="badge">
+              {t('{n}쪽', { n: number })}
+            </AppText>
+          </View>
+          {segment.summary ? (
+            <AppText tone="muted" variant="meta">
+              {segment.summary}
+            </AppText>
+          ) : null}
+          <AppText variant="body">{segment.text}</AppText>
+        </ScrollView>
+      )}
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: colors.background, flex: 1 },

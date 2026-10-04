@@ -47,8 +47,16 @@ import { TimeChip } from '@/components/study/TimeChip';
 import {
   TranscriptSectionMarker,
   withSectionMarkers,
+  type TranscriptRow,
 } from '@/components/study/TranscriptSections';
-import { useTabSwipe } from '@/components/study/useTabSwipe';
+import { CardPager, CardPagerHeader } from '@/components/study/CardPager';
+import {
+  cardForSwipe,
+  pageIndexOfSegment,
+  transcriptPagesFor,
+  type TranscriptPage,
+} from '@/components/study/card-pages';
+import { TAB_SWIPE_THRESHOLD, useTabSwipe } from '@/components/study/useTabSwipe';
 import { StudyPlayer } from '@/components/StudyPlayer';
 import {
   YouTubePlayer,
@@ -107,8 +115,6 @@ import type {
 } from '@/types';
 
 type DetailTab = 'summary' | 'transcript' | 'mindmap' | 'cards';
-/** 요약 reads two ways: today's overview, or the lecture written out in full. */
-type SummaryView = 'glance' | 'detail';
 
 /**
  * Four tabs still fit flexed segments at 360dp: the strip is 320 wide, so each
@@ -130,15 +136,6 @@ const tabOptions = [
   { value: 'cards', label: '카드' },
 ] as const;
 
-/**
- * The 요약 switch. Only shown when the server wrote an outline for the
- * recording, so older 마인드팩 keep the panel they always had.
- */
-const summaryViewOptions = [
-  { value: 'glance', label: '한눈에 보기' },
-  { value: 'detail', label: '자세히' },
-] as const;
-
 /** One shared empty list, so a 마인드팩 without an outline keeps a stable reference. */
 const NO_OUTLINE: readonly OutlineSection[] = [];
 
@@ -155,6 +152,11 @@ const TIMELINE_STEP_MS = 1000;
 
 /** How long a reader's own scroll keeps the transcript from following playback. */
 const MANUAL_SCROLL_HOLD_MS = 4000;
+/**
+ * After the reader turns a 대본 card by hand, playback leaves the card alone
+ * this long, so a card being read is not swapped out from under them.
+ */
+const MANUAL_CARD_HOLD_MS = 15_000;
 /** Scroll events inside this window after `scrollTo` are ours, not the reader's. */
 const PROGRAMMATIC_SCROLL_WINDOW_MS = 1000;
 const NOTICE_MS = 2200;
@@ -169,6 +171,16 @@ interface RowLayout {
 }
 
 /** The segment the playhead is in, or the last one that started before it. */
+/** A 대본 card's title: its 구간, its page, or the stretch of the clock it covers. */
+function transcriptCardTitle(page: TranscriptPage, isDocument: boolean): string {
+  if (page.section) return page.section.heading;
+  const first = page.segments[0];
+  const last = page.segments[page.segments.length - 1];
+  if (!first || !last) return '';
+  if (isDocument) return formatSourcePosition(first.startMs, true);
+  return `${formatDuration(first.startMs / 1000)} – ${formatDuration(last.endMs / 1000)}`;
+}
+
 function segmentAtPosition(
   transcript: readonly TranscriptSegment[],
   positionMs: number,
@@ -269,6 +281,10 @@ export default function MaterialDetailScreen() {
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [importantOnly, setImportantOnly] = useState(false);
+  // 요약 and 대본 are read a card at a time (`card-pages.ts`).
+  const [transcriptCard, setTranscriptCard] = useState(0);
+  const [summaryCard, setSummaryCard] = useState(0);
+  const manualCardUntil = useRef(0);
   /**
    * Whether the 대본 shows the 요약 구간 headings. On by default: the breaks
    * are what makes a long transcript readable, and the chip is only offered
@@ -276,7 +292,6 @@ export default function MaterialDetailScreen() {
    */
   const [sectionsOn, setSectionsOn] = useState(true);
   /** Which way 요약 is being read. One screen is one material, so this is per material. */
-  const [summaryView, setSummaryView] = useState<SummaryView>('glance');
   /** Show only the 대본 lines that hold a painted sentence. */
   const [paintedOnly, setPaintedOnly] = useState(false);
   /** Whether the learner has waved the 대본's 형광펜 line away this visit. */
@@ -308,11 +323,6 @@ export default function MaterialDetailScreen() {
   const timelinePositionRef = useRef(seekPosition);
   const activeSegmentRef = useRef<string | null>(null);
   const rowLayouts = useRef(new Map<string, RowLayout>());
-  /** Where each 요약 구간 sits inside the 자세히 card, by its `startMs`. */
-  const outlineRowY = useRef(new Map<number, number>());
-  const outlineCardY = useRef(0);
-  /** The 구간 tapped in the 대본, until its row in 자세히 has been reached. */
-  const pendingSectionMs = useRef<number | null>(null);
   const panelY = useRef(0);
   const transcriptCardY = useRef(0);
   const scrollOffset = useRef(0);
@@ -403,6 +413,20 @@ export default function MaterialDetailScreen() {
     () => withSectionMarkers(visibleTranscript, sectionsOn ? outline : NO_OUTLINE),
     [outline, sectionsOn, visibleTranscript],
   );
+  const transcriptFiltered = Boolean(search.trim()) || importantOnly || transcriptPaintedOnly;
+  const transcriptPages = useMemo(
+    () =>
+      transcriptPagesFor(visibleTranscript, {
+        document: material?.source.kind === 'document',
+        filtered: transcriptFiltered,
+        outline,
+      }),
+    [material?.source.kind, outline, transcriptFiltered, visibleTranscript],
+  );
+  const transcriptPaged = transcriptPages.length > 1;
+  const transcriptCardIndex = Math.min(transcriptCard, Math.max(0, transcriptPages.length - 1));
+  const summaryCardCount = outline.length ? outline.length + 1 : 1;
+  const summaryCardIndex = Math.min(summaryCard, summaryCardCount - 1);
 
   useEffect(
     () => () => {
@@ -451,48 +475,77 @@ export default function MaterialDetailScreen() {
     scrollRef.current?.scrollTo({ y: Math.max(0, y), animated: true });
   }, []);
 
+  /** A new card starts at its top: bring the panel back up if it was read down. */
+  const showPanelTop = useCallback(() => {
+    if (scrollOffset.current > panelY.current) scrollTo(panelY.current - spacing.sm);
+  }, [scrollTo]);
+
+  const turnTranscriptCard = useCallback(
+    (next: number) => {
+      manualCardUntil.current = Date.now() + MANUAL_CARD_HOLD_MS;
+      setTranscriptCard(next);
+      showPanelTop();
+    },
+    [showPanelTop],
+  );
+
+  const turnSummaryCard = useCallback(
+    (next: number) => {
+      setSummaryCard(next);
+      showPanelTop();
+    },
+    [showPanelTop],
+  );
+
+  /** The panel's swipe turns a card first; past either end it changes tab. */
+  const swipeCard = useCallback(
+    (translationX: number) => {
+      if (tab === 'transcript' && transcriptPaged) {
+        const next = cardForSwipe(transcriptCardIndex, transcriptPages.length, translationX, TAB_SWIPE_THRESHOLD);
+        if (next !== null) {
+          turnTranscriptCard(next);
+          return true;
+        }
+      }
+      if (tab === 'summary' && summaryCardCount > 1) {
+        const next = cardForSwipe(summaryCardIndex, summaryCardCount, translationX, TAB_SWIPE_THRESHOLD);
+        if (next !== null) {
+          turnSummaryCard(next);
+          return true;
+        }
+      }
+      return false;
+    },
+    [
+      summaryCardCount,
+      summaryCardIndex,
+      tab,
+      transcriptCardIndex,
+      transcriptPaged,
+      transcriptPages.length,
+      turnSummaryCard,
+      turnTranscriptCard,
+    ],
+  );
+
   /**
    * A 구간 tapped in the 대본 opens 요약 자세히 and brings that section to the
    * top of the screen. The tap only records which one to look for: switching
    * tabs remounts the panel, so the scroll waits for the section to report
    * where it landed.
    */
-  const openSection = useCallback((section: OutlineSection) => {
-    pendingSectionMs.current = section.startMs;
-    setSummaryView('detail');
-    setTab('summary');
-  }, []);
-
-  /** Runs from either half of the outline's layout, whichever lands last. */
-  const focusPendingSection = useCallback(() => {
-    const startMs = pendingSectionMs.current;
-    if (startMs === null) return;
-    const y = outlineRowY.current.get(startMs);
-    if (y === undefined) return;
-    // Wait a frame so the card and panel offsets from the same layout pass
-    // have landed too.
-    requestAnimationFrame(() => {
-      if (pendingSectionMs.current !== startMs) return;
-      pendingSectionMs.current = null;
-      scrollTo(panelY.current + outlineCardY.current + y - spacing.md);
-    });
-  }, [scrollTo]);
-
-  const handleOutlineLayout = useCallback(
-    (y: number) => {
-      outlineCardY.current = y;
-      focusPendingSection();
+  const openSection = useCallback(
+    (section: OutlineSection) => {
+      const index = outline.findIndex(
+        (candidate) => candidate.startMs === section.startMs && candidate.heading === section.heading,
+      );
+      // Card 0 is 한눈에 보기; the 구간 follow it in order.
+      setSummaryCard(index >= 0 ? index + 1 : 0);
+      setTab('summary');
     },
-    [focusPendingSection],
+    [outline],
   );
 
-  const handleOutlineSectionLayout = useCallback(
-    (startMs: number, y: number) => {
-      outlineRowY.current.set(startMs, y);
-      focusPendingSection();
-    },
-    [focusPendingSection],
-  );
 
   /**
    * Brings the active line just under the top edge of the viewport unless it
@@ -534,16 +587,32 @@ export default function MaterialDetailScreen() {
   const swipeGesture = useTabSwipe<DetailTab>({
     enabled: tab !== 'cards',
     onChange: setTab,
+    onSwipe: swipeCard,
     tabs: swipeTabs,
     value: tab,
   });
 
-  // Keep the active line in view while the lecture plays.
+  // Rows on another card are unmounted; their old positions must not be followed.
+  useEffect(() => {
+    rowLayouts.current.clear();
+  }, [transcriptCardIndex]);
+
+  // Keep the active line in view while the lecture plays — turning to its card
+  // first, unless the reader just turned to another one themselves.
   useEffect(() => {
     if (tab !== 'transcript' || !activeSegmentId) return;
+    if (transcriptPaged) {
+      const index = pageIndexOfSegment(transcriptPages, activeSegmentId);
+      if (index < 0) return;
+      if (index !== transcriptCardIndex) {
+        if (Date.now() >= manualCardUntil.current) setTranscriptCard(index);
+        // The row reports its layout once its card mounts, and is followed then.
+        return;
+      }
+    }
     followedSegmentId.current = null;
     followSegment(activeSegmentId);
-  }, [activeSegmentId, followSegment, tab]);
+  }, [activeSegmentId, followSegment, tab, transcriptCardIndex, transcriptPaged, transcriptPages]);
 
   /** Rows report layout after the effect above; the active one follows late. */
   const handleRowLayout = useCallback(
@@ -630,6 +699,12 @@ export default function MaterialDetailScreen() {
   const pageCount = isDocument ? material.transcript.length : 0;
   const hasPageSummaries =
     isDocument && material.transcript.some((segment) => segment.summary);
+  const transcriptPage = transcriptPages[transcriptCardIndex];
+  /** Paged: this card's lines. Filtered or a single card: the whole list. */
+  const shownTranscriptRows: TranscriptRow[] =
+    transcriptPaged && transcriptPage
+      ? transcriptPage.segments.map((segment) => ({ kind: 'segment', key: segment.id, segment }))
+      : transcriptRows;
 
   const jumpTo = (timestampMs: number) => {
     if (youtubeId) {
@@ -640,6 +715,11 @@ export default function MaterialDetailScreen() {
       setPlayerKey((value) => value + 1);
     }
     handlePositionChange(timestampMs);
+    // An explicit seek always shows its card, even right after a manual turn.
+    manualCardUntil.current = 0;
+    const target = segmentAtPosition(material.transcript, timestampMs);
+    const index = target ? pageIndexOfSegment(transcriptPages, target.id) : -1;
+    if (index >= 0) setTranscriptCard(index);
     void Haptics.selectionAsync();
   };
 
@@ -914,14 +994,12 @@ export default function MaterialDetailScreen() {
             onCheckedPointsChange={(checkedPoints) =>
               updateStudyNote(material.id, { checkedPoints })
             }
-            onOutlineLayout={handleOutlineLayout}
+            card={summaryCardIndex}
+            onCardChange={turnSummaryCard}
             onPaintSentence={paintSentence}
-            onSectionLayout={handleOutlineSectionLayout}
-            onSummaryViewChange={setSummaryView}
             painted={painted}
             positionMs={timelinePositionMs}
             split={wide}
-            summaryView={summaryView}
           />
         ) : null}
 
@@ -981,8 +1059,9 @@ export default function MaterialDetailScreen() {
                 selected={importantOnly}
               />
               {/* Only offered when the server wrote an outline: with nothing
-                  to place, the chip would be a control that does nothing. */}
-              {outline.length ? (
+                  to place, the chip would be a control that does nothing.
+                  Cards are already one 구간 each, so it waits for a filter. */}
+              {outline.length && !transcriptPaged ? (
                 <Chip
                   accessibilityHint={
                     sectionsOn
@@ -1041,6 +1120,15 @@ export default function MaterialDetailScreen() {
                 {t(TRANSCRIPT_HINT)}
               </HighlightHint>
             )}
+            {transcriptPaged && transcriptPage ? (
+              <CardPagerHeader
+                count={transcriptPages.length}
+                index={transcriptCardIndex}
+                onChange={turnTranscriptCard}
+                testID="transcript-pager"
+                title={transcriptCardTitle(transcriptPage, isDocument)}
+              />
+            ) : null}
             {visibleTranscript.length ? (
               <View
                 onLayout={(event: LayoutChangeEvent) => {
@@ -1048,9 +1136,10 @@ export default function MaterialDetailScreen() {
                 }}
               >
               <Card padding={false}>
-                {transcriptRows.map((row, index) => {
+                <AnimatedReveal distance={6} key={transcriptPaged ? transcriptCardIndex : 'all'}>
+                {shownTranscriptRows.map((row, index) => {
                   const divider =
-                    index < transcriptRows.length - 1 ? styles.rowDivider : null;
+                    index < shownTranscriptRows.length - 1 ? styles.rowDivider : null;
                   if (row.kind === 'section') {
                     return (
                       <TranscriptSectionMarker
@@ -1155,6 +1244,7 @@ export default function MaterialDetailScreen() {
                     </View>
                   );
                 })}
+                </AnimatedReveal>
               </Card>
               </View>
             ) : (
@@ -1286,14 +1376,12 @@ function SummaryPanel({
   jumpTo,
   material,
   onCheckedPointsChange,
-  onOutlineLayout,
+  card,
+  onCardChange,
   onPaintSentence,
-  onSectionLayout,
-  onSummaryViewChange,
   painted,
   positionMs,
   split,
-  summaryView,
 }: {
   /** The points the learner has checked off, from `studyNotes[materialId]`. */
   checkedPoints: readonly string[];
@@ -1302,12 +1390,10 @@ function SummaryPanel({
   jumpTo: (timestampMs: number) => void;
   material: StudyMaterial;
   onCheckedPointsChange: (checkedPoints: string[]) => void;
-  /** Where the 자세히 card starts inside the panel. */
-  onOutlineLayout: (y: number) => void;
+  /** Which card is open: 0 is 한눈에 보기, then one per 구간 of the outline. */
+  card: number;
+  onCardChange: (card: number) => void;
   onPaintSentence: (sentence: string) => void;
-  /** Where one 구간 sits inside that card, by its `startMs`. */
-  onSectionLayout: (startMs: number, y: number) => void;
-  onSummaryViewChange: (view: SummaryView) => void;
   /** Every stroke of this 마인드팩, in reading order. */
   painted: readonly SentenceSource[];
   positionMs: number;
@@ -1317,7 +1403,6 @@ function SummaryPanel({
    * here: three tiles need more width than the side column has.
    */
   split: boolean;
-  summaryView: SummaryView;
 }) {
   const t = useT();
   const note = material.note;
@@ -1328,40 +1413,14 @@ function SummaryPanel({
   const outline = material.outline ?? NO_OUTLINE;
   // Older 마인드팩 were made before the server wrote outlines. With nothing to
   // switch to, the switch itself would be a dead control, so it stays away.
-  const showViewSwitch = outline.length > 0;
-  const view: SummaryView = showViewSwitch ? summaryView : 'glance';
+  // 한눈에 보기 is card 0; each 구간 of the outline is a card after it.
+  const paged = outline.length > 0;
+  const cardCount = paged ? outline.length + 1 : 1;
+  const section = card > 0 ? outline[card - 1] : undefined;
   const page = material.source.kind === 'document';
   const inlineKeyPoints = split ? [] : keyPoints;
 
-  /**
-   * How to read 요약, as chips rather than a segmented control.
-   *
-   * It used to be a second segmented control sitting directly under the four
-   * main tabs, and two identical pill strips stacked read as two rows of tabs:
-   * nothing said which one picked the screen and which one picked the view.
-   * The 대본 tab already puts its view options (중요만, 구간, 쪽 요약) in a chip
-   * row, so this follows the same rule — a segmented control chooses the
-   * panel, chips change what is inside it.
-   */
-  const controls = showViewSwitch ? (
-    <View style={styles.summaryControls} testID="summary-view-switch">
-      {summaryViewOptions.map((option) => (
-        <Chip
-          accessibilityHint={
-            option.value === 'detail'
-              ? t('구간별로 자세히 풀어 쓴 요약을 봐요.')
-              : t('핵심만 짧게 봐요.')
-          }
-          key={option.value}
-          label={t(option.label)}
-          onPress={() => onSummaryViewChange(option.value)}
-          selected={view === option.value}
-        />
-      ))}
-    </View>
-  ) : null;
-
-  /** Where the strokes come back, under whichever way 요약 is being read. */
+  /** Where the strokes come back, under whichever card is open. */
   const highlightList = (
     <HighlightList
       onClear={onPaintSentence}
@@ -1372,41 +1431,36 @@ function SummaryPanel({
     />
   );
 
-  if (view === 'detail') {
+  if (paged && section) {
     return (
       <View style={styles.panel}>
-        {controls}
-        <View
-          onLayout={(event: LayoutChangeEvent) => {
-            onOutlineLayout(event.nativeEvent.layout.y);
-          }}
+        <CardPager
+          count={cardCount}
+          index={card}
+          onChange={onCardChange}
+          testID="summary-pager"
+          title={t('자세히')}
         >
           <SummaryOutline
             highlights={highlights}
             onSeek={jumpTo}
-            onSectionLayout={onSectionLayout}
             onToggleHighlight={onPaintSentence}
             page={page}
-            sections={outline}
+            sections={[section]}
           />
-        </View>
+        </CardPager>
         {highlightList}
       </View>
     );
   }
 
-  // Text first (what the lecture said), then the strokes (once there are
-  // any), then the timeline and the marked moments. The badge, the review
-  // minutes and the three number tiles went in the 2026-09-26 declutter.
-  return (
-    <View style={styles.panel}>
-      {controls}
-      {summary || inlineKeyPoints.length ? (
+  const glance =
+    summary || inlineKeyPoints.length ? (
         <Card style={styles.summaryCard}>
           {summary ? (
             <View style={styles.summaryBlock}>
-              {/* With the switch above, its 한눈에 보기 segment is the title. */}
-              {showViewSwitch ? null : (
+              {/* With the cards above, the pager's title names this one. */}
+              {paged ? null : (
                 <AppText accessibilityRole="header" variant="heading">
                   {t('한눈에 보기')}
                 </AppText>
@@ -1442,6 +1496,25 @@ function SummaryPanel({
           icon={Sparkles}
           title={t('요약이 없어요')}
         />
+      );
+
+  // Text first (what the lecture said), then the strokes (once there are
+  // any), then the timeline and the marked moments. The badge, the review
+  // minutes and the three number tiles went in the 2026-09-26 declutter.
+  return (
+    <View style={styles.panel}>
+      {paged ? (
+        <CardPager
+          count={cardCount}
+          index={0}
+          onChange={onCardChange}
+          testID="summary-pager"
+          title={t('한눈에 보기')}
+        >
+          {glance}
+        </CardPager>
+      ) : (
+        glance
       )}
 
       {highlightList}
@@ -1612,13 +1685,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   panel: { gap: spacing.md },
-  /** The 요약 switch and the 형광펜 chips: two tappables sit 12 apart. */
-  summaryControls: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
   summaryCard: { gap: spacing.md },
   summaryBlock: { gap: spacing.sm },
   summaryBlockDivided: {
