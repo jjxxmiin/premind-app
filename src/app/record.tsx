@@ -1336,6 +1336,14 @@ export default function RecordScreen() {
               </View>
             </AnimatedReveal>
 
+            <Button
+              disabled={isStarting}
+              onPress={() => router.push('/record-transcript')}
+              variant="secondary"
+            >
+              {t('실시간 대본을 보며 녹음하기')}
+            </Button>
+
             <AnimatedReveal delay={45}>
               <SetupOptions
                 disabled={isStarting}

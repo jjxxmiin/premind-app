@@ -4,15 +4,18 @@ import {
   Modal as NativeModal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { decorative } from '@/lib/a11y';
 import { colors, radii, shadows, spacing } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Button, type ButtonVariant } from './Button';
+import { useReducedMotion } from './Motion';
 
 export interface DialogAction {
   label: string;
@@ -52,10 +55,15 @@ export function Dialog({
   testID,
 }: DialogProps) {
   const close = onRequestClose ?? cancel?.onPress;
+  const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
 
   return (
     <NativeModal
-      animationType="fade"
+      accessibilityLabel={Platform.OS === 'web' ? title : undefined}
+      // RN Web retains the modal focus trap until its exit animation ends.
+      animationType={reducedMotion || (Platform.OS === 'web' && !visible) ? 'none' : 'fade'}
+      navigationBarTranslucent
       onRequestClose={close}
       presentationStyle="overFullScreen"
       statusBarTranslucent
@@ -65,7 +73,13 @@ export function Dialog({
       {/* Edge-to-edge Android never resizes the window, so both platforms pad. */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'web' ? undefined : 'padding'}
-        style={styles.overlay}
+        style={[
+          styles.overlay,
+          {
+            paddingTop: Math.max(insets.top, spacing.xl),
+            paddingBottom: Math.max(insets.bottom, spacing.xl),
+          },
+        ]}
       >
         <Pressable {...decorative} onPress={close} style={styles.backdrop} />
         <View
@@ -75,39 +89,45 @@ export function Dialog({
           style={styles.card}
           testID={testID}
         >
-          <View style={styles.copy}>
-            <AppText accessibilityRole="header" align="center" variant="heading">
-              {title}
-            </AppText>
-            {description ? (
-              <AppText align="center" tone="muted" variant="meta">
-                {description}
+          <ScrollView
+            contentContainerStyle={styles.cardContent}
+            keyboardShouldPersistTaps="handled"
+            style={styles.scroller}
+          >
+            <View style={styles.copy}>
+              <AppText accessibilityRole="header" align="center" variant="heading">
+                {title}
               </AppText>
-            ) : null}
-          </View>
-          {children ? <View style={styles.body}>{children}</View> : null}
-          <View style={styles.actions}>
-            {cancel ? (
+              {description ? (
+                <AppText align="center" tone="muted" variant="meta">
+                  {description}
+                </AppText>
+              ) : null}
+            </View>
+            {children ? <View style={styles.body}>{children}</View> : null}
+            <View style={styles.actions}>
+              {cancel ? (
+                <Button
+                  disabled={cancel.disabled}
+                  loading={cancel.loading}
+                  onPress={cancel.onPress}
+                  style={styles.action}
+                  variant={cancel.variant ?? 'secondary'}
+                >
+                  {cancel.label}
+                </Button>
+              ) : null}
               <Button
-                disabled={cancel.disabled}
-                loading={cancel.loading}
-                onPress={cancel.onPress}
+                disabled={confirm.disabled}
+                loading={confirm.loading}
+                onPress={confirm.onPress}
                 style={styles.action}
-                variant={cancel.variant ?? 'secondary'}
+                variant={confirm.variant ?? 'primary'}
               >
-                {cancel.label}
+                {confirm.label}
               </Button>
-            ) : null}
-            <Button
-              disabled={confirm.disabled}
-              loading={confirm.loading}
-              onPress={confirm.onPress}
-              style={styles.action}
-              variant={confirm.variant ?? 'primary'}
-            >
-              {confirm.label}
-            </Button>
-          </View>
+            </View>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </NativeModal>
@@ -132,11 +152,21 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii.modal,
-    gap: spacing.lg,
+    flexShrink: 1,
+    maxHeight: '100%',
     maxWidth: 360,
-    padding: spacing.xl,
+    overflow: 'hidden',
     width: '100%',
     ...shadows.floating,
+  },
+  scroller: {
+    flexGrow: 0,
+    flexShrink: 1,
+    minHeight: 0,
+  },
+  cardContent: {
+    gap: spacing.lg,
+    padding: spacing.xl,
   },
   copy: {
     alignItems: 'center',

@@ -84,10 +84,10 @@ export function priceCopy(
         billingLine: `You're charged ${enAmount} every month.`,
       };
     }
-    const enPerMonth = storePerMonth ?? fmtWon(yearlyPerMonth(price), 'en');
+    const enPerMonth = storePerMonth ?? (storePrice ? null : fmtWon(yearlyPerMonth(price), 'en'));
     return {
       headline: `${enAmount} / year`,
-      subline: `About ${enPerMonth} a month, 2 months free`,
+      subline: enPerMonth ? `About ${enPerMonth} a month, billed yearly` : null,
       billingLine: `You're charged ${enAmount} once a year.`,
     };
   }
@@ -99,10 +99,10 @@ export function priceCopy(
       billingLine: `매달 ${amount}씩 결제돼요.`,
     };
   }
-  const perMonth = storePerMonth ?? formatKrw(yearlyPerMonth(price));
+  const perMonth = storePerMonth ?? (storePrice ? null : formatKrw(yearlyPerMonth(price)));
   return {
     headline: `연 ${amount}`,
-    subline: `한 달에 ${perMonth} 꼴, 2개월 무료`,
+    subline: perMonth ? `월 환산 ${perMonth}, 연간 결제` : null,
     billingLine: `1년마다 ${amount}씩 한 번에 결제돼요.`,
   };
 }

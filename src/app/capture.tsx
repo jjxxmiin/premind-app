@@ -6,7 +6,6 @@ import {
   FileText,
   FileVideo2,
   FolderOpen,
-  ShieldCheck,
   Upload,
 } from 'lucide-react-native';
 import { useState } from 'react';
@@ -238,8 +237,8 @@ export default function CaptureScreen() {
           <AnimatedReveal delay={30}>
             <View style={styles.intro}>
               <AppText variant="pageTitle">{t('영상, 음성, 문서를 골라요')}</AppText>
-              <AppText tone="muted" variant="meta">
-                {t('원본은 기기에 먼저 저장돼요')}
+              <AppText tone="muted" variant="body">
+                {t('영상, 음성은 1분에 1분, 문서는 1쪽에 1분을 써요')}
               </AppText>
             </View>
           </AnimatedReveal>
@@ -372,25 +371,13 @@ export default function CaptureScreen() {
                   </View>
                 ))}
               </View>
-              <View style={styles.formatNotes}>
-                <AppText tone="muted" variant="meta">
-                  {t(
-                    '문서는 쪽 단위로 읽어요. 소리가 없으니 재생 대신 쪽 번호가 붙어요. 스캔한 이미지 PDF는 글자가 없어서 읽지 못해요.',
-                  )}
-                </AppText>
-                <AppText tone="muted" variant="meta">
-                  {t('일부 파일은 기기에 따라 재생이 안 될 수 있어요.')}
-                </AppText>
-              </View>
+              {/* One line: the only rule that makes an upload fail. */}
+              <AppText style={styles.formatNotes} tone="muted" variant="body">
+                {t('스캔한 이미지 PDF는 읽지 못해요')}
+              </AppText>
             </View>
           </AnimatedReveal>
 
-          <View style={styles.localNote}>
-            <ShieldCheck {...decorative} color={colors.textFaint} size={iconSizes.inline} strokeWidth={1.9} />
-            <AppText style={styles.flex} tone="muted" variant="meta">
-              {t('원본은 기기에 먼저 저장돼요. 중간에 멈춰도 원본은 남아 있어요.')}
-            </AppText>
-          </View>
         </DeskCard>
       </ScrollView>
 
@@ -679,11 +666,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSoft,
     borderRadius: radii.alert,
     padding: spacing.md,
-  },
-  localNote: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: spacing.sm,
   },
   bottomBar: {
     backgroundColor: colors.background,

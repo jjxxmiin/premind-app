@@ -17,7 +17,7 @@ const mockAppStoreState = {
   projects: [],
   renameMaterial: jest.fn(),
   requestLens: jest.fn(),
-  savedMaterialIds: [],
+  savedMaterialIds: [] as string[],
   selectProject: jest.fn(),
   settings: { homeChecklistDismissed: false },
   shareRooms: [],
@@ -54,6 +54,9 @@ jest.mock('@/components/AppHeader', () => ({
   AppHeader: ({ right }: { right?: ReactNode }) => <>{right}</>,
 }));
 jest.mock('@/components/MediaArtwork', () => ({ MediaArtwork: () => null }));
+jest.mock('@/components/home/MaterialList', () => ({
+  MaterialList: () => <button data-testid="material-page-action" type="button">자료 열기</button>,
+}));
 jest.mock('@/components/ui', () => {
   const Passthrough = ({ children }: PropsWithChildren) => <>{children}</>;
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
@@ -156,6 +159,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   mockNewProjectParam = undefined;
+  mockAppStoreState.savedMaterialIds = [];
   mockReplace.mockClear();
 });
 
@@ -167,6 +171,25 @@ afterEach(() => {
 });
 
 describe('Library newProject navigation request', () => {
+  it('keeps offscreen folder actions inert and exposes the selected folder', () => {
+    mockAppStoreState.savedMaterialIds = ['saved-material'];
+    const library = renderLibrary();
+    const actions = library.querySelectorAll('[data-testid="material-page-action"]');
+
+    expect(actions).toHaveLength(2);
+    const [allPage, savedPage] = Array.from(actions);
+    if (!allPage || !savedPage) throw new Error('Both folder pages must be rendered');
+    expect(allPage.closest('[inert]')).toBeNull();
+    expect(savedPage.closest('[inert]')).not.toBeNull();
+    expect(savedPage.closest('[aria-hidden="true"]')).not.toBeNull();
+
+    act(() => library.querySelector<HTMLElement>('[aria-label="저장함 자료"]')?.click());
+
+    expect(allPage.closest('[inert]')).not.toBeNull();
+    expect(savedPage.closest('[inert]')).toBeNull();
+    expect(savedPage.closest('[aria-hidden="true"]')).toBeNull();
+  });
+
   it('opens once, replaces the request URL, and does not reopen for the same token', () => {
     mockNewProjectParam = 'request-a';
     renderLibrary();

@@ -1,19 +1,14 @@
 import { memo, useCallback, type ReactElement } from 'react';
 import { FlatList, StyleSheet, View, type ListRenderItem } from 'react-native';
 
-import { MediaCard } from '@/components/ui';
-import {
-  formatBytes,
-  formatMaterialLength,
-  formatRelativeDate,
-} from '@/lib/format';
+import { Card } from '@/components/ui';
 import { useT } from '@/lib/i18n';
 import { colors, radii, spacing } from '@/theme/tokens';
 import type { Project, StudyMaterial } from '@/types';
 
 import { MaterialCard } from './MaterialCard';
 import { MaterialRow } from './MaterialRow';
-import { libraryStatusPresentation, youtubeThumbnail, type LibraryView } from './library';
+import type { LibraryView } from './library';
 
 export interface MaterialListProps {
   materials: readonly StudyMaterial[];
@@ -81,46 +76,12 @@ export const MaterialList = memo(function MaterialList({
         );
       }
 
-      if (view === 'card') {
-        const status = libraryStatusPresentation(item, isRunning, t);
-        const thumbnail = youtubeThumbnail(item);
-        const card = (
-          <MediaCard
-            duration={formatMaterialLength(
-              item.source.kind,
-              item.source.durationMs,
-              item.transcript.length,
-            )}
-            kind={item.source.kind}
-            metadata={
-              thumbnail
-                ? `${formatRelativeDate(item.updatedAt)}, ${t('유튜브')}`
-                : `${formatRelativeDate(item.updatedAt)}, ${formatBytes(item.source.sizeBytes)}`
-            }
-            moreLabel={t('{title} 메뉴', { title: item.title })}
-            onPress={() => onOpen(item)}
-            onMorePress={() => onMore(item)}
-            progress={isRunning ? item.progress * 100 : undefined}
-            progressLabel={status.detail}
-            statusLabel={status.label}
-            statusTone={status.tone}
-            style={styles.fullCard}
-            subtitle={projectTitle}
-            thumbnailBackgroundColor={colors.backgroundSoft}
-            thumbnailSource={thumbnail ? { uri: thumbnail } : undefined}
-            title={item.title}
-          />
-        );
-        return (
-          <View style={[styles.cardCell, { paddingHorizontal: gutter }]}>{card}</View>
-        );
-      }
-
       const last = index === materials.length - 1;
+      const compactCard = view === 'card';
       const row = (
         <MaterialRow
-          divider={!last}
-          gutter={grouped ? spacing.gutter : gutter}
+          divider={!compactCard && !last}
+          gutter={compactCard ? spacing.md : grouped ? spacing.gutter : gutter}
           isEvaluating={isEvaluating}
           isRunning={isRunning}
           material={item}
@@ -129,7 +90,14 @@ export const MaterialList = memo(function MaterialList({
           projectTitle={projectTitle}
         />
       );
-      if (!grouped) return row;
+      if (compactCard) {
+        return (
+          <View style={[styles.cardCell, { paddingHorizontal: gutter }]}>
+            <Card padding={false}>{row}</Card>
+          </View>
+        );
+      }
+      if (!grouped || columns === 1) return row;
       return (
         <View
           style={[
@@ -145,6 +113,7 @@ export const MaterialList = memo(function MaterialList({
     },
     [
       cardWidth,
+      columns,
       evaluatingMaterialIds,
       grid,
       grouped,

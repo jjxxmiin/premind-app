@@ -1,22 +1,23 @@
 # Google Play 등록용 이미지
 
-2026-10-01 갱신. 앱의 새 연필 쥔 P 심볼과 현재 홈, 복습, 추가, 연습, MY 화면을 기준으로 만들었어요.
+2026-10-03 등록정보와 이미지 생성 스크립트 갱신. 메시지는 "강의는 요약으로. 복습은 문제로."이며, 실제 자료 정리와 복습 흐름을 먼저 보여줘요.
 이 폴더의 변경과 AAB 빌드만으로 Play 등록정보가 바뀌지는 않아요. 콘솔에 이미지와 새 릴리스를 각각 제출해야 해요.
+이미지가 실제로 생성된 시각과 앱 버전은 `assets-manifest.json`에서 확인해요. 스크립트 수정 시각만으로 이미지가 갱신됐다고 판단하지 않아요.
 
 ## 제출할 파일
 
 | 파일 | 크기 | 용도 |
 | --- | --- | --- |
 | `app-icon-512.png` | 512×512 | Play 등록 아이콘. `assets/brand/app-icon.png`를 그대로 축소해요. |
-| `feature-graphic.png` | 1024×500 | 새 심볼, 워드마크와 제품 설명을 넣은 그래픽 이미지 |
-| `screenshots/framed/01-home.png` | 1080×1920 | 내 자료를 한곳에 |
-| `screenshots/framed/02-material-summary.png` | 1080×1920 | 핵심만 담은 요약 |
-| `screenshots/framed/03-material-mindmap.png` | 1080×1920 | 한눈에 보는 마인드맵 |
-| `screenshots/framed/04-chat.png` | 1080×1920 | 내 자료를 근거로 질문 |
-| `screenshots/framed/05-mastery.png` | 1080×1920 | 다시 볼 곳을 찾아 복습 |
-| `screenshots/framed/06-lens.png` | 1080×1920 | 발표를 연습하고 평가 |
-| `screenshots/framed/07-report.png` | 1080×1920 | 근거와 함께 보는 피드백 |
-| `screenshots/framed/09-interview.png` | 1080×1920 | 면접도 차근차근 연습 |
+| `feature-graphic.png` | 1024×500 | 워드마크, 핵심 가치 문구, 실제 요약 화면 |
+| `screenshots/framed/01-home.png` | 1080×1920 | 쌓여 있던 강의를 복습할 자료로 |
+| `screenshots/framed/02-material-summary.png` | 1080×1920 | 긴 강의도 핵심부터 읽어요 |
+| `screenshots/framed/03-material-mindmap.png` | 1080×1920 | 개념 사이의 연결이 한눈에 보여요 |
+| `screenshots/framed/04-chat.png` | 1080×1920 | 헷갈릴 때는 내 자료에 물어봐요 |
+| `screenshots/framed/05-mastery.png` | 1080×1920 | 읽고 끝내지 말고 문제로 확인해요 |
+| `screenshots/framed/06-lens.png` | 1080×1920 | 발표하기 전에 한 번 더 연습해요 |
+| `screenshots/framed/07-report.png` | 1080×1920 | 무엇을 고칠지 근거와 함께 봐요 |
+| `screenshots/framed/09-interview.png` | 1080×1920 | 면접 답변도 말하면서 다듬어요 |
 
 위 8장을 순서대로 사용해요. 프레임 없는 원본은 `screenshots/`에 있어요.
 `08-record.png`도 현재 화면으로 갱신하지만, 브라우저 전용 녹음 안내가 있어 **Play 제출 목록에서 제외**했어요.
@@ -42,16 +43,14 @@ node scripts/refresh-store-assets.mjs
 다른 로컬 포트는 `PREMIND_STORE_PREVIEW_URL`로 지정할 수 있어요.
 스크립트는 새 브라우저 프로필에서 데모에 로그인하고 API 요청을 차단해요.
 앱 화면을 실제로 캡처하며, 로고를 새로 그리지 않고 원본을 사용해요.
+흰 바탕, 잉크색 글자, 주황색 포인트와 Pretendard는 앱 디자인 시스템을 따라요.
+제출 전 8장 모두를 열어 제목 줄바꿈, 하단 잘림, 실제 기능과 문구의 일치를 확인해요.
 
 ## Android 업데이트
 
-이번 소스 버전은 `1.0.3`, Android `versionCode 6`예요.
-서명된 제출 파일은 `dist/android/premind-1.0.3-release.aab`, 설치 확인용은 같은 폴더의 `.apk`예요.
-이 버전은 구글/카카오 로그인 버튼을 실제 텍스트와 SVG 아이콘을 사용하는 공통 컴포넌트로 교체했어요.
-기존 `1.0.2` AAB에는 이 수정이 없으므로 새 AAB를 제출해야 해요.
-Play Console에서 현재 사용된 versionCode를 확인하고, 6이 이미 사용됐다면 더 큰 값으로 다시 빌드해야 해요.
-스토어 아이콘과 스크린샷은 기본 스토어 등록정보에 별도로 올려야 해요.
-제출용 8장에는 로그인 화면이 없어, 이번 버튼 수정 때문에 이미지를 다시 만들 필요는 없어요.
-`premind-1.0.3-play-assets.zip`은 기존 최신 이미지에 이 버전의 안내를 함께 묶은 파일이에요.
-이미 새 아이콘과 이미지를 등록했다면 재업로드는 필요 없고, 아직 옛 이미지라면 이 묶음으로 교체하세요.
+앱 버전과 Android `versionCode`는 `app.json`을 기준으로 확인해요.
+Play Console에서 이미 사용한 값보다 큰 `versionCode`로 서명된 AAB를 제출해야 해요.
+화면 수정과 아이콘 변경을 포함한 빌드를 확인한 뒤 이 스크립트로 이미지를 다시 만들어요.
+스토어 아이콘, 그래픽 이미지, 스크린샷 8장과 `listing-ko.md`의 설명은 기본 스토어 등록정보에 별도로 반영해요.
+이미지의 캡처 버전과 제출할 앱의 화면이 일치하는지 확인하고, 이전 버전의 이미지 묶음을 새 등록정보로 올리지 않아요.
 Play 업로드 인증과 실제 출시 상태는 로컬 빌드 성공만으로 확인할 수 없어요.

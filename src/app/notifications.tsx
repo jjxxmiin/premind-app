@@ -11,6 +11,8 @@ import {
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
+import { libraryStatusPresentation } from '@/components/home/library';
+import type { StatusTone } from '@/components/ui/Chip';
 import {
   AppText,
   Button,
@@ -28,10 +30,10 @@ import { useAppStore } from '@/state/app-store';
 import { colors, iconSizes, radii, sizes, spacing } from '@/theme/tokens';
 import type { StudyMaterial } from '@/types';
 
-function presentation(material: StudyMaterial, t: T): {
+function presentation(material: StudyMaterial, isRunning: boolean, t: T): {
   icon: LucideIcon;
   label: string;
-  tone: 'positive' | 'negative' | 'brand';
+  tone: StatusTone;
   title: string;
   description: string;
 } {
@@ -53,18 +55,27 @@ function presentation(material: StudyMaterial, t: T): {
       description: t(material.lastError ?? '원본은 그대로 있어요. 눌러서 다시 시도해 주세요.'),
     };
   }
+  const status = libraryStatusPresentation(material, isRunning, t);
   return {
     icon: Headphones,
-    label: t('진행 중'),
-    tone: 'brand',
-    title: t('마인드팩을 만들고 있어요'),
-    description: t(material.progressLabel),
+    label: status.label,
+    tone: status.tone,
+    title: t(
+      material.status === 'imported'
+        ? '원본을 저장했어요'
+        : !isRunning
+          ? '마인드팩 만들기를 이어가세요'
+          : material.status === 'queued'
+            ? '마인드팩을 준비하고 있어요'
+            : '마인드팩을 만들고 있어요',
+    ),
+    description: status.detail,
   };
 }
 
 export default function NotificationsScreen() {
   const t = useT();
-  const { materials, settings } = useAppStore();
+  const { materials, processingMaterialIds, settings } = useAppStore();
   const notifications = [...materials]
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
     .slice(0, 20);
@@ -133,7 +144,7 @@ export default function NotificationsScreen() {
             </AppText>
             <Card padding={false}>
               {notifications.map((material, index) => {
-                const item = presentation(material, t);
+                const item = presentation(material, processingMaterialIds.includes(material.id), t);
                 const Icon = item.icon;
                 const last = index === notifications.length - 1;
                 return (

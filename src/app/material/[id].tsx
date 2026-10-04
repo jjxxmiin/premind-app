@@ -498,8 +498,8 @@ export default function MaterialDetailScreen() {
    * Brings the active line just under the top edge of the viewport unless it
    * is already in view or the reader has just scrolled on their own. Returns
    * whether the row's layout was known; callers retry from `onLayout` when it
-   * was not. The tab row scrolls with the content, so nothing is pinned above
-   * the line it lands on.
+   * was not. The player and tab row are pinned above the scroll view, so the
+   * viewport's top edge is the panel's.
    */
   const followSegment = useCallback(
     (segmentId: string) => {
@@ -783,6 +783,16 @@ export default function MaterialDetailScreen() {
     </Button>
   ) : null;
 
+  const detailTabs = (
+    <View style={styles.tabsBlock}>
+      <SegmentedControl<DetailTab>
+        onChange={setTab}
+        options={tabOptions.map((option) => ({ ...option, label: t(option.label) }))}
+        value={tab}
+      />
+    </View>
+  );
+
   return (
     <Screen fullBleed={wide} padded={false}>
       <View style={wide ? styles.wideFrame : styles.fill}>
@@ -806,6 +816,39 @@ export default function MaterialDetailScreen() {
       />
 
       <View style={wide ? styles.columns : styles.fill}>
+      <View style={styles.mainColumn}>
+      {/* A video or recording stays pinned while 요약, 대본 and the rest
+          scroll underneath, so the reader never loses the player. */}
+      {isDocument ? null : (
+        <View style={styles.pinnedTop}>
+          <View style={[styles.block, styles.playerBlock]}>
+            <AnimatedReveal>
+              {youtubeId ? (
+                <YouTubePlayer
+                  durationMs={material.source.durationMs}
+                  initialPositionMs={seekPosition}
+                  onPositionChange={handlePositionChange}
+                  ref={youtubeRef}
+                  title={material.title}
+                  videoId={youtubeId}
+                />
+              ) : (
+                <StudyPlayer
+                  durationMs={material.source.durationMs}
+                  fallbackSource={fallbackSource}
+                  initialPositionMs={seekPosition}
+                  key={playerKey}
+                  kind={material.source.kind}
+                  onPositionChange={handlePositionChange}
+                  title={material.title}
+                  uri={material.source.uri}
+                />
+              )}
+            </AnimatedReveal>
+          </View>
+          {detailTabs}
+        </View>
+      )}
       <ScrollView
         contentContainerStyle={[styles.content, wide ? styles.contentWide : null]}
         keyboardShouldPersistTaps="handled"
@@ -822,64 +865,33 @@ export default function MaterialDetailScreen() {
         {/* A document has nothing to play, so the player block becomes the
             pages themselves: swipe them, tap one to open it in the 대본. */}
         {isDocument ? (
-          <View style={[styles.block, styles.playerBlock]}>
-            <AnimatedReveal>
-              {pageCount > 0 ? (
-                <DocumentPages
-                  onOpenPage={setViewerPage}
-                  pageImage={pageImage}
-                  segments={material.transcript}
-                />
-              ) : (
-                <Card style={styles.documentCard} variant="soft">
-                  <FileText
-                    {...decorative}
-                    color={colors.textMuted}
-                    size={iconSizes.section}
-                    strokeWidth={1.9}
+          <>
+            <View style={[styles.block, styles.playerBlock]}>
+              <AnimatedReveal>
+                {pageCount > 0 ? (
+                  <DocumentPages
+                    onOpenPage={setViewerPage}
+                    pageImage={pageImage}
+                    segments={material.transcript}
                   />
-                  <AppText style={styles.flex} tone="muted" variant="meta">
-                    {t('올린 문서를 읽었어요.')}
-                  </AppText>
-                </Card>
-              )}
-            </AnimatedReveal>
-          </View>
-        ) : (
-        <View style={[styles.block, styles.playerBlock]}>
-          <AnimatedReveal>
-            {youtubeId ? (
-              <YouTubePlayer
-                durationMs={material.source.durationMs}
-                initialPositionMs={seekPosition}
-                onPositionChange={handlePositionChange}
-                ref={youtubeRef}
-                title={material.title}
-                videoId={youtubeId}
-              />
-            ) : (
-              <StudyPlayer
-                durationMs={material.source.durationMs}
-                fallbackSource={fallbackSource}
-                initialPositionMs={seekPosition}
-                key={playerKey}
-                kind={material.source.kind}
-                onPositionChange={handlePositionChange}
-                title={material.title}
-                uri={material.source.uri}
-              />
-            )}
-          </AnimatedReveal>
-        </View>
-        )}
-
-        <View style={styles.tabsBlock}>
-          <SegmentedControl<DetailTab>
-            onChange={setTab}
-            options={tabOptions.map((option) => ({ ...option, label: t(option.label) }))}
-            value={tab}
-          />
-        </View>
+                ) : (
+                  <Card style={styles.documentCard} variant="soft">
+                    <FileText
+                      {...decorative}
+                      color={colors.textMuted}
+                      size={iconSizes.section}
+                      strokeWidth={1.9}
+                    />
+                    <AppText style={styles.flex} tone="muted" variant="meta">
+                      {t('올린 문서를 읽었어요.')}
+                    </AppText>
+                  </Card>
+                )}
+              </AnimatedReveal>
+            </View>
+          {detailTabs}
+          </>
+        ) : null}
 
         <View
           onLayout={(event: LayoutChangeEvent) => {
@@ -1176,6 +1188,7 @@ export default function MaterialDetailScreen() {
         </AppText>
         </View>
       </ScrollView>
+      </View>
 
       {wide ? (
         <ScrollView
@@ -1536,6 +1549,9 @@ const styles = StyleSheet.create({
    * unreachable beneath the bottom bar.
    */
   scroll: { flex: 1, minHeight: 0 },
+  mainColumn: { flex: 1, minHeight: 0, minWidth: 0 },
+  /** Player and tabs above the scroll view; only the panel below them moves. */
+  pinnedTop: { backgroundColor: colors.background },
   /** The last row clears the bottom bar with room to spare (32 + 24). */
   content: {
     paddingBottom: spacing.xxl + spacing.xl,
@@ -1570,7 +1586,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   playerBlock: { paddingBottom: spacing.md + spacing.xs, paddingTop: spacing.sm },
-  /** Scrolls with the content; a pinned header on Android costs more than it gives. */
+  /** Pinned under the player for media; scrolls with the pages for a document. */
   tabsBlock: {
     backgroundColor: colors.background,
     paddingBottom: spacing.md,

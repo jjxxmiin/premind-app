@@ -3,7 +3,7 @@ import { ChevronRight } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Surface } from '@/components/speak/SpeakKit';
-import { AppText } from '@/components/ui';
+import { AppText, Button } from '@/components/ui';
 import type { InterviewAllowance } from '@/features/interview/interview-api';
 import { decorative } from '@/lib/a11y';
 import { useT } from '@/lib/i18n';
@@ -14,7 +14,7 @@ import { colors, iconSizes, spacing } from '@/theme/tokens';
  * 결제)으로 보낸다. 면접은 PREMIND 학생 요금제의 한 줄이다.
  * 2026-09-26 덜어내기: 흰 카드에 한 문장. 무료면 카드가 요금제 화면을 연다.
  */
-export function AllowanceCard({ allowance, demo = false }: { allowance: InterviewAllowance | null; demo?: boolean }) {
+export function AllowanceCard({ allowance, demo = false, compact = false }: { allowance: InterviewAllowance | null; demo?: boolean; compact?: boolean }) {
   const t = useT();
   const standard = allowance?.plan === 'standard';
   const left = allowance ? (allowance.ai.freeTrial ? 1 : Math.max(0, allowance.ai.limit - allowance.ai.used)) : null;
@@ -27,6 +27,11 @@ export function AllowanceCard({ allowance, demo = false }: { allowance: Intervie
       : standard
         ? t('이번 달 AI 피드백 {n}회 남았어요', { n: left })
         : t('AI 피드백 무료 체험을 썼어요');
+  if (compact) {
+    return standard || demo
+      ? <AppText tone="muted" variant="meta">{headline}</AppText>
+      : <Button accessibilityHint={t('요금제 보기')} onPress={() => router.push('/subscription')} size="small" variant="ghost">{headline}</Button>;
+  }
   // 2026-09-26 덜어내기: 한 줄(숫자는 문장 안에 한 번). 무료면 줄 전체가 요금제 화면을 연다(따로 버튼 없음).
   const row = (
     <View style={styles.head}>

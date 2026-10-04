@@ -212,7 +212,7 @@ export default function ProfileScreen() {
             description={usageLine(planStatus.usage, locale) ?? undefined}
             onPress={() => router.push('/subscription')}
             title={t('구독')}
-            value={planStatus.loading ? '' : planLabel(planStatus.plan, locale)}
+            value={planStatus.loading ? '' : planStatus.error ? t('확인 필요') : planLabel(planStatus.plan, locale)}
           />
         </GroupCard>
 
@@ -265,9 +265,6 @@ export default function ProfileScreen() {
           <Wordmark width={120} />
           <AppText tone="muted" variant="meta">
             PREMIND {appVersion}
-          </AppText>
-          <AppText align="center" tone="faint" variant="badge">
-            Expo SDK {Constants.expoConfig?.sdkVersion ?? '57'} / {Platform.OS}
           </AppText>
         </View>
         <GroupCard>

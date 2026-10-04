@@ -59,7 +59,7 @@ export default function LoginAccountsScreen() {
   };
 
   return (
-    <Screen scroll maxWidth={680}>
+    <Screen scroll maxWidth={680} overlay={<Toast message={message} />}>
       <AppHeader title={t('로그인 계정 관리')} onBack={() => goBackOrReplace('/(tabs)/profile')} />
       <View style={styles.content}>
         <AppText tone="muted">{t('연결한 방법으로 같은 계정에 로그인해요. 강의, 노트, 구독은 그대로 유지돼요.')}</AppText>
@@ -112,7 +112,6 @@ export default function LoginAccountsScreen() {
           {error ? <AppText accessibilityRole="alert" tone="negative">{t(error)}</AppText> : null}
         </View>
       </Dialog>
-      <Toast message={message} />
     </Screen>
   );
 }

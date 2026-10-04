@@ -26,6 +26,7 @@ import { colors, radii, shadows, sizes, spacing } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { IconButton } from './IconButton';
+import { useReducedMotion } from './Motion';
 
 export interface BottomSheetModalProps {
   visible: boolean;
@@ -67,7 +68,9 @@ export function BottomSheetModal({
   const closeLabel = closeLabelProp ?? t('닫기');
   const sheetRef = useRef<View>(null);
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
   const { height, width } = useWindowDimensions();
+  const [positionerHeight, setPositionerHeight] = useState(height);
   const isTablet = width >= 600;
   const safeRatio = Math.min(Math.max(maxHeightRatio, 0.4), 0.96);
   const positionerPaddingTop = Math.max(
@@ -91,7 +94,7 @@ export function BottomSheetModal({
   );
   const availableHeight = Math.max(
     0,
-    height - positionerPaddingTop - positionerPaddingBottom,
+    Math.min(height, positionerHeight) - positionerPaddingTop - positionerPaddingBottom,
   );
   const sheetWidth = isTablet ? Math.min(availableWidth, 560) : availableWidth;
   const sheetMaxHeight = Math.min(height * safeRatio, availableHeight);
@@ -148,7 +151,9 @@ export function BottomSheetModal({
   return (
     <NativeModal
       accessibilityLabel={Platform.OS === 'web' ? title ?? t('대화상자') : undefined}
-      animationType="fade"
+      // Release RN Web's focus trap immediately when another overlay may open.
+      animationType={reducedMotion || (Platform.OS === 'web' && !visible) ? 'none' : 'fade'}
+      navigationBarTranslucent
       onDismiss={onDismiss}
       onRequestClose={onClose}
       presentationStyle="overFullScreen"
@@ -164,58 +169,64 @@ export function BottomSheetModal({
         />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'web' ? undefined : 'padding'}
-          style={[
-            styles.positioner,
-            isTablet ? styles.tabletPositioner : styles.phonePositioner,
-            {
-              paddingBottom: positionerPaddingBottom,
-              paddingLeft: positionerPaddingLeft,
-              paddingRight: positionerPaddingRight,
-              paddingTop: positionerPaddingTop,
-            },
-          ]}
+          pointerEvents="box-none"
+          style={styles.overlay}
         >
           <View
-            accessibilityLabel={title ?? t('대화상자')}
-            accessibilityViewIsModal
-            ref={sheetRef}
-            role={Platform.OS === 'web' ? undefined : 'dialog'}
+            onLayout={({ nativeEvent }) => setPositionerHeight(nativeEvent.layout.height)}
             style={[
-              styles.sheet,
-              isTablet ? styles.tabletSheet : styles.phoneSheet,
+              styles.positioner,
+              isTablet ? styles.tabletPositioner : styles.phonePositioner,
               {
-                maxHeight: sheetMaxHeight,
-                paddingBottom: sheetBottomPadding,
-                width: sheetWidth,
+                paddingBottom: positionerPaddingBottom,
+                paddingLeft: positionerPaddingLeft,
+                paddingRight: positionerPaddingRight,
+                paddingTop: positionerPaddingTop,
               },
             ]}
-            tabIndex={Platform.OS === 'web' ? -1 : undefined}
-            testID={testID}
           >
-            {!isTablet ? <View {...decorative} style={styles.handle} /> : null}
-            {title || description ? (
-              <View style={styles.header}>
-                <View style={styles.headerCopy}>
-                  {title ? (
-                    <AppText accessibilityRole="header" variant="heading">
-                      {title}
-                    </AppText>
-                  ) : null}
-                  {description ? (
-                    <AppText tone="muted" variant="meta">
-                      {description}
-                    </AppText>
-                  ) : null}
+            <View
+              accessibilityLabel={title ?? t('대화상자')}
+              accessibilityViewIsModal
+              ref={sheetRef}
+              role={Platform.OS === 'web' ? undefined : 'dialog'}
+              style={[
+                styles.sheet,
+                isTablet ? styles.tabletSheet : styles.phoneSheet,
+                {
+                  maxHeight: sheetMaxHeight,
+                  paddingBottom: sheetBottomPadding,
+                  width: sheetWidth,
+                },
+              ]}
+              tabIndex={Platform.OS === 'web' ? -1 : undefined}
+              testID={testID}
+            >
+              {!isTablet ? <View {...decorative} style={styles.handle} /> : null}
+              {title || description ? (
+                <View style={styles.header}>
+                  <View style={styles.headerCopy}>
+                    {title ? (
+                      <AppText accessibilityRole="header" variant="heading">
+                        {title}
+                      </AppText>
+                    ) : null}
+                    {description ? (
+                      <AppText tone="muted" variant="meta">
+                        {description}
+                      </AppText>
+                    ) : null}
+                  </View>
+                  <IconButton icon={X} label={closeLabel} onPress={onClose} />
                 </View>
-                <IconButton icon={X} label={closeLabel} onPress={onClose} />
-              </View>
-            ) : (
-              <View style={styles.closeOnly}>
-                <IconButton icon={X} label={closeLabel} onPress={onClose} />
-              </View>
-            )}
-            {body}
-            {footer ? <View style={styles.footer}>{footer}</View> : null}
+              ) : (
+                <View style={styles.closeOnly}>
+                  <IconButton icon={X} label={closeLabel} onPress={onClose} />
+                </View>
+              )}
+              {body}
+              {footer ? <View style={styles.footer}>{footer}</View> : null}
+            </View>
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -239,6 +250,7 @@ const styles = StyleSheet.create({
   },
   positioner: {
     flex: 1,
+    minHeight: 0,
     pointerEvents: 'box-none',
   },
   phonePositioner: {

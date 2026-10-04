@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from 'react';
+import { createContext, useContext, useMemo, useState, type PropsWithChildren, type ReactNode } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -13,6 +13,16 @@ import { useLayout } from '@/lib/layout';
 import { colors } from '@/theme/tokens';
 
 export type ScreenBackground = 'canvas' | 'soft' | 'paper' | 'stage';
+
+const ScreenOverlayContext = createContext({
+  bottomInsetHandled: false,
+  dockHeight: 0,
+  setDockHeight: (_height: number) => {},
+});
+
+export function useScreenOverlay() {
+  return useContext(ScreenOverlayContext);
+}
 
 export interface ScreenProps {
   scroll?: boolean;
@@ -42,6 +52,8 @@ export interface ScreenProps {
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
   scrollViewProps?: Omit<ScrollViewProps, 'contentContainerStyle' | 'style'>;
+  /** Viewport-pinned feedback, outside the scrolling content. */
+  overlay?: ReactNode;
   testID?: string;
 }
 
@@ -66,9 +78,16 @@ export function Screen({
   style,
   contentStyle,
   scrollViewProps,
+  overlay,
   testID,
 }: PropsWithChildren<ScreenProps>) {
   const { gutter, contentMaxWidth, wideMaxWidth, isTablet } = useLayout();
+  const [dockHeight, setDockHeight] = useState(0);
+  const bottomInsetHandled = safeArea && safeAreaEdges.includes('bottom');
+  const overlayContext = useMemo(
+    () => ({ bottomInsetHandled, dockHeight, setDockHeight }),
+    [bottomInsetHandled, dockHeight],
+  );
   const columnLimit = wide ? wideMaxWidth : contentMaxWidth;
   const backgroundColor = backgroundColors[background];
 
@@ -115,7 +134,12 @@ export function Screen({
   if (!safeArea) {
     return (
       <View testID={testID} style={[styles.safeArea, { backgroundColor }, style]}>
-        {content}
+        <ScreenOverlayContext value={overlayContext}>
+          <View style={styles.fill}>
+            {content}
+            {overlay}
+          </View>
+        </ScreenOverlayContext>
       </View>
     );
   }
@@ -126,7 +150,12 @@ export function Screen({
       edges={[...safeAreaEdges]}
       style={[styles.safeArea, { backgroundColor }, style]}
     >
-      {content}
+      <ScreenOverlayContext value={overlayContext}>
+        <View style={styles.fill}>
+          {content}
+          {overlay}
+        </View>
+      </ScreenOverlayContext>
     </SafeAreaView>
   );
 }
@@ -134,9 +163,11 @@ export function Screen({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    minHeight: 0,
   },
   fill: {
     flex: 1,
+    minHeight: 0,
   },
   content: {
     flexGrow: 1,
@@ -150,6 +181,7 @@ const styles = StyleSheet.create({
   },
   fillColumn: {
     flex: 1,
+    minHeight: 0,
     width: '100%',
   },
   scrollColumn: {

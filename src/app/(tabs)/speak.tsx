@@ -1,10 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { MessagesSquare, Presentation } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 
-import { InterviewHome } from '@/components/speak/InterviewHome';
-import { PresentationHome } from '@/components/speak/PresentationHome';
 import { SpeakTabs, type SpeakTab } from '@/components/speak/SpeakTabs';
+import { loadInterviewScreen, loadPresentationScreen, type PracticeScreenModule } from '@/components/speak/load-practice-screen';
+import { RouteLoading } from '@/components/ui/RouteLoading';
 import { useT } from '@/lib/i18n';
+
+export { RouteError as ErrorBoundary } from '@/components/ui/RouteLoading';
 
 export type SpeakMode = 'presentation' | 'interview';
 
@@ -19,6 +22,8 @@ const OPTIONS: readonly SpeakTab<SpeakMode>[] = [
  * 옛 주소(/lens, /interview)와 뒤로 가기가 그대로 맞는다.
  */
 export default function SpeakScreen() {
+  const [screens, setScreens] = useState<Partial<Record<SpeakMode, PracticeScreenModule['default']>>>({});
+  const [failure, setFailure] = useState<{ mode: SpeakMode; error: Error } | null>(null);
   const t = useT();
   const options = OPTIONS.map((option) => ({
     ...option,
@@ -27,6 +32,20 @@ export default function SpeakScreen() {
   }));
   const params = useLocalSearchParams<{ mode?: string }>();
   const mode: SpeakMode = params.mode === 'interview' ? 'interview' : 'presentation';
+  useEffect(() => {
+    if (screens[mode]) return;
+    let cancelled = false;
+    const load = mode === 'interview' ? loadInterviewScreen : loadPresentationScreen;
+    void load().then(({ default: ScreenComponent }) => {
+      if (!cancelled) setScreens((current) => ({ ...current, [mode]: ScreenComponent }));
+    }).catch((error: unknown) => {
+      if (!cancelled) setFailure({ mode, error: error instanceof Error ? error : new Error(String(error)) });
+    });
+    return () => { cancelled = true; };
+  }, [mode, screens]);
+
+  if (failure?.mode === mode) throw failure.error;
+  const PracticeScreen = screens[mode];
   const switcher = (
     <SpeakTabs<SpeakMode>
       onChange={(next) => router.setParams({ mode: next })}
@@ -35,5 +54,5 @@ export default function SpeakScreen() {
       value={mode}
     />
   );
-  return mode === 'interview' ? <InterviewHome switcher={switcher} /> : <PresentationHome switcher={switcher} />;
+  return PracticeScreen ? <PracticeScreen switcher={switcher} /> : <RouteLoading />;
 }

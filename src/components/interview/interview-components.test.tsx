@@ -56,8 +56,32 @@ it('removes a 자소서 question together with its 꼬리질문', async () => {
       ]}
     />,
   );
+  expect(screen.getAllByLabelText(/번 질문 지우기/)).toHaveLength(1);
+  await fireEvent.press(screen.getByLabelText('다음 질문'));
+  await fireEvent.press(screen.getByLabelText('다음 질문'));
   expect(screen.getByText('꼬리질문')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('이전 질문'));
   await fireEvent.press(screen.getByLabelText('2번 질문 지우기'));
   expect(screen.queryByText('꼬리질문')).toBeNull();
   expect(screen.getAllByLabelText(/번 질문 지우기/)).toHaveLength(1);
+  expect(screen.getByText('질문 1 / 1')).toBeTruthy();
+});
+
+function AddingEditor() {
+  const [questions, setQuestions] = useState<CustomInterviewQuestion[]>([
+    { id: 'first', question: '첫 질문', answerDurationSec: 90, kind: 'common' },
+  ]);
+  return <QuestionListEditor onAdd={() => setQuestions((current) => [...current, { id: 'second', question: '', answerDurationSec: 90, kind: 'common' }])} onChange={setQuestions} questions={questions} />;
+}
+
+it('opens each new question in place and preserves edits when paging back', async () => {
+  await render(<AddingEditor />);
+  await fireEvent.press(screen.getByText('질문 추가'));
+  expect(screen.getByText('질문 2 / 2')).toBeTruthy();
+  expect(screen.queryByDisplayValue('첫 질문')).toBeNull();
+  await fireEvent.changeText(screen.getByLabelText('질문'), '추가한 질문');
+  await fireEvent.press(screen.getByLabelText('이전 질문'));
+  expect(screen.getByDisplayValue('첫 질문')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('다음 질문'));
+  expect(screen.getByDisplayValue('추가한 질문')).toBeTruthy();
 });

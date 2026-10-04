@@ -5,8 +5,10 @@ import { EN_COMMON } from './common';
 import { EN_HOME } from './home';
 import { EN_INTERVIEW } from './interview';
 import { EN_LENS } from './lens';
+import { EN_LIVE_TRANSCRIPT } from './live-transcript';
 import { EN_MATERIAL } from './material';
 import { EN_RECORDING } from './recording';
+import { EN_RELEASE } from './release';
 import { EN_SERVER } from './server';
 import { EN_STUDY } from './study';
 
@@ -24,5 +26,7 @@ export const EN: EnDict = {
   ...EN_STUDY,
   ...EN_MATERIAL,
   ...EN_HOME,
+  ...EN_RELEASE,
+  ...EN_LIVE_TRANSCRIPT,
   ...EN_COMMON,
 };

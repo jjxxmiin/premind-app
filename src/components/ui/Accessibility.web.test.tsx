@@ -4,11 +4,14 @@ import { act, useState, type ReactNode } from 'react';
 
 import { AppText } from './AppText';
 import { Chip } from './Chip';
+import { Dialog } from './Dialog';
 import { BottomSheetModal } from './Modal';
 import { ProgressBar } from './ProgressBar';
 import { SegmentedControl } from './SegmentedControl';
 
 jest.mock('lucide-react-native', () => ({ X: () => null }));
+let mockReducedMotion = false;
+jest.mock('./Motion', () => ({ useReducedMotion: () => mockReducedMotion }));
 jest.mock('react-native', () => ({
   ...jest.requireActual('react-native-web'),
   // expo-modules-core can be loaded while React DOM snapshots globals. A web
@@ -145,8 +148,9 @@ describe('web accessibility state attributes', () => {
   });
 });
 
-describe('BottomSheetModal web focus behavior', () => {
+describe.each([false, true])('BottomSheetModal web focus behavior (reduced motion: %s)', (reducedMotion) => {
   it('focuses the dialog, closes once on Escape, and returns focus to its caller', async () => {
+    mockReducedMotion = reducedMotion;
     const onClose = jest.fn();
 
     function Harness() {
@@ -204,12 +208,87 @@ describe('BottomSheetModal web focus behavior', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
 
     const closingAnimation = portalHost?.firstElementChild ?? null;
-    expect(closingAnimation).not.toBeNull();
+    expect(closingAnimation).toBeNull();
     if (closingAnimation) dispatchAnimationEnd(closingAnimation);
     await act(async () => {
       await new Promise((resolve) => window.setTimeout(resolve, 0));
     });
 
     expect(document.activeElement).toBe(trigger);
+  });
+});
+
+it('releases a dismissed dialog before the next dialog takes focus', () => {
+  mockReducedMotion = false;
+  function Harness() {
+    const [step, setStep] = useState<'delete' | 'logout'>('delete');
+    return <>
+      <Dialog visible={step === 'delete'} title="계정 삭제" confirm={{ label: '삭제', onPress: () => undefined }} cancel={{ label: '취소', onPress: () => setStep('logout') }} />
+      <Dialog visible={step === 'logout'} title="로그아웃" confirm={{ label: '나가기', onPress: () => undefined }} cancel={{ label: '취소', onPress: () => undefined }} />
+    </>;
+  }
+  const container = renderIntoDocument(<Harness />);
+  const portals = Array.from(document.body.children).filter((element) => element !== container);
+  const opening = portals[0]?.firstElementChild;
+  if (opening) dispatchAnimationEnd(opening);
+  const cancel = Array.from(document.querySelectorAll<HTMLElement>('[role="button"]')).find((element) => element.textContent === '취소');
+  act(() => cancel?.click());
+  expect(portals[0]?.firstElementChild).toBeNull();
+  const nextOpening = portals[1]?.firstElementChild;
+  if (nextOpening) dispatchAnimationEnd(nextOpening);
+  const dialogs = document.querySelectorAll('[role="dialog"]');
+  expect(dialogs).toHaveLength(1);
+  expect(dialogs[0]?.textContent).toContain('로그아웃');
+  expect(dialogs[0]?.contains(document.activeElement)).toBe(true);
+  expect(Array.from(document.querySelectorAll('[role="button"]')).filter((element) => element.textContent === '취소')).toHaveLength(1);
+});
+
+describe('web reduced-motion subscriptions', () => {
+  const { useReducedMotion } = jest.requireActual<typeof import('./Motion')>('./Motion');
+
+  function Preference() {
+    return <span>{useReducedMotion() ? 'reduced' : 'animated'}</span>;
+  }
+
+  it('updates concurrent consumers independently and removes their media listeners', () => {
+    const listeners = new Set<(event: { matches: boolean }) => void>();
+    const original = Object.getOwnPropertyDescriptor(window, 'matchMedia');
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: () => ({
+        matches: false,
+        addEventListener: (_name: string, listener: (event: { matches: boolean }) => void) => listeners.add(listener),
+        removeEventListener: (_name: string, listener: (event: { matches: boolean }) => void) => listeners.delete(listener),
+      }),
+    });
+    try {
+      const first = renderIntoDocument(<Preference />);
+      const second = renderIntoDocument(<Preference />);
+      expect(listeners.size).toBe(2);
+      expect(first.textContent).toBe('animated');
+      expect(second.textContent).toBe('animated');
+      act(() => listeners.forEach((listener) => listener({ matches: true })));
+      expect(first.textContent).toBe('reduced');
+      expect(second.textContent).toBe('reduced');
+      while (mountedRoots.length > 0) {
+        const root = mountedRoots.pop();
+        if (root) act(() => root.unmount());
+      }
+      expect(listeners.size).toBe(0);
+    } finally {
+      if (original) Object.defineProperty(window, 'matchMedia', original);
+      else Reflect.deleteProperty(window, 'matchMedia');
+    }
+  });
+
+  it('defaults safely to reduced motion when media queries are unavailable', () => {
+    const original = Object.getOwnPropertyDescriptor(window, 'matchMedia');
+    Reflect.deleteProperty(window, 'matchMedia');
+    try {
+      const container = renderIntoDocument(<Preference />);
+      expect(container.textContent).toBe('reduced');
+    } finally {
+      if (original) Object.defineProperty(window, 'matchMedia', original);
+    }
   });
 });

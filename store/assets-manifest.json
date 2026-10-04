@@ -1,12 +1,14 @@
 {
-  "generatedAt": "2026-10-01T11:37:15.745Z",
-  "sourceCommit": "3eecad8b27d777507db0d06dfa4337d13c84fea7",
-  "version": "1.0.2",
-  "versionCode": 5,
-  "compatibleAppVersions": ["1.0.2", "1.0.3"],
-  "compatibilityNote": "Captured on 1.0.2. The 1.0.3 social sign-in UI and web authentication changes do not affect the submitted screenshots.",
+  "generatedAt": "2026-10-03T09:03:58.242Z",
+  "sourceCommit": "0d424f98d82b47ecfe6fa19c3d4914a91fa6364d",
+  "sourceWorktreeDirty": true,
+  "captureBundles": [
+    "/_expo/static/js/web/entry-d1fbc865c7285957b1667f48b14c2a7f.js"
+  ],
+  "version": "1.0.5",
+  "versionCode": 8,
   "capture": "Local web demo, 360×640 at 3x; not an Android device capture",
-  "iconSha256": "8bd336d7f52526e400cbdec3fe24a1b31cf17c0df130023e2105a38b91509b5b",
+  "iconSha256": "d6c90c2bed3ee6633a821db7424fc7f2ee1d66dff36d02ad09344c1ffad8db47",
   "iconSource": "assets/brand/app-icon.png",
   "playScreenshots": [
     "screenshots/framed/01-home.png",

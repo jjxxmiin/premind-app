@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { apiClient, hasConfiguredApi } from '@/services/api/client';
 import { isDemoSession, sessionManager } from '@/services/api/session-manager';
@@ -12,6 +12,8 @@ export interface PlanStatus {
   usage: PlanUsage | null;
   /** True while the first answer is on its way; false for demo/offline. */
   loading: boolean;
+  /** Failed verification must never make an existing buyer look confirmed free. */
+  error: boolean;
   /**
    * Re-read `/api/auth/me`. Resolves once the answer has been applied, so a
    * screen that just changed the plan can await it before saying so.
@@ -31,21 +33,21 @@ const NO_REFRESH = async () => undefined;
 /**
  * One read of `/api/auth/me`, with no state of its own.
  *
- * A server that will not answer is not an error the learner can act on: the
- * plan simply reads as free, the same as an account that is.
+ * An unavailable account is unknown, not a confirmed free subscription.
  */
-async function readPlanFacts(): Promise<PlanFacts> {
+async function readPlanFacts(userId: string): Promise<PlanFacts | null> {
   try {
     const user = await sessionManager.authorize((token) =>
       apiClient.getCurrentUser(token),
     );
+    if (user.id !== userId || sessionManager.session?.user.id !== userId) return null;
     return {
       plan: user.plan ?? 'free',
       renewsAt: user.plan_renews_at ?? null,
       usage: user.usage ?? null,
     };
   } catch {
-    return FREE;
+    return null;
   }
 }
 
@@ -64,29 +66,46 @@ export function usePlanStatus(): PlanStatus {
   // The last answer, tagged with the account it belongs to, so switching
   // accounts never shows the previous person's plan while the next loads —
   // and so a slow answer for a signed-out account is dropped on arrival.
-  const [loaded, setLoaded] = useState<{ userId: string; facts: PlanFacts } | null>(null);
+  const [loaded, setLoaded] = useState<{
+    readonly userId: string;
+    readonly facts: PlanFacts;
+    readonly error: boolean;
+  } | null>(null);
+  const requestScope = useRef<{ userId: string | null; generation: number }>({
+    userId: null,
+    generation: 0,
+  });
 
   const refresh = useCallback(async () => {
-    if (!live || !userId) return;
-    setLoaded({ userId, facts: await readPlanFacts() });
+    if (!live || !userId || requestScope.current.userId !== userId ||
+        sessionManager.session?.user.id !== userId) return;
+    const generation = ++requestScope.current.generation;
+    const facts = await readPlanFacts(userId);
+    if (requestScope.current.userId !== userId ||
+        requestScope.current.generation !== generation ||
+        sessionManager.session?.user.id !== userId) return;
+    setLoaded((previous) => ({
+      userId,
+      facts: facts ?? (previous?.userId === userId ? previous.facts : FREE),
+      error: facts === null,
+    }));
   }, [live, userId]);
 
   useEffect(() => {
-    if (!live || !userId) return;
-    let cancelled = false;
-    void readPlanFacts().then((facts) => {
-      if (!cancelled) setLoaded({ userId, facts });
-    });
+    const scope = requestScope.current;
+    scope.userId = live ? userId : null;
+    void refresh();
     return () => {
-      cancelled = true;
+      scope.userId = null;
+      scope.generation += 1;
     };
-  }, [live, userId]);
+  }, [live, userId, refresh]);
 
-  if (!live || !userId) return { ...FREE, loading: false, refresh: NO_REFRESH };
+  if (!live || !userId) return { ...FREE, loading: false, error: false, refresh: NO_REFRESH };
   if (loaded && loaded.userId === userId) {
-    return { ...loaded.facts, loading: false, refresh };
+    return { ...loaded.facts, loading: false, error: loaded.error, refresh };
   }
-  return { ...FREE, loading: true, refresh };
+  return { ...FREE, loading: true, error: false, refresh };
 }
 
 export function planLabel(plan: PlanId, locale: AppLocale = 'ko'): string {

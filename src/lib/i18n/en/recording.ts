@@ -217,6 +217,9 @@ export const EN_RECORDING: EnDict = {
   '문서는 쪽 단위로 읽어요. 소리가 없으니 재생 대신 쪽 번호가 붙어요. 스캔한 이미지 PDF는 글자가 없어서 읽지 못해요.':
     "Documents are read page by page. There's no sound, so you get page numbers instead of playback. Scanned image PDFs have no text, so they can't be read.",
   '일부 파일은 기기에 따라 재생이 안 될 수 있어요.': "Some files may not play on every device.",
+  '영상, 음성은 1분에 1분, 문서는 1쪽에 1분을 써요':
+    'Video and audio use 1 minute per minute; documents use 1 minute per page',
+  '스캔한 이미지 PDF는 읽지 못해요': "Scanned image PDFs can't be read",
   '원본은 기기에 먼저 저장돼요. 중간에 멈춰도 원본은 남아 있어요.':
     'The original is saved on your device first. If anything stops midway, the original is kept.',
   '파일 선택': 'Choose file',

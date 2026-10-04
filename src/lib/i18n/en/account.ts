@@ -2,6 +2,9 @@ import type { EnDict } from '../core';
 
 /** 영어 사전 — account 영역. 키는 화면의 한국어 문장 그대로. */
 export const EN_ACCOUNT: EnDict = {
+  '원본을 저장했어요': 'Your original is saved',
+  '마인드팩 만들기를 이어가세요': 'Resume making your Mind Pack',
+  '마인드팩을 준비하고 있어요': 'Preparing your Mind Pack',
   '로그인 계정 관리': 'Login methods',
   '이메일, Google, 카카오 연결 상태를 관리해요.': 'Manage your email, Google and Kakao login methods.',
   '연결한 방법으로 같은 계정에 로그인해요. 강의, 노트, 구독은 그대로 유지돼요.': 'Use any linked method to sign in to the same account. Your lectures, notes and subscription stay with you.',
@@ -297,10 +300,10 @@ export const EN_ACCOUNT: EnDict = {
   '가입하면 바로 시작할 수 있어요': 'Start right after you sign up',
   '이메일이나 소셜 계정으로 가입하면 바로 무료로 시작해요.':
     'Sign up with email or a social account and start for free right away.',
-  '녹음 탭을 누르거나 파일을 올리면 첫 마인드팩이 만들어져요.':
-    'Record or upload a file, and your first Mind Pack is made.',
-  '알림과 녹음 품질은 MY 탭에서 언제든 바꿀 수 있어요.':
-    'You can change notifications and recording quality anytime in the Me tab.',
+  '추가 탭에서 녹음하거나 파일을 올리면 첫 마인드팩이 만들어져요.':
+    'Use the Add tab to record or upload a file and create your first Mind Pack.',
+  '알림은 MY 탭에서 언제든 바꿀 수 있어요.':
+    'You can change notifications anytime in the Me tab.',
   '녹음 / 영상, 음성, 문서 / 유튜브 링크': 'Recording / video, audio, documents / YouTube links',
   '녹음하면 원본을 기기에 먼저 저장해요.': 'When you record, the original is saved on your device first.',
   '영상, 음성 파일을 올려도 같은 방식으로 마인드팩을 만들어요.':

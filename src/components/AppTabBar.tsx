@@ -140,6 +140,7 @@ function SideBar({ state, descriptors, navigation }: AppTabBarProps) {
             <Pressable
               accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
               accessibilityRole="tab"
+              aria-selected={focused}
               accessibilityState={{ selected: focused }}
               key={route.key}
               onPress={pressHandler(navigation, route, focused)}
@@ -167,6 +168,7 @@ function SideBar({ state, descriptors, navigation }: AppTabBarProps) {
             profile.descriptor.options.tabBarAccessibilityLabel ?? tabLabel(profile.descriptor.options, profile.route.name)
           }
           accessibilityRole="tab"
+          aria-selected={state.index === profile.index}
           accessibilityState={{ selected: state.index === profile.index }}
           key={profile.route.key}
           onPress={pressHandler(navigation, profile.route, state.index === profile.index)}
@@ -227,6 +229,7 @@ function BottomBar({ state, descriptors, navigation }: AppTabBarProps) {
             <Pressable
               accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
               accessibilityRole="tab"
+              aria-selected={focused}
               accessibilityState={{ selected: focused }}
               key={route.key}
               onLongPress={() =>

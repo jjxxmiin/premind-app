@@ -39,9 +39,11 @@ echo "API URL: '${EXPO_PUBLIC_API_URL:-<demo mode>}'"
 # subscription screen simply cannot sell, so a keyless build still runs.
 # A key starting `test_` is RevenueCat's Test Store — the paywall works end to
 # end but no real money moves; the Play key (`goog_...`) is what ships.
-export EXPO_PUBLIC_REVENUECAT_ANDROID_KEY="${EXPO_PUBLIC_REVENUECAT_ANDROID_KEY:-}"
-export EXPO_PUBLIC_REVENUECAT_IOS_KEY="${EXPO_PUBLIC_REVENUECAT_IOS_KEY:-}"
-export EXPO_PUBLIC_REVENUECAT_ENTITLEMENT="${EXPO_PUBLIC_REVENUECAT_ENTITLEMENT:-}"
+eval "$(node scripts/load-social-env.mjs)"
+if [ -n "$EXPO_PUBLIC_API_URL" ] && [[ "$EXPO_PUBLIC_REVENUECAT_ANDROID_KEY" != goog_* ]]; then
+  echo "ERROR: A server-connected Android release requires a live RevenueCat Google Play key" >&2
+  exit 1
+fi
 case "${EXPO_PUBLIC_REVENUECAT_ANDROID_KEY}" in
   "") echo "RevenueCat: <no key, cannot sell>" ;;
   test_*) echo "RevenueCat: TEST store key (no real charges)" ;;
@@ -52,9 +54,6 @@ esac
 # (src/features/auth/use-social-sign-in.ts), and the server has to have the
 # matching id too or it would refuse the token — so both ends are configured
 # or neither is offered.
-# Read only public social settings from Expo's production env files; the
-# helper shell-quotes values and preserves explicit shell overrides.
-eval "$(node scripts/load-social-env.mjs)"
 SOCIAL=""
 [ -n "$EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID" ] && [ -n "$EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB" ] && SOCIAL="$SOCIAL google"
 [ -n "$EXPO_PUBLIC_KAKAO_REST_KEY" ] && [ "$EXPO_PUBLIC_ENABLE_KAKAO_AUTH" = "true" ] && SOCIAL="$SOCIAL kakao"

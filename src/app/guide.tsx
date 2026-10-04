@@ -26,7 +26,7 @@ const SUPPORT_MAILTO = 'mailto:support@camorix.com';
 
 /** The product loop, in the order a first-time user meets it. */
 const loop: { icon: LucideIcon; label: string }[] = [
-  { icon: Mic, label: '녹음, 올리기' },
+  { icon: Mic, label: '추가' },
   { icon: BookOpenCheck, label: '마인드팩' },
   { icon: Gauge, label: '복습' },
   { icon: BarChart3, label: '연습' },
@@ -48,8 +48,8 @@ const steps: GuideStep[] = [
     icon: Home,
     lines: [
       '이메일이나 소셜 계정으로 가입하면 바로 무료로 시작해요.',
-      '녹음 탭을 누르거나 파일을 올리면 첫 마인드팩이 만들어져요.',
-      '알림과 녹음 품질은 MY 탭에서 언제든 바꿀 수 있어요.',
+      '추가 탭에서 녹음하거나 파일을 올리면 첫 마인드팩이 만들어져요.',
+      '알림은 MY 탭에서 언제든 바꿀 수 있어요.',
     ],
   },
   {

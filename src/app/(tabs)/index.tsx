@@ -36,6 +36,8 @@ import {
   HomeDesktopOverview,
 } from '@/components/home/HomeDesktop';
 import { MaterialList } from '@/components/home/MaterialList';
+import { LibraryPage } from '@/components/home/LibraryPage';
+import { LibraryWelcome } from '@/components/home/LibraryWelcome';
 import { SubjectTabs, type SubjectTab } from '@/components/home/SubjectTabs';
 import {
   DEFAULT_FILTERS,
@@ -53,7 +55,6 @@ import {
   Button,
   Card,
   Dialog,
-  EmptyLibraryArtwork,
   EmptyState,
   Toast,
   useToast,
@@ -791,9 +792,16 @@ export default function HomeScreen() {
 
   const renderPage = ({ item: page }: { item: SubjectPage }) => {
     const pageMaterials = visibleMaterialsByPage.get(page.key) ?? [];
-    // One quiet header (2026-09-26 declutter): no count line, no onboarding
-    // card. Sort and filter live behind the header's icon; the desktop keeps
-    // the folders as chips with the same icon at the end of their row.
+    const listHeading = hasMaterial ? (
+      <View style={styles.listHeading}>
+        <AppText tone="muted" variant="meta">
+          {t('자료 {n}개', { n: pageMaterials.length })}
+        </AppText>
+        <Button onPress={() => setUploadSheetVisible(true)} size="small" variant="ghost">
+          {t('자료 추가')}
+        </Button>
+      </View>
+    ) : null;
     const header = wide ? (
       <View style={styles.wideHeader}>
         <HomeDesktopHeader
@@ -819,50 +827,51 @@ export default function HomeScreen() {
           </View>
           {filterButton}
         </View>
+        {listHeading}
       </View>
     ) : (
-      <View />
+      <View>{listHeading}</View>
     );
-    const empty = (
+    const empty = !hasMaterial && showEmptyAction ? (
+      <LibraryWelcome onAdd={() => setUploadSheetVisible(true)} />
+    ) : (
       <EmptyState
-        actionLabel={showEmptyAction ? t('녹음 시작') : undefined}
+        actionLabel={showEmptyAction ? t('자료 추가') : undefined}
         actionVariant="primary"
-        // The first-run state is the one that decides whether anyone stays, so
-        // it gets the drawing of what the app makes. A list emptied by a
-        // filter is a passing condition and keeps the quiet line icon.
-        artwork={showEmptyAction ? <EmptyLibraryArtwork /> : undefined}
+        compact
         description={emptyDescription}
         icon={FolderOpen}
-        onAction={showEmptyAction ? openRecording : undefined}
+        onAction={showEmptyAction ? () => setUploadSheetVisible(true) : undefined}
         title={emptyTitle}
       />
     );
 
     return (
-      <MaterialList
-        cardWidth={cardWidth}
-        columns={columns}
-        empty={empty}
-        evaluatingMaterialIds={evaluatingMaterialIds}
-        // One white card of rows on the grey page, on every width.
-        grouped
-        gutter={gutter}
-        header={header}
-        materials={pageMaterials}
-        onMore={openMaterialMenu}
-        onOpen={openMaterial}
-        processingMaterialIds={processingMaterialIds}
-        projectById={projectById}
-        view={filters.view}
-        width={pageWidth}
-      />
+      <LibraryPage active={page.key === currentPage?.key} width={pageWidth}>
+        <MaterialList
+          cardWidth={cardWidth}
+          columns={columns}
+          empty={empty}
+          evaluatingMaterialIds={evaluatingMaterialIds}
+          grouped
+          gutter={gutter}
+          header={header}
+          materials={pageMaterials}
+          onMore={openMaterialMenu}
+          onOpen={openMaterial}
+          processingMaterialIds={processingMaterialIds}
+          projectById={projectById}
+          view={filters.view}
+          width={pageWidth}
+        />
+      </LibraryPage>
     );
   };
 
   return (
     <>
       {wide ? (
-        <Screen background="soft" padded={false} safeAreaEdges={['top', 'left', 'right']} wide>
+        <Screen padded={false} safeAreaEdges={['top', 'left', 'right']} wide>
           <View
             onLayout={(event) => {
               const width = Math.round(event.nativeEvent.layout.width);
@@ -874,7 +883,7 @@ export default function HomeScreen() {
           </View>
         </Screen>
       ) : (
-      <Screen background="soft" padded={false} safeAreaEdges={['top', 'left', 'right']}>
+      <Screen padded={false} safeAreaEdges={['top', 'left', 'right']}>
         <AppHeader
           brand
           right={
@@ -951,7 +960,6 @@ export default function HomeScreen() {
       {/* Every way to start a 마인드팩, in one place. The tab bar's middle
           button opens this, so "어디서 올리지" has one answer. */}
       <BottomSheetModal
-        description={t('녹음하거나 파일을 올리면 마인드팩이 만들어져요.')}
         onClose={() => setUploadSheetVisible(false)}
         scrollable={false}
         title={t('자료 추가')}
@@ -963,7 +971,7 @@ export default function HomeScreen() {
             leadingIcon={Mic}
             onPress={() => {
               setUploadSheetVisible(false);
-              setTimeout(() => router.push('/record'), motion.duration.deliberate);
+              setTimeout(openRecording, motion.duration.deliberate);
             }}
             subtitle={t('강의나 발표를 그 자리에서')}
             title={t('녹음하기')}
@@ -987,7 +995,6 @@ export default function HomeScreen() {
       </BottomSheetModal>
 
       <BottomSheetModal
-        description={t('이 자료를 담을 폴더를 골라요.')}
         onClose={() => setMoveTarget(null)}
         scrollable={false}
         testID="move-material-sheet"
@@ -1113,7 +1120,6 @@ export default function HomeScreen() {
       </BottomSheetModal>
 
       <BottomSheetModal
-        description={t('폴더별로 자료를 묶어 두면 찾기 쉬워요.')}
         footer={
           <View style={styles.sheetFooter}>
             <Button
@@ -1296,6 +1302,12 @@ const styles = StyleSheet.create({
   },
   wideHeader: {
     gap: spacing.xl,
+  },
+  listHeading: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.md,
+    justifyContent: 'space-between',
   },
   // Chips wrap on the left; the filter icon holds the right edge.
   wideFolders: {

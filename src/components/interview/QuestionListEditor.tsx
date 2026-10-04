@@ -1,4 +1,5 @@
-import { Plus, Quote, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Plus, Quote, Trash2 } from 'lucide-react-native';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText, Button, Card, Chip, IconButton, StatusBadge, TextArea } from '@/components/ui';
@@ -30,13 +31,21 @@ export interface QuestionListEditorProps {
 export function QuestionListEditor({ questions, onChange, onAdd, disabled = false }: QuestionListEditorProps) {
   const t = useT();
   const locale = useLocale();
+  const [page, setPage] = useState(0);
+  const index = Math.min(page, Math.max(0, questions.length - 1));
+  const question = questions[index];
   const update = (id: string, patch: Partial<CustomInterviewQuestion>) =>
     onChange(questions.map((question) => (question.id === id ? { ...question, ...patch } : question)));
   const remove = (id: string) => onChange(questions.filter((question) => question.id !== id && question.parentQuestionId !== id));
 
   return (
     <View style={styles.list}>
-      {questions.map((question, index) => (
+      <View style={styles.navigation}>
+        <IconButton disabled={disabled || index === 0} icon={ChevronLeft} label={t('이전 질문')} onPress={() => setPage(index - 1)} />
+        <AppText accessibilityLiveRegion="polite" variant="label">{t('질문 {current} / {total}', { current: questions.length ? index + 1 : 0, total: questions.length })}</AppText>
+        <IconButton disabled={disabled || index >= questions.length - 1} icon={ChevronRight} label={t('다음 질문')} onPress={() => setPage(index + 1)} />
+      </View>
+      {question ? (
         <Card key={question.id} style={[styles.card, question.kind === 'follow_up' ? styles.followUp : null]}>
           <View style={styles.head}>
             <AppText tone="muted" variant="badge">{t('{n}번 질문', { n: index + 1 })}</AppText>
@@ -82,9 +91,9 @@ export function QuestionListEditor({ questions, onChange, onAdd, disabled = fals
             ))}
           </View>
         </Card>
-      ))}
+      ) : null}
       {questions.length < MAX_CUSTOM_QUESTIONS ? (
-        <Button disabled={disabled} leftIcon={<Plus color={colors.text} size={iconSizes.inline} />} onPress={onAdd} variant="secondary">
+        <Button disabled={disabled} leftIcon={<Plus color={colors.text} size={iconSizes.inline} />} onPress={() => { setPage(questions.length); onAdd(); }} variant="secondary">
           {t('질문 추가')}
         </Button>
       ) : (
@@ -97,7 +106,8 @@ export function QuestionListEditor({ questions, onChange, onAdd, disabled = fals
 const styles = StyleSheet.create({
   list: { gap: spacing.md },
   card: { gap: spacing.md },
-  followUp: { marginLeft: spacing.xl },
+  followUp: { borderColor: colors.borderStrong },
+  navigation: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
   head: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
   spacer: { flex: 1 },
   flex: { flex: 1, minWidth: 0 },

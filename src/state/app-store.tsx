@@ -19,6 +19,10 @@ import {
 } from '../lib/study-notebook';
 import { deleteLocalStudySources } from '../features/files/delete-local-study-sources';
 import {
+  liveTranscriptRepository,
+  type LiveTranscriptRepository,
+} from '../features/recording/live-transcript-repository';
+import {
   legacyFlutterRecordingMigrationService,
   type LegacyFlutterRecordingMigrationService,
 } from '../features/migration/legacy-flutter-recording-migration';
@@ -643,6 +647,7 @@ export type AppStoreProviderProps = PropsWithChildren<{
     'activateWorkspace' | 'clearWorkspace' | 'getAll'
   >;
   deleteLocalSources?: typeof deleteLocalStudySources;
+  transcriptRepository?: Pick<LiveTranscriptRepository, 'list' | 'purge'>;
   legacyMigrationService?: Pick<
     LegacyFlutterRecordingMigrationService,
     'migrate'
@@ -659,6 +664,7 @@ export function AppStoreProvider({
   materialService,
   recordingRepository = recordingSessionRepository,
   deleteLocalSources = deleteLocalStudySources,
+  transcriptRepository = liveTranscriptRepository,
   legacyMigrationService = legacyFlutterRecordingMigrationService,
 }: AppStoreProviderProps) {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -861,11 +867,25 @@ export function AppStoreProvider({
   );
 
   useEffect(() => {
-    if (!state.isHydrated || !state.session) {
+    const current = stateRef.current;
+    if (!current.isHydrated || !current.session) {
       return;
     }
-    void storage.saveSnapshot(toSnapshot(state), state.session.user.id);
-  }, [state, storage]);
+    void storage.saveSnapshot(toSnapshot(current), current.session.user.id);
+  }, [
+    state.isHydrated,
+    state.session?.user.id,
+    state.projects,
+    state.materials,
+    state.shareRooms,
+    state.activeProjectId,
+    state.savedMaterialIds,
+    state.confusionFeedback,
+    state.quizAttempts,
+    state.settings,
+    state.studyNotes,
+    storage,
+  ]);
 
   useEffect(
     () => () => {
@@ -970,10 +990,15 @@ export function AppStoreProvider({
 
     const workspaceId = accountSession.user.id;
     let recoveries: RecordingSessionSnapshot[];
+    let transcriptSourceUris: string[];
     try {
       // Read every owned URI before the workspace is detached. This lets the
       // cleanup remove interrupted recordings that never became materials.
       recoveries = await recordingRepository.getAll();
+      const transcripts = await transcriptRepository.list(workspaceId);
+      transcriptSourceUris = transcripts.flatMap((draft) =>
+        draft.parts.map((part) => part.uri),
+      );
       if (!isDemoSession(accountSession)) {
         await sessions.authorize((accessToken) =>
           client.deleteAccount(accessToken),
@@ -994,6 +1019,7 @@ export function AppStoreProvider({
       ...recoveries.flatMap((recovery) =>
         recovery.localFileUri ? [recovery.localFileUri] : [],
       ),
+      ...transcriptSourceUris,
     ];
     let releaseCleanup!: () => void;
     const cleanupSettled = new Promise<void>((resolve) => {
@@ -1009,6 +1035,7 @@ export function AppStoreProvider({
       deleteLocalSources(sourceUris),
       storage.clearSnapshot(workspaceId),
       recordingRepository.clearWorkspace(workspaceId),
+      transcriptRepository.purge(workspaceId),
     ]);
     let credentialError: unknown;
     try {
@@ -1040,6 +1067,7 @@ export function AppStoreProvider({
     recordingRepository,
     sessions,
     storage,
+    transcriptRepository,
   ]);
 
   const clearError = useCallback(

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { parseProjectEnv } from '@expo/env';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const root = process.cwd();
 const output = path.resolve(process.argv[2] ?? 'dist/web-production');
@@ -24,7 +25,8 @@ for (const key of publicKeys) {
   if (!social[key].trim()) throw new Error(`Missing web release setting: ${key}`);
 }
 if (social.EXPO_PUBLIC_ENABLE_KAKAO_AUTH !== 'true') throw new Error('Kakao must be enabled for this web release');
-const child = spawn('npx', ['expo', 'export', '--platform', 'web', '--clear', '--output-dir', output], {
+const executable = fileURLToPath(import.meta.resolve('expo/bin/cli'));
+const child = spawn(process.execPath, [executable, 'export', '--platform', 'web', '--clear', '--output-dir', output], {
   stdio: 'inherit',
   env: { ...process.env, ...social, NODE_ENV: 'production', EXPO_NO_DOTENV: '1',
     EXPO_PUBLIC_API_URL: 'https://api.premind.co.kr', PREMIND_WEB_BASE_URL: '/app', EXPO_PUBLIC_WEB_BASE_PATH: '/app' },

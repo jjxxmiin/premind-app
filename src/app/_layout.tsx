@@ -11,11 +11,13 @@ import { useFonts } from 'expo-font';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppProvider, useAppStore } from '@/state/app-store';
+import { useReducedMotion } from '@/components/ui/Motion';
+import { RouteLoading } from '@/components/ui/RouteLoading';
 import {
   configureStudyNotifications,
   subscribeToStudyNotificationResponses,
 } from '@/services/notifications';
-import { colors, fontFamilies } from '@/theme/tokens';
+import { colors, fontFamilies, motion } from '@/theme/tokens';
 import { hydrateLocale } from '@/lib/i18n';
 import { captureInitialReturnTo, takeReturnTo } from '@/lib/return-to';
 
@@ -42,6 +44,8 @@ const navigationTheme = {
     text: colors.text,
   },
 };
+
+export { RouteError as ErrorBoundary, RouteLoading as SuspenseFallback } from '@/components/ui/RouteLoading';
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -77,6 +81,11 @@ export default function RootLayout() {
 function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const { isHydrated, session } = useAppStore();
   const signedIn = Boolean(session);
+  const reducedMotion = useReducedMotion();
+  const rootTransition = {
+    animation: reducedMotion ? 'none' : 'fade',
+    animationDuration: motion.duration.fast,
+  } as const;
 
   useEffect(() => {
     if (fontsReady && isHydrated) {
@@ -113,7 +122,7 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   }, [signedIn]);
 
   if (!fontsReady || !isHydrated) {
-    return null;
+    return <RouteLoading />;
   }
 
   return (
@@ -121,21 +130,23 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
-          animation: 'slide_from_right',
+          animation: reducedMotion ? 'none' : 'slide_from_right',
+          animationDuration: motion.duration.standard,
           contentStyle: { backgroundColor: colors.background },
           headerShown: false,
         }}
       >
-        <Stack.Screen name="index" options={{ animation: 'fade' }} />
+        <Stack.Screen name="index" options={rootTransition} />
         <Stack.Protected guard={!signedIn}>
-          <Stack.Screen name="login" options={{ animation: 'fade' }} />
+          <Stack.Screen name="login" options={rootTransition} />
           <Stack.Screen name="signup" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn}>
           <Stack.Screen name="login-accounts" />
-          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-          <Stack.Screen name="capture" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="(tabs)" options={rootTransition} />
+          <Stack.Screen name="capture" options={{ animation: reducedMotion ? 'none' : 'slide_from_bottom', presentation: 'modal' }} />
           <Stack.Screen name="record" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="record-transcript" options={{ gestureEnabled: false }} />
           <Stack.Screen
             name="processing/[id]"
             options={{ gestureEnabled: false }}

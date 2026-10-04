@@ -21,7 +21,8 @@ export function safeImportedFileName(name: string): string {
 }
 
 /**
- * DocumentPicker grants a cache URI that the OS may evict. Copy it into the
+ * DocumentPicker grants a cache URI that the OS may evict (iOS), or a
+ * content:// URI whose read grant ends with the activity (Android). Copy it into the
  * app's document area before creating a material; the cache source is never
  * moved or deleted so interrupted copies remain recoverable.
  */

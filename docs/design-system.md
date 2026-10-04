@@ -132,6 +132,13 @@ studying alone on a phone. Every string follows this:
   prompts ask for 해요체 and forbid the middot as well, so this is a net,
   not the rule.
 - Numbers: "3개", "52:14", "4일 전"; never "3 개".
+- **Key point only, at reading size** (2026-10-04 CEO). Do not stack
+  `meta`-size explanation lines under a section. One screen gets at most one
+  helper line, in `body`, and only when it changes what the learner does (a
+  cost, a limit, a reason the upload will fail). Reassurance ("원본은 남아
+  있어요"), restating the title, and explaining how a feature works are cut.
+  A sheet or dialog whose options already say what they do has no
+  `description`.
 
 ## Information architecture (2026-09-05)
 

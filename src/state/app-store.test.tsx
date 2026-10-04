@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { createEmptySnapshot, createMockSnapshot } from '../data/mock-data';
 import { LEGACY_FLUTTER_METADATA_STRATEGY } from '../features/migration/legacy-flutter-recording-migration';
 import type { RecordingSessionSnapshot } from '../features/recording/recording-session-repository';
+import type { LiveTranscriptDraft } from '../features/recording/live-transcript-repository';
 import {
   ApiError,
   type PremindApiClient,
@@ -167,6 +168,7 @@ async function harness(options: {
   nextLogin?: AccessSession;
   client?: Pick<PremindApiClient, 'deleteAccount'>;
   recoverySnapshots?: RecordingSessionSnapshot[];
+  transcriptDrafts?: LiveTranscriptDraft[];
   deleteLocalSources?: (sourceUris: readonly string[]) => Promise<void>;
 }) {
   let latest: AppStoreValue | null = null;
@@ -183,6 +185,10 @@ async function harness(options: {
     activateWorkspace: jest.fn(async () => undefined),
     clearWorkspace: jest.fn(async () => undefined),
     getAll: jest.fn(async () => options.recoverySnapshots ?? []),
+  };
+  const transcriptRepository = {
+    list: jest.fn(async () => options.transcriptDrafts ?? []),
+    purge: jest.fn(async () => undefined),
   };
   const client = {
     deleteAccount: jest.fn(async () => undefined),
@@ -218,6 +224,7 @@ async function harness(options: {
       legacyMigrationService={legacyMigrationService}
       materialService={materialService}
       recordingRepository={recordingRepository}
+      transcriptRepository={transcriptRepository}
       sessions={sessions as unknown as SessionManager}
       storage={storage}
       client={client}
@@ -234,6 +241,7 @@ async function harness(options: {
     },
     materialService,
     recordingRepository,
+    transcriptRepository,
     sessions,
     storage,
     client,
@@ -242,6 +250,26 @@ async function harness(options: {
 }
 
 describe('AppStore workspace ownership', () => {
+  it('does not rewrite the workspace for transient errors or a token refresh', async () => {
+    const app = await harness({
+      initialSession: session('persistent-owner'),
+      loadSnapshot: async () => snapshot('owned-project'),
+    });
+    await waitFor(() => expect(app.store.isHydrated).toBe(true));
+    jest.mocked(app.storage.saveSnapshot).mockClear();
+
+    await act(async () => app.store.clearError());
+    await act(async () => app.sessions.replace(session('persistent-owner', 'rotated-token')));
+    await waitFor(() => expect(app.store.session?.accessToken).toBe('rotated-token'));
+
+    expect(app.storage.saveSnapshot).not.toHaveBeenCalled();
+    await act(async () => app.store.selectProject(null));
+    expect(app.storage.saveSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ activeProjectId: null }),
+      'persistent-owner',
+    );
+  });
+
   it('starts a new real account with an empty workspace', async () => {
     const user = session('real-user');
     const app = await harness({
@@ -415,6 +443,15 @@ describe('AppStore workspace ownership', () => {
       initialSession: session('real-user'),
       loadSnapshot: async () => materialSnapshot(source),
       recoverySnapshots: [recovery],
+      transcriptDrafts: [{
+        id: 'live-owned',
+        title: '실시간 대본',
+        updatedAt: '2026-10-04T00:00:00.000Z',
+        status: 'completed',
+        paragraphs: ['저장된 대본'],
+        interim: '',
+        parts: [{ uri: 'file:///documents/live-owned.wav', durationMillis: 1000, finalized: true }],
+      }],
     });
     await waitFor(() => expect(app.store.isHydrated).toBe(true));
 
@@ -427,8 +464,11 @@ describe('AppStore workspace ownership', () => {
     expect(app.deleteLocalSources).toHaveBeenCalledWith([
       'premind-web-media:owned-source',
       'premind-web-recording-checkpoint:recovery-owned',
+      'file:///documents/live-owned.wav',
     ]);
     expect(app.storage.clearSnapshot).toHaveBeenCalledWith('real-user');
+    expect(app.transcriptRepository.list).toHaveBeenCalledWith('real-user');
+    expect(app.transcriptRepository.purge).toHaveBeenCalledWith('real-user');
     expect(app.recordingRepository.clearWorkspace).toHaveBeenCalledWith(
       'real-user',
     );
@@ -483,6 +523,7 @@ describe('AppStore workspace ownership', () => {
     expect(app.store.activeProjectId).toBe('project-owned');
     expect(app.storage.clearSnapshot).not.toHaveBeenCalled();
     expect(app.recordingRepository.clearWorkspace).not.toHaveBeenCalled();
+    expect(app.transcriptRepository.purge).not.toHaveBeenCalled();
     expect(app.sessions.replace).not.toHaveBeenCalled();
   });
 });

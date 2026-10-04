@@ -37,13 +37,18 @@ describe('priceCopy', () => {
     const copy = priceCopy('yearly', price, null);
     expect(copy.headline).toBe('연 99,000원');
     expect(copy.billingLine).toBe('1년마다 99,000원씩 한 번에 결제돼요.');
-    expect(copy.subline).toBe('한 달에 8,300원 꼴, 2개월 무료');
+    expect(copy.subline).toBe('월 환산 8,300원, 연간 결제');
   });
 
   it('uses the store per-month figure for a yearly plan when it has one', () => {
     const copy = priceCopy('yearly', price, '₩99,000', '₩8,250');
     expect(copy.headline).toBe('연 ₩99,000');
-    expect(copy.subline).toBe('한 달에 ₩8,250 꼴, 2개월 무료');
+    expect(copy.subline).toBe('월 환산 ₩8,250, 연간 결제');
+  });
+
+  it('omits the monthly equivalent when the store has not provided one', () => {
+    expect(priceCopy('yearly', price, '$79.99').subline).toBeNull();
+    expect(priceCopy('yearly', price, '$79.99', null, 'en').subline).toBeNull();
   });
 
   it('never writes a middot', () => {

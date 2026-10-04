@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLayout } from '@/lib/layout';
+import { useScreenOverlay } from '@/components/ui/Screen';
 import { colors, spacing } from '@/theme/tokens';
 
 /**
@@ -14,9 +15,16 @@ export const BOTTOM_ACTION_SPACE = 96;
 
 export function BottomAction({ children }: { children: ReactNode }) {
   const { breakpoint } = useLayout();
+  const { bottomInsetHandled, setDockHeight } = useScreenOverlay();
+  useEffect(() => () => setDockHeight(0), [breakpoint, setDockHeight]);
   if (breakpoint !== 'compact') return <View style={styles.inline}>{children}</View>;
   return (
-    <SafeAreaView edges={['bottom']} pointerEvents="box-none" style={styles.dock}>
+    <SafeAreaView
+      edges={bottomInsetHandled ? [] : ['bottom']}
+      onLayout={({ nativeEvent }) => setDockHeight(nativeEvent.layout.height)}
+      pointerEvents="box-none"
+      style={styles.dock}
+    >
       <View style={styles.fade} pointerEvents="none" />
       <View style={styles.inner}>{children}</View>
     </SafeAreaView>

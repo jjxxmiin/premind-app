@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radii, spacing } from '@/theme/tokens';
 
 import { AppText } from './AppText';
+import { useScreenOverlay } from './Screen';
 
 /** How long a toast stays before it fades out of the tree. */
 const TOAST_MS = 1_800;
@@ -25,17 +27,27 @@ export interface ToastProps {
  * inert to touch so it can sit over content.
  */
 export function Toast({ message, bottom = spacing.xxxl, style }: ToastProps) {
+  const { bottom: bottomInset } = useSafeAreaInsets();
+  const { bottomInsetHandled, dockHeight } = useScreenOverlay();
+  const clearance = Math.max(
+    bottom,
+    dockHeight > 0 ? dockHeight + spacing.md : 0,
+  ) + (bottomInsetHandled ? 0 : bottomInset);
   if (!message) return null;
   return (
-    <View
+    <KeyboardAvoidingView
       accessibilityLiveRegion="polite"
+      behavior={Platform.OS === 'web' ? undefined : 'position'}
+      keyboardVerticalOffset={spacing.md}
       pointerEvents="none"
-      style={[styles.toast, { bottom }, style]}
+      style={[styles.positioner, { bottom: clearance }]}
     >
-      <AppText align="center" tone="inverse" variant="label">
-        {message}
-      </AppText>
-    </View>
+      <View style={[styles.toast, style]}>
+        <AppText align="center" tone="inverse" variant="label">
+          {message}
+        </AppText>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -67,13 +79,16 @@ export function useToast(): {
 }
 
 const styles = StyleSheet.create({
-  toast: {
+  positioner: {
     alignSelf: 'center',
+    maxWidth: '90%',
+    position: 'absolute',
+    zIndex: 1,
+  },
+  toast: {
     backgroundColor: colors.stage,
     borderRadius: radii.chip,
-    maxWidth: '90%',
     paddingHorizontal: spacing.gutter,
     paddingVertical: spacing.md,
-    position: 'absolute',
   },
 });

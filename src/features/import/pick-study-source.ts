@@ -1,5 +1,6 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { File as ExpoFile } from 'expo-file-system';
+import { Platform } from 'react-native';
 
 export const MAX_MEDIA_SOURCE_BYTES = 4 * 1024 * 1024 * 1024;
 export const MAX_DOCUMENT_SOURCE_BYTES = 40 * 1024 * 1024;
@@ -227,7 +228,11 @@ export async function pickStudySource(
   ];
   const result = await DocumentPicker.getDocumentAsync({
     type: mimeTypesForKinds(allowedKinds),
-    copyToCacheDirectory: true,
+    // Android's picker copies the whole file on the UI thread before it
+    // returns; a lecture video froze the app long enough for the system to
+    // kill it. Keep the content:// URI there instead —
+    // `preservePickedStudySource` copies it on a background thread.
+    copyToCacheDirectory: Platform.OS !== 'android',
     multiple: false,
     base64: false,
   });

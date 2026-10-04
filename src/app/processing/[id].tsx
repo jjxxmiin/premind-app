@@ -3,9 +3,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import {
   Clock3,
   FlaskConical,
-  Link2,
-  ShieldCheck,
-  WifiOff,
 } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -313,22 +310,6 @@ export default function ProcessingScreen() {
             </Card>
           </AnimatedReveal>
 
-          {isLink && !isBlocked ? (
-            <AnimatedReveal delay={110}>
-              <Card style={styles.noticeCard} variant="soft">
-                <Link2
-                  {...decorative}
-                  color={colors.textMuted}
-                  size={iconSizes.section}
-                  strokeWidth={1.9}
-                />
-                <AppText style={styles.flex} tone="muted" variant="meta">
-                  {t('영상은 내려받지 않고 유튜브에서 바로 재생해요.')}
-                </AppText>
-              </Card>
-            </AnimatedReveal>
-          ) : null}
-
           {isBlocked ? (
             <ErrorState
               compact
@@ -391,44 +372,6 @@ export default function ProcessingScreen() {
                 <SkeletonLines lines={5} />
               </Card>
             </AnimatedReveal>
-          ) : null}
-
-          {isBlocked ? (
-            <Card style={styles.noticeCard} variant="soft">
-              {isLink ? (
-                <Link2
-                  {...decorative}
-                  color={colors.textMuted}
-                  size={iconSizes.section}
-                  strokeWidth={1.9}
-                />
-              ) : connectionBlocked ? (
-                <WifiOff
-                  {...decorative}
-                  color={colors.warningStrong}
-                  size={iconSizes.section}
-                  strokeWidth={1.9}
-                />
-              ) : (
-                <ShieldCheck
-                  {...decorative}
-                  color={colors.positiveStrong}
-                  size={iconSizes.section}
-                  strokeWidth={1.9}
-                />
-              )}
-              <AppText style={styles.flex} tone="muted" variant="meta">
-                {t(
-                  isLink
-                    ? '다시 시도하면 같은 링크로 이어서 만들어요.'
-                    : connectionBlocked
-                      ? material.serverRecordingId
-                        ? '원본은 이미 올라갔어요. 연결되면 이어서 확인해요.'
-                        : '끊긴 지점부터 이어서 올려요. 자료가 중복되지 않아요.'
-                      : '다시 시도해도 기기의 원본은 지워지지 않아요.',
-                )}
-              </AppText>
-            </Card>
           ) : null}
 
           {isTablet ? primaryAction : null}

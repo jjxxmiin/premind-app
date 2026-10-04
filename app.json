@@ -2,7 +2,7 @@
   "expo": {
     "name": "PREMIND",
     "slug": "premind",
-    "version": "1.0.4",
+    "version": "1.0.6",
     "orientation": "default",
     "icon": "./assets/brand/app-icon.png",
     "scheme": "premind",
@@ -14,7 +14,7 @@
         "NSMicrophoneUsageDescription": "발표와 강의를 녹음해 마인드팩을 만들 수 있도록 마이크 접근을 허용해 주세요.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "3"
+      "buildNumber": "5"
     },
     "android": {
       "package": "kr.co.premind.premind",
@@ -23,7 +23,7 @@
         "foregroundImage": "./assets/brand/adaptive-foreground.png"
       },
       "predictiveBackGestureEnabled": true,
-      "versionCode": 7,
+      "versionCode": 9,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
@@ -67,7 +67,14 @@
       ],
       "expo-sqlite",
       "expo-web-browser",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "실시간 대본과 원본 녹음을 저장하도록 마이크 접근을 허용해 주세요.",
+          "speechRecognitionPermission": "말하는 내용을 실시간 대본으로 저장하도록 음성 인식을 허용해 주세요."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

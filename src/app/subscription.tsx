@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import {
   Check,
   CreditCard,
@@ -84,7 +83,7 @@ import { useLayout } from '@/lib/layout';
 
 const cycleOptions = [
   { value: 'monthly', label: '월간' },
-  { value: 'yearly', label: '연간 (2개월 무료)' },
+  { value: 'yearly', label: '연간' },
 ] as const;
 
 const SUPPORT_EMAIL = 'support@camorix.com';
@@ -220,6 +219,11 @@ function PlanCard({
  * says why, instead of crashing on a missing native module.
  */
 export default function SubscriptionScreen() {
+  const { session } = useAppStore();
+  return <SubscriptionContent key={session?.user.id ?? 'signed-out'} />;
+}
+
+function SubscriptionContent() {
   const t = useT();
   const locale = useLocale();
   const { session } = useAppStore();
@@ -230,6 +234,8 @@ export default function SubscriptionScreen() {
     error: null,
   });
   const [offering, setOffering] = useState<StoreOffering | null>(null);
+  const [storeLoading, setStoreLoading] = useState(true);
+  const [storeAttempt, setStoreAttempt] = useState(0);
   const [entitlement, setEntitlement] = useState<StoreEntitlement | null>(null);
   const [state, dispatch] = useReducer(purchaseReducer, initialPurchaseState);
   const toast = useToast();
@@ -251,6 +257,8 @@ export default function SubscriptionScreen() {
   const subscribed = state.entitled || planStatus.plan === 'standard';
   const usage = planStatus.usage;
   const busy = state.busy;
+  const checkingPlan = planStatus.loading || (storeBilling && storeLoading);
+  const purchaseBlocked = checkingPlan || planStatus.error || busy !== null;
 
   const storePackage = cycle === 'monthly' ? offering?.monthly : offering?.yearly;
   const copy = priceCopy(
@@ -265,9 +273,6 @@ export default function SubscriptionScreen() {
   const renewsAtIso = planStatus.renewsAt ?? entitlement?.expiresAt ?? null;
   const renewsText = renewalFact(renewsAtIso, subscribed, locale);
   const planName = t(subscribed ? '스탠다드' : '무료');
-  const planLine = formatRenewalDate(renewsAtIso)
-    ? t('지금 요금제 {planName} / 다음 갱신일 {renewsText}', { planName, renewsText })
-    : t('지금 요금제 {planName}', { planName });
   // 웹(Polar)에서 결제한 구독은 여기서 바로 해지 예약, 해지 취소(2026-09-26). 스토어 구독은 스토어에서.
   const [webSub, setWebSub] = useState<WebSubscription | null>(null);
   const [cancelAsk, setCancelAsk] = useState(false);
@@ -281,9 +286,15 @@ export default function SubscriptionScreen() {
     return () => {
       alive = false;
     };
-  }, [planStatus.plan]);
-  const webManaged = webSub?.source === 'web';
-  const webEnd = formatRenewalDate(webSub?.renewsAt ?? renewsAtIso, locale) ?? '';
+  }, [planStatus.plan, session?.user.id]);
+  const webManaged = subscribed && webSub?.source === 'web';
+  const webEnd = formatRenewalDate(webSub?.renewsAt ?? renewsAtIso, locale) ?? t('현재 이용 기간이 끝날 때');
+  const ending = webSub?.cancelAtPeriodEnd || (entitlement?.active && !entitlement.willRenew);
+  const planLine = ending
+    ? t('지금 요금제 {planName} / 만료일 {renewsText}', { planName, renewsText })
+    : formatRenewalDate(renewsAtIso)
+      ? t('지금 요금제 {planName} / 다음 갱신일 {renewsText}', { planName, renewsText })
+      : t('지금 요금제 {planName}', { planName });
   const changeWebCancel = async (cancel: boolean) => {
     setWebBusy(true);
     try {
@@ -316,23 +327,29 @@ export default function SubscriptionScreen() {
     void (async () => {
       // The signed-in user id, so a purchase follows the account rather than
       // the handset: reinstalling or signing in elsewhere keeps 스탠다드.
-      const ready = await configureBilling(session?.user.id ?? null);
-      if (!ready || cancelled) return;
-      const [nextOffering, current] = await Promise.all([
-        getStoreOffering(),
-        getStoreEntitlement(),
-      ]);
-      if (cancelled) return;
-      setOffering(nextOffering);
-      if (current) {
-        setEntitlement(current);
-        dispatch({ type: 'entitlement:known', entitled: current.active });
+      try {
+        const ready = await configureBilling(session?.user.id ?? null);
+        if (!ready || cancelled) return;
+        const [nextOffering, current] = await Promise.all([
+          getStoreOffering(),
+          getStoreEntitlement(),
+        ]);
+        if (cancelled) return;
+        setOffering(nextOffering);
+        if (current) {
+          setEntitlement(current);
+          dispatch({ type: 'entitlement:known', entitled: current.active });
+        }
+      } catch {
+        if (!cancelled) setOffering(null);
+      } finally {
+        if (!cancelled) setStoreLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [session?.user.id, storeBilling]);
+  }, [session?.user.id, storeBilling, storeAttempt]);
 
   /**
    * Hand the receipt to our server, then re-read the plan.
@@ -355,7 +372,7 @@ export default function SubscriptionScreen() {
   };
 
   const purchase = async () => {
-    if (!storePackage) return;
+    if (!storePackage || purchaseBlocked || subscribed) return;
     dispatch({ type: 'purchase:start' });
     const result = await purchaseStorePackage(storePackage.identifier);
     dispatch({ type: 'purchase:settle', result });
@@ -377,7 +394,7 @@ export default function SubscriptionScreen() {
   };
 
   return (
-    <Screen background="soft" padded={false}>
+    <Screen padded={false}>
       <AppHeader
         onBack={() => goBackOrReplace('/(tabs)/profile')}
         title={t('구독')}
@@ -428,7 +445,11 @@ export default function SubscriptionScreen() {
           <View style={wide ? styles.cycleWide : null}>
             <SegmentedControl<BillingCycle>
               onChange={setCycle}
-              options={cycleOptions.map((option) => ({ ...option, label: t(option.label) }))}
+              options={cycleOptions.map((option) => ({
+                ...option,
+                disabled: busy !== null || webCheckout.busy,
+                label: t(option.label),
+              }))}
               value={cycle}
             />
           </View>
@@ -598,23 +619,34 @@ export default function SubscriptionScreen() {
           />
         </Card>
 
-        {state.notice ? (
-          <AppText
-            accessibilityLiveRegion="polite"
-            tone={state.notice.tone}
-            variant="meta"
-          >
-            {t(state.notice.text)}
-          </AppText>
-        ) : null}
       </ScrollView>
 
       <View style={styles.bottomBar}>
         <View style={[styles.barInner, wide ? styles.barInnerWide : null]}>
+          {state.notice ? (
+            <AppText accessibilityLiveRegion="polite" tone={state.notice.tone} variant="meta">
+              {t(state.notice.text)}
+            </AppText>
+          ) : null}
+          {!subscribed && checkingPlan ? (
+            <AppText accessibilityLiveRegion="polite" tone="muted" variant="meta">
+              {t('구독 정보를 확인하고 있어요.')}
+            </AppText>
+          ) : null}
+          {!subscribed && planStatus.error ? (
+            <>
+              <AppText accessibilityRole="alert" tone="negative" variant="meta">
+                {t('기존 구독을 확인하지 못했어요. 다시 확인한 뒤 결제해 주세요.')}
+              </AppText>
+              <Button onPress={() => void planStatus.refresh()} size="small" variant="outline">
+                {t('다시 확인')}
+              </Button>
+            </>
+          ) : null}
           {subscribed ? (
             <Button
               fullWidth
-              onPress={() => router.back()}
+              onPress={() => goBackOrReplace('/(tabs)/profile')}
               size="large"
               variant="secondary"
             >
@@ -628,8 +660,9 @@ export default function SubscriptionScreen() {
                 </AppText>
               ) : null}
               <Button
-                disabled={webCheckout.busy}
+                disabled={webCheckout.busy || purchaseBlocked}
                 fullWidth
+                loading={webCheckout.busy}
                 onPress={() => {
                   setWebCheckout({ busy: true, error: null });
                   // The student server opens a Polar checkout for this account
@@ -671,7 +704,7 @@ export default function SubscriptionScreen() {
               </Button>
               <Button
                 fullWidth
-                onPress={() => router.back()}
+                onPress={() => goBackOrReplace('/(tabs)/profile')}
                 size="medium"
                 variant="ghost"
               >
@@ -684,23 +717,30 @@ export default function SubscriptionScreen() {
                   tap twice and then give up on. The store answers with no
                   products while the app's subscriptions are still being set up
                   or reviewed, so say that rather than showing a dead control. */}
-              {!storePackage ? (
+              {!storePackage && !storeLoading ? (
                 <AppText accessibilityRole="alert" tone="muted" variant="meta">
-                  {t('지금은 구독 상품을 불러올 수 없어요. 스토어에 상품이 준비되면 바로 구독할 수 있어요.')}
+                  {t('구독 상품을 불러오지 못했어요. 연결을 확인하고 다시 시도해 주세요.')}
                 </AppText>
               ) : null}
               <Button
-                disabled={!storePackage || busy !== null}
+                disabled={purchaseBlocked}
                 fullWidth
                 loading={busy === 'purchase' || busy === 'sync'}
-                onPress={() => void purchase()}
+                onPress={() => {
+                  if (storePackage) {
+                    void purchase();
+                    return;
+                  }
+                  setStoreLoading(true);
+                  setStoreAttempt((attempt) => attempt + 1);
+                }}
                 size="large"
                 variant="primary"
               >
-                {t('구독 시작하기')}
+                {t(storePackage ? '구독 시작하기' : '다시 불러오기')}
               </Button>
               <Button
-                disabled={busy !== null}
+                disabled={busy !== null || storeLoading}
                 fullWidth
                 loading={busy === 'restore'}
                 onPress={() => void restore()}
@@ -713,7 +753,7 @@ export default function SubscriptionScreen() {
           ) : (
             <Button
               fullWidth
-              onPress={() => router.back()}
+              onPress={() => goBackOrReplace('/(tabs)/profile')}
               size="large"
               variant="secondary"
             >

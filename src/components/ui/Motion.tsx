@@ -37,6 +37,20 @@ export function useReducedMotion() {
       cachedReducedMotion = value;
       if (mounted) setReduced(value);
     };
+    if (Platform.OS === 'web') {
+      if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+        updatePreference(true);
+        return;
+      }
+      const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const onChange = (event: MediaQueryListEvent) => updatePreference(event.matches);
+      updatePreference(media.matches);
+      media.addEventListener('change', onChange);
+      return () => {
+        mounted = false;
+        media.removeEventListener('change', onChange);
+      };
+    }
     void AccessibilityInfo.isReduceMotionEnabled()
       .then(updatePreference)
       .catch(() => {

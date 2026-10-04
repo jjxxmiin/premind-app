@@ -51,6 +51,11 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        // No cross-fade between tabs: both scenes were half-visible at once
+        // and the outgoing tab left a ghost behind the incoming one.
+        animation: 'none',
+        // Only the focused tab is painted; a blurred tab cannot bleed through.
+        freezeOnBlur: true,
         headerShown: false,
         // Laptop and desktop windows: the bar becomes a sidebar on the left.
         tabBarPosition: breakpoint === 'expanded' ? 'left' : 'bottom',

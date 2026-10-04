@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 import { STUDY_IMPORT_DIRECTORY_NAME } from '@/features/import/preserve-study-source';
 import { RECORDING_DIRECTORY_NAME } from '@/features/recording/recording-session-repository';
+import { LIVE_TRANSCRIPT_DIRECTORY_NAME } from '@/features/recording/live-transcript-constants';
 
 import {
   deleteWebMediaSource,
@@ -19,6 +20,7 @@ function isOwnedNativeSource(uri: string): boolean {
   const ownedPrefixes = [
     directoryPrefix(new Directory(Paths.document, STUDY_IMPORT_DIRECTORY_NAME)),
     directoryPrefix(new Directory(Paths.document, RECORDING_DIRECTORY_NAME)),
+    directoryPrefix(new Directory(Paths.document, LIVE_TRANSCRIPT_DIRECTORY_NAME)),
     directoryPrefix(Paths.cache),
   ];
   return ownedPrefixes.some((prefix) => uri.startsWith(prefix));

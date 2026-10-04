@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { AlertTriangle, CheckCircle2, Mic, Square, X } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 
 import { CameraPreview } from '@/components/interview/CameraPreview';
 import { AppText, Button, Card, Dialog, IconButton, ProgressBar, Screen } from '@/components/ui';
@@ -30,7 +30,7 @@ import { colors, iconSizes, radii, spacing } from '@/theme/tokens';
 import { INTERVIEW_HOME } from '@/features/interview/routes';
 
 type Stage = 'loading' | 'missing' | 'blocked' | 'greeting' | 'connecting' | 'running' | 'device_error' | 'complete' | 'load_error';
-type Phase = 'question' | 'thinking' | 'answering' | 'saving' | 'next';
+type Phase = 'question' | 'thinking' | 'starting' | 'answering' | 'saving' | 'next';
 
 const QUESTION_HOLD_MS = 700;
 const NEXT_HOLD_MS = 700;
@@ -254,8 +254,11 @@ export default function InterviewRoomScreen() {
   }, [question]);
 
   const startAnswer = useCallback(() => {
-    if (stage !== 'running' || (phase !== 'thinking' && phase !== 'question') || !question || !session || answerLockRef.current) return;
+    if ((stage !== 'running' && stage !== 'load_error') || (phase !== 'thinking' && phase !== 'question' && phase !== 'starting') || !question || !session || answerLockRef.current) return;
     answerLockRef.current = true;
+    setMessage(null);
+    setStage('running');
+    setPhase('starting');
     const start = async () => {
       if (ai) {
         const ok = await recorder.start();
@@ -413,6 +416,9 @@ export default function InterviewRoomScreen() {
         <Notice
           actions={
             <>
+              {stage === 'load_error' && session && !planBlocked ? (
+                <Button onPress={startAnswer} variant="primary">{t('다시 시도')}</Button>
+              ) : null}
               {planBlocked ? (
                 <Button onPress={() => router.push('/subscription')} variant="brand">
                   {t('요금제 보기')}
@@ -472,14 +478,14 @@ export default function InterviewRoomScreen() {
         </View>
       ) : null}
 
-      <View style={[styles.stage, { paddingHorizontal: gutter }]}>
+      <ScrollView key={question?.id} contentContainerStyle={[styles.stageContent, { paddingHorizontal: gutter }]} style={styles.stage} testID="interview-question-stage">
         <View style={[styles.stageInner, wide && withVideo ? styles.stageRow : null]}>
           {withVideo && preview ? (
             <View style={wide ? styles.previewWide : styles.preview}>
               <CameraPreview stream={preview} />
             </View>
           ) : null}
-          <View style={styles.questionColumn}>
+          <View style={[styles.questionColumn, wide && withVideo ? styles.flex : null]}>
             {stage === 'greeting' || stage === 'connecting' ? (
               <View style={styles.block}>
                 <AppText tone="inverse" variant="heroTitle">
@@ -536,7 +542,9 @@ export default function InterviewRoomScreen() {
                   ) : (
                     <AppText style={styles.inverseMuted} variant="body">
                       {t(
-                        phase === 'saving'
+                        phase === 'starting'
+                          ? '답변을 시작하고 있어요.'
+                          : phase === 'saving'
                           ? ai
                             ? '답변을 저장하고 있어요.'
                             : '답변 시간을 기록하고 있어요.'
@@ -548,7 +556,9 @@ export default function InterviewRoomScreen() {
                   )}
                 </View>
 
-                {thinking ? (
+                {phase === 'starting' ? (
+                  <Button disabled loading size="large" variant="brand">{t('시작 중')}</Button>
+                ) : thinking ? (
                   <Button leftIcon={<Mic color={colors.textInverse} size={iconSizes.inline} />} onPress={startAnswer} size="large" variant="brand">
                     {t('바로 답하기')}
                   </Button>
@@ -561,7 +571,7 @@ export default function InterviewRoomScreen() {
             )}
           </View>
         </View>
-      </View>
+      </ScrollView>
 
       <Dialog
         cancel={{ label: t('계속 답하기'), onPress: () => setLeaveOpen(false) }}
@@ -605,12 +615,13 @@ const styles = StyleSheet.create({
   top: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, minHeight: 56, paddingTop: spacing.sm },
   inverseMuted: { color: colors.stageMuted },
   inverseLink: { color: colors.stageText },
-  stage: { alignItems: 'center', flex: 1, justifyContent: 'center', paddingVertical: spacing.xl },
+  stage: { flex: 1, minHeight: 0 },
+  stageContent: { alignItems: 'center', flexGrow: 1, justifyContent: 'center', paddingVertical: spacing.xl },
   stageInner: { gap: spacing.xl, maxWidth: 960, width: '100%' },
   stageRow: { alignItems: 'center', flexDirection: 'row' },
   preview: { alignSelf: 'center', maxWidth: 360, width: '100%' },
   previewWide: { flex: 1, maxWidth: 420 },
-  questionColumn: { alignSelf: 'center', flex: 1, maxWidth: 680, minWidth: 0, width: '100%' },
+  questionColumn: { alignSelf: 'center', maxWidth: 680, minWidth: 0, width: '100%' },
   block: { gap: spacing.lg },
   clockRow: { minHeight: 96, justifyContent: 'center' },
   clock: {

@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
-const executable = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-const child = spawn(executable, ['expo', 'export', '--platform', 'web', '--clear'], {
+const executable = fileURLToPath(import.meta.resolve('expo/bin/cli'));
+const child = spawn(process.execPath, [executable, 'export', '--platform', 'web', '--clear'], {
   env: {
     ...process.env,
     // A same-origin base keeps tunneled previews functional. The preview

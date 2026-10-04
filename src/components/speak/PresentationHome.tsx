@@ -4,22 +4,15 @@ import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppHeader } from "@/components/AppHeader";
-import { Carousel } from "@/components/app";
 import {
-  LatestReportCard,
-  LensEvaluatingTile,
-  LensReportTile,
-  ScoreTrend,
   lensFailure,
   lensHome,
   type LensFailure,
 } from "@/components/lens";
 import { MediaArtwork } from "@/components/MediaArtwork";
 import { SpeakColumns, SpeakFrame } from "@/components/speak/SpeakColumns";
+import { PresentationOverview } from "@/components/speak/PresentationOverview";
 import { RoundAction } from "@/components/speak/RoundAction";
-import {
-  Surface,
-} from "@/components/speak/SpeakKit";
 import {
   AnimatedReveal,
   AppText,
@@ -39,11 +32,6 @@ import { useAppStore } from "@/state/app-store";
 import { colors, iconSizes, radii, spacing } from "@/theme/tokens";
 import type { StudyMaterial } from "@/types";
 
-/**
- * 말하기 탭의 발표 쪽(2026-09-26 앱다운 재설계). 큰 제목 → 알약 고르기 → 머리 카드 안의 큰 둥근
- * 녹음 버튼(스픽: 목소리가 먼저) → 최근 평가 한 장 → 지난 평가는 옆으로 넘기기 → 팁 세 타일.
- * `switcher` 는 발표, 면접을 고르는 알약.
- */
 export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
   const t = useT();
   const { evaluatingMaterialIds, materials, projects, requestLens } =
@@ -59,11 +47,11 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
     projects.find((project) => project.id === material.projectId)?.title ??
     t("폴더 없음");
 
-  const isEvaluating = (id: string) => evaluatingMaterialIds.includes(id);
-  const { candidates, history, latest, rows } = lensHome(
+  const home = lensHome(
     materials,
     evaluatingMaterialIds,
   );
+  const { candidates, latest } = home;
 
   const openPicker = () => {
     setSelectedId(null);
@@ -83,13 +71,15 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
       .catch((error: unknown) => setFailure(lensFailure(error)));
   };
 
-  // 머리 카드(흰 면): 제목 한 줄 + 큰 둥근 녹음 버튼. 가진 자료로 평가는 작은 회색 버튼(시트).
   const hero = (
-    <Surface padding={spacing.xl} style={styles.hero} tone="raised">
+    <Card padding={spacing.gutter} variant="soft">
       <View style={[styles.heroRow, compact ? styles.heroRowCompact : null]}>
         <View style={styles.heroLeft}>
           <AppText variant={compact ? "pageTitle" : "heroTitle"}>
             {t(latest ? "한 번 더 말해 볼까요?" : "발표를 들려주세요")}
+          </AppText>
+          <AppText tone="muted" variant="meta">
+            {t("내 발표를 녹음하고, 다음에 고칠 부분을 찾아요.")}
           </AppText>
           <Button
             leftIcon={
@@ -112,51 +102,17 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
           testID="speak-record"
         />
       </View>
-    </Surface>
+    </Card>
   );
 
-  const latestCard = latest?.lensReport ? (
-    <LatestReportCard
-      onPress={() => openReport(latest)}
-      projectTitle={projectTitle(latest)}
-      report={latest.lensReport}
-      title={latest.title}
-      updatedAt={latest.updatedAt}
+  const overview = (
+    <PresentationOverview
+      evaluatingIds={evaluatingMaterialIds}
+      home={home}
+      onOpen={openReport}
+      projectTitle={projectTitle}
     />
-  ) : null;
-
-  const trend = history.length >= 2 ? <ScoreTrend entries={history} /> : null;
-
-  // 지난 평가: 위 카드에 크게 보인 최근 평가는 빼고, 쓰는 중인 것부터.
-  const past = rows.filter(
-    (material) => isEvaluating(material.id) || material.id !== latest?.id,
   );
-  const pastRow =
-    past.length > 0 ? (
-      <View style={styles.section}>
-        <Carousel
-          accessibilityLabel={t("지난 평가")}
-          itemWidth={compact ? 220 : 240}
-        >
-          {past.map((material) =>
-            isEvaluating(material.id) ? (
-              <LensEvaluatingTile
-                key={material.id}
-                material={material}
-                projectTitle={projectTitle(material)}
-              />
-            ) : (
-              <LensReportTile
-                key={material.id}
-                material={material}
-                onPress={() => openReport(material)}
-                projectTitle={projectTitle(material)}
-              />
-            ),
-          )}
-        </Carousel>
-      </View>
-    ) : null;
 
   const top = (
     <View style={styles.top}>
@@ -166,7 +122,6 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
 
   return (
     <Screen
-      background="soft"
       fullBleed
       padded={false}
       safeAreaEdges={["top", "left", "right"]}
@@ -189,36 +144,14 @@ export function PresentationHome({ switcher }: { switcher?: ReactNode }) {
           <AnimatedReveal>{top}</AnimatedReveal>
           {wide ? (
             <SpeakColumns
-              main={
-                <>
-                  <AnimatedReveal delay={60}>{hero}</AnimatedReveal>
-                  {latestCard ? (
-                    <AnimatedReveal delay={120}>{latestCard}</AnimatedReveal>
-                  ) : null}
-                  {pastRow ? (
-                    <AnimatedReveal delay={180}>{pastRow}</AnimatedReveal>
-                  ) : null}
-                </>
-              }
-              side={
-                trend ? (
-                  <AnimatedReveal delay={120}>{trend}</AnimatedReveal>
-                ) : null
-              }
-              sideWidth={340}
+              main={<AnimatedReveal>{hero}</AnimatedReveal>}
+              side={<AnimatedReveal>{overview}</AnimatedReveal>}
+              sideWidth={400}
             />
           ) : (
             <>
-              <AnimatedReveal delay={60}>{hero}</AnimatedReveal>
-              {latestCard ? (
-                <AnimatedReveal delay={120}>{latestCard}</AnimatedReveal>
-              ) : null}
-              {pastRow ? (
-                <AnimatedReveal delay={180}>{pastRow}</AnimatedReveal>
-              ) : null}
-              {trend ? (
-                <AnimatedReveal delay={220}>{trend}</AnimatedReveal>
-              ) : null}
+              <AnimatedReveal>{hero}</AnimatedReveal>
+              <AnimatedReveal>{overview}</AnimatedReveal>
             </>
           )}
         </View>
@@ -366,18 +299,12 @@ function CandidateRow({
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.xxl,
+    gap: spacing.xl,
     paddingBottom: spacing.xxl,
     paddingTop: spacing.xs,
   },
   top: {
     gap: spacing.lg,
-  },
-  section: {
-    gap: spacing.md,
-  },
-  hero: {
-    borderRadius: 24,
   },
   heroRow: {
     alignItems: "center",
@@ -389,7 +316,7 @@ const styles = StyleSheet.create({
   },
   heroLeft: {
     flex: 1,
-    gap: spacing.lg,
+    gap: spacing.md,
     minWidth: 0,
   },
   pick: {

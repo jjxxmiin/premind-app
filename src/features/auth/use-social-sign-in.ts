@@ -4,7 +4,7 @@ import * as Crypto from 'expo-crypto';
 import { useGoogleAuthentication, isGoogleSignInSupported } from './use-google-auth';
 import { parseKakaoCallback, KAKAO_APP_REDIRECT } from './kakao-callback';
 import { authenticateKakaoWeb } from './kakao-web-auth';
-import * as WebBrowser from 'expo-web-browser';
+import { openKakaoAuthSession } from './kakao-native-session';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
@@ -136,9 +136,7 @@ export function useKakaoIdentity(): () => Promise<{ code: string; state: string;
     const start = await apiClient.startKakaoSignIn(
       challenge.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
     );
-    const result = await WebBrowser.openAuthSessionAsync(
-      start.authorizationUrl, KAKAO_APP_REDIRECT,
-    );
+    const result = await openKakaoAuthSession(start.authorizationUrl);
     if (result.type !== 'success') throw new SocialSignInCancelled();
     const callback = parseKakaoCallback(result.url, start.state);
     if (callback.cancelled) throw new SocialSignInCancelled();
