@@ -48,10 +48,10 @@ export function PlanRow({ divider = true, item, onPress }: PlanRowProps) {
         <Icon {...decorative} color={colors.text} size={iconSizes.section} strokeWidth={1.9} />
       </View>
       <View style={styles.copy}>
-        <AppText numberOfLines={1} variant="itemTitle">
+        <AppText numberOfLines={2} variant="itemTitle">
           {item.title}
         </AppText>
-        <AppText numberOfLines={2} tone="muted" variant="meta">
+        <AppText tone="muted" variant="meta">
           {item.detail}
         </AppText>
       </View>

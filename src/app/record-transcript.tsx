@@ -29,7 +29,7 @@ function LiveTranscriptScreen({ workspaceId }: { readonly workspaceId: string })
   const navigation = useNavigation();
   const recorder = useLiveTranscript(workspaceId);
   const toast = useToast();
-  const [title, setTitle] = useState(() => t('실시간 녹음 대본'));
+  const [title, setTitle] = useState(() => t('자막 녹음'));
   const [selected, setSelected] = useState<LiveTranscriptDraft | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -80,19 +80,19 @@ function LiveTranscriptScreen({ workspaceId }: { readonly workspaceId: string })
 
   return (
     <Screen padded={false} overlay={<Toast message={toast.message} />}>
-      <AppHeader onBack={back} title={t('실시간 대본')} />
+      <AppHeader onBack={back} title={t('자막 녹음')} />
       <ScrollView ref={transcriptScroll} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled"
         scrollEventThrottle={100}
         onScroll={({ nativeEvent }) => { nearBottom.current = nativeEvent.contentSize.height - nativeEvent.layoutMeasurement.height - nativeEvent.contentOffset.y < spacing.massive; }}
         onContentSizeChange={() => { if (phase === 'recording' && nearBottom.current) transcriptScroll.current?.scrollToEnd({ animated: true }); }}>
         {!draft ? <>
-          <AppText variant="heroTitle">{t('말하는 순간, 대본으로 남겨요')}</AppText>
+          <AppText variant="heroTitle">{t('말하는 대로 자막이 떠요')}</AppText>
           <Card style={styles.card}>
             <AuthField label={t('녹음 제목')} value={title} onChangeText={setTitle} maxLength={80} editable={!busy} />
             {/* What the start button's 동의 refers to; it stays visible above it. */}
             <AppText tone="muted">{t('기기의 음성 인식 서비스를 사용해요. 서비스에 따라 음성이 Google 또는 Apple 서버로 전송될 수 있어요.')}</AppText>
             <AppText tone="muted">{t('화면을 벗어나거나 잠그면 일시정지해요')}</AppText>
-            <Button disabled={!recorder.supported || !title.trim()} loading={busy} variant="primary" onPress={() => void recorder.start(title)}>{t('동의하고 실시간 녹음 시작')}</Button>
+            <Button disabled={!recorder.supported || !title.trim()} loading={busy} variant="primary" onPress={() => void recorder.start(title)}>{t('동의하고 자막 녹음 시작')}</Button>
             {!recorder.supported ? <AppText tone="muted">{t('Android 13 이상이나 iOS 앱에서 쓸 수 있어요')}</AppText> : null}
             <Button variant="secondary" disabled={busy} onPress={() => router.dismissTo('/record')}>{t('일반 녹음으로 시작')}</Button>
           </Card>

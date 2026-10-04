@@ -24,7 +24,7 @@
         "monochromeImage": "./assets/brand/adaptive-monochrome.png"
       },
       "predictiveBackGestureEnabled": true,
-      "versionCode": 14,
+      "versionCode": 15,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",

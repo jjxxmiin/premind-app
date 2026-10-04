@@ -48,7 +48,10 @@ export function HomeHero({
           inputMode="url"
           onChangeText={setText}
           onSubmitEditing={() => (text.trim() ? send() : undefined)}
-          placeholder={t('유튜브 링크를 붙여 넣거나 파일을 올려 보세요')}
+          // Short enough for a 360dp phone at a large font size (2026-10-04 QA: the
+          // longer line ran past the dark box).
+          numberOfLines={1}
+          placeholder={t('유튜브 링크를 붙여 넣어 보세요')}
           placeholderTextColor={colors.stageMuted}
           returnKeyType="send"
           style={[styles.input, inputReset]}

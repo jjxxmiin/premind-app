@@ -293,7 +293,7 @@ export default function ProcessingScreen() {
                   <MediaArtwork compact kind={material.source.kind} status={material.status} />
                 )}
                 <View style={styles.flex}>
-                  <AppText numberOfLines={1} variant="itemTitle">
+                  <AppText variant="itemTitle">
                     {material.title}
                   </AppText>
                   <AppText numberOfLines={1} tone="muted" variant="meta">

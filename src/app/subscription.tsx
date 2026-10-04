@@ -22,6 +22,7 @@ import {
   ProgressBar,
   Screen,
   SegmentedControl,
+  Skeleton,
   StatusBadge,
   Toast,
   useToast,
@@ -111,11 +112,18 @@ function PlanCard({
   expanded,
   plan,
   price,
+  pricePending = false,
   priceNote,
   recommended,
   wide,
 }: {
   current: boolean;
+  /**
+   * The store has not answered yet. The price waits as a placeholder of the
+   * same size instead of showing our own figure and then swapping it for the
+   * store's (2026-10-04 QA: "구독 누르면 텍스트가 갑자기 툭 바뀜").
+   */
+  pricePending?: boolean;
   /** Every line of the offer; folded, only the lines people ask about first. */
   expanded: boolean;
   plan: 'free' | 'standard';
@@ -141,7 +149,12 @@ function PlanCard({
           <StatusBadge label={t('이용 중')} tone={standard ? 'positive' : 'neutral'} />
         ) : null}
       </View>
-      {price ? (
+      {pricePending ? (
+        <View accessibilityLabel={t('가격을 불러오고 있어요')} style={styles.planPrice}>
+          <Skeleton height={36} width={150} />
+          <Skeleton height={14} width={110} />
+        </View>
+      ) : price ? (
         <View style={styles.planPrice}>
           <AppText tabular variant="display">
             {price}
@@ -476,6 +489,7 @@ function SubscriptionContent() {
                         : null
                     : null
                 }
+                pricePending={plan === 'standard' && storeBilling && storeLoading && !subscribed}
                 priceNote={
                   canBuyHere && !subscribed && plan === 'standard' ? copy.subline : null
                 }
@@ -503,9 +517,14 @@ function SubscriptionContent() {
             <AppText accessibilityRole="header" variant="itemTitle">
               {t('결제 안내')}
             </AppText>
-            <AppText tone="muted" variant="body">
-              {copy.billingLine}
-            </AppText>
+            {/* The charge waits for the store's own price, like the card above. */}
+            {storeBilling && storeLoading ? (
+              <Skeleton height={20} width="80%" />
+            ) : (
+              <AppText tone="muted" variant="body">
+                {copy.billingLine}
+              </AppText>
+            )}
             <AppText tone="muted" variant="body">
               {autoRenewLine(cycle, locale)}
             </AppText>

@@ -400,7 +400,7 @@ export function StudyChat({
                             <AppText variant="label">
                               {t.ctx('source', sourceLabel(citation.sourceKind))} / {citationAt(citation.timestampMs)}
                             </AppText>
-                            <AppText numberOfLines={3} tone="muted" variant="meta">
+                            <AppText tone="muted" variant="meta">
                               {citation.excerpt}
                             </AppText>
                           </View>
@@ -477,7 +477,7 @@ export function StudyChat({
                     hovered || pressed ? styles.rowPressed : null,
                   ]}
                 >
-                  <AppText numberOfLines={2} style={styles.flex} variant="body">
+                  <AppText style={styles.flex} variant="body">
                     {suggestion}
                   </AppText>
                   <Plus

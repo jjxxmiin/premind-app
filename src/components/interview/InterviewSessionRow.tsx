@@ -46,7 +46,7 @@ export function InterviewSessionRow({ session, onPress, last = false, showStatus
       style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [styles.row, !last ? styles.divider : null, hovered || pressed ? styles.pressed : null]}
     >
       <View style={styles.flex}>
-        <AppText numberOfLines={1} variant="itemTitle">
+        <AppText numberOfLines={2} variant="itemTitle">
           {title}
         </AppText>
         <AppText numberOfLines={1} tone="muted" variant="meta">

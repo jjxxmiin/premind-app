@@ -408,7 +408,7 @@ function ConceptCard({
         {term}
       </AppText>
       {concept.missedQuestion ? (
-        <AppText numberOfLines={1} tone="muted" variant="meta">
+        <AppText tone="muted" variant="meta">
           {concept.missedQuestion.prompt}
         </AppText>
       ) : null}

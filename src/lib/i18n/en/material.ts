@@ -221,4 +221,5 @@ export const EN_MATERIAL: EnDict = {
   'AI 요약': 'AI summary',
   '시험에 나올 부분은?': 'What will be on the exam?',
   '핵심만 쉽게 설명해 줘': 'Explain the key points simply',
+  '말소리가 거의 없어서 요약을 만들지 않았어요.': 'Almost nothing was said, so no summary was made.',
 };

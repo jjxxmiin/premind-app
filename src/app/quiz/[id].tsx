@@ -313,7 +313,7 @@ export default function QuizScreen() {
                     }
                     style={styles.missed}
                   >
-                    <AppText numberOfLines={1} variant="itemTitle">
+                    <AppText variant="itemTitle">
                       {item.prompt}
                     </AppText>
                     <AppText numberOfLines={1} tone="muted" variant="meta">

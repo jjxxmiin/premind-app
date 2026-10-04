@@ -166,13 +166,13 @@ export default function NotificationsScreen() {
                       <AppText numberOfLines={2} variant="itemTitle">
                         {item.title}
                       </AppText>
-                      <AppText numberOfLines={1} tone="soft" variant="meta">
+                      <AppText tone="soft" variant="meta">
                         {material.title}
                       </AppText>
                       {/* A finished pack says nothing its title has not; the others
                           say why it stopped or what a tap will do. */}
                       {material.status !== 'ready' ? (
-                        <AppText numberOfLines={2} tone="muted" variant="body">
+                        <AppText tone="muted" variant="body">
                           {item.description}
                         </AppText>
                       ) : null}

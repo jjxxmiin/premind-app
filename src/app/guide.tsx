@@ -280,7 +280,7 @@ function StepRow({
             </AppText>
             {t.ctx('guide', step.title)}
           </AppText>
-          <AppText numberOfLines={1} tone="muted" variant="meta">
+          <AppText tone="muted" variant="meta">
             {t(step.summary)}
           </AppText>
         </View>

@@ -80,7 +80,7 @@ export function ListRow({
           {title}
         </AppText>
         {subtitle ? (
-          <AppText numberOfLines={2} tone="muted" variant="meta">
+          <AppText tone="muted" variant="meta">
             {subtitle}
           </AppText>
         ) : null}

@@ -85,7 +85,10 @@ export function AppHeader({
       <AppText
         accessibilityRole="header"
         align={alignment}
-        numberOfLines={1}
+        // Two lines for a long 자료 title (2026-10-04 QA: a title cut with "…"
+        // could not be read in full anywhere). A tab name or a titled
+        // subtitle pair stays on one.
+        numberOfLines={large || subtitle ? 1 : 2}
         tone={inverse ? 'inverse' : 'default'}
         variant={large ? 'pageTitle' : 'heading'}
       >

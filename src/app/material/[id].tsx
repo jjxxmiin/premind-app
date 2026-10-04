@@ -177,6 +177,14 @@ interface RowLayout {
 }
 
 /** The segment the playhead is in, or the last one that started before it. */
+/** Letters and digits across the 대본, the measure the server's summary gate uses. */
+function spokenChars(material: StudyMaterial): number {
+  return material.transcript.reduce(
+    (sum, segment) => sum + (segment.text.match(/[가-힣A-Za-z0-9]/g)?.length ?? 0),
+    0,
+  );
+}
+
 function segmentAtPosition(
   transcript: readonly TranscriptSegment[],
   positionMs: number,
@@ -1471,9 +1479,13 @@ function SummaryPanel({
         <EmptyState
           compact
           description={
-            material.transcript.length
-              ? t('이 자료에는 요약이 없어요. 대본 탭에서 원문을 볼 수 있어요.')
-              : t('요약과 대본이 없어요. 원본은 위에서 들을 수 있어요.')
+            // The server skips the summary when almost nothing was said
+            // (premind-recorder-api MIN_SUMMARY_CONTENT_CHARS): say so.
+            material.transcript.length && spokenChars(material) < 40
+              ? t('말소리가 거의 없어서 요약을 만들지 않았어요.')
+              : material.transcript.length
+                ? t('이 자료에는 요약이 없어요. 대본 탭에서 원문을 볼 수 있어요.')
+                : t('요약과 대본이 없어요. 원본은 위에서 들을 수 있어요.')
           }
           icon={Sparkles}
           title={t('요약이 없어요')}

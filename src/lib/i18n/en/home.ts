@@ -221,7 +221,7 @@ export const EN_HOME: EnDict = {
   // Direction D home (2026-10-04)
   '{name}님, 오늘은 무엇을 공부할까요?': 'What will you study today, {name}?',
   '오늘은 무엇을 공부할까요?': 'What will you study today?',
-  '유튜브 링크를 붙여 넣거나 파일을 올려 보세요': 'Paste a YouTube link or upload a file',
+  '유튜브 링크를 붙여 넣어 보세요': 'Paste a YouTube link',
   링크: 'Link',
   '유튜브 링크로 만들기': 'Make it from the YouTube link',
   '오늘의 복습': "Today's review",

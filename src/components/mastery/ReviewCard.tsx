@@ -67,7 +67,7 @@ export function ReviewCard({ material, onPress, summary }: Omit<MaterialMasteryR
           </AppText>
         </View>
       ) : (
-        <AppText numberOfLines={1} tone="muted" variant="meta">
+        <AppText numberOfLines={2} tone="muted" variant="meta">
           {line}
         </AppText>
       )}

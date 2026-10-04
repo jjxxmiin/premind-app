@@ -188,7 +188,7 @@ export default function InterviewReportScreen() {
             {index + 1}
           </AppText>
           <View style={styles.flex}>
-            <AppText numberOfLines={2} variant="body">
+            <AppText variant="body">
               {t(question.text)}
             </AppText>
             <AppText tone="muted" variant="meta">
@@ -214,7 +214,7 @@ export default function InterviewReportScreen() {
               {index + 1}
             </AppText>
           </View>
-          <AppText numberOfLines={3} style={styles.grow} variant="bodyStrong">
+          <AppText style={styles.grow} variant="bodyStrong">
             {t(question.text)}
           </AppText>
           <AppText numberOfLines={1} tone={on ? 'brand' : 'muted'} variant="meta">
@@ -736,7 +736,7 @@ function QuestionDetail({
                   </AppText>
                 </View>
                 {side.missing !== null ? <AppText variant="meta">{t('빠진 내용 {n}개', { n: side.missing })}</AppText> : null}
-                <AppText numberOfLines={3} variant="meta">
+                <AppText variant="meta">
                   {side.transcript || t('전사문이 아직 없어요.')}
                 </AppText>
               </Pressable>

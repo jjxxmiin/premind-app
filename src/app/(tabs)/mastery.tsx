@@ -369,10 +369,10 @@ function ConfusionSpotCard({
         onPress={onOpen}
         style={styles.spotBody}
       >
-        <AppText numberOfLines={1} variant="itemTitle">
+        <AppText variant="itemTitle">
           {spot.passage}
         </AppText>
-        <AppText numberOfLines={1} tone="muted" variant="meta">
+        <AppText numberOfLines={2} tone="muted" variant="meta">
           {where}
         </AppText>
         <AppText numberOfLines={1} style={styles.reasonText} variant="badge">

@@ -524,7 +524,7 @@ export default function InterviewRoomScreen() {
                   {question ? t(question.text) : null}
                 </AppText>
                 {question?.sourceQuote ? (
-                  <AppText numberOfLines={2} style={styles.inverseMuted} variant="meta">
+                  <AppText style={styles.inverseMuted} variant="meta">
                     {t('자소서: {quote}', { quote: question.sourceQuote })}
                   </AppText>
                 ) : null}
