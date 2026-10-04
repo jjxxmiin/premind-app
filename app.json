@@ -19,11 +19,12 @@
     "android": {
       "package": "kr.co.premind.premind",
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/brand/adaptive-foreground.png"
+        "backgroundColor": "#FDF6EB",
+        "foregroundImage": "./assets/brand/adaptive-foreground.png",
+        "monochromeImage": "./assets/brand/adaptive-monochrome.png"
       },
       "predictiveBackGestureEnabled": true,
-      "versionCode": 11,
+      "versionCode": 12,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",

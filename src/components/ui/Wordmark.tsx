@@ -11,14 +11,15 @@ import { colors, sizes, spacing } from '@/theme/tokens';
 
 const WORDMARK_ASPECT_RATIO = 1315 / 341;
 const wordmarkSource = require('../../../assets/brand/wordmark.png');
-// The app icon's pencil-P, cut tight on white (scripts/refresh-brand-icons.mjs).
+// The app icon's P, cut tight on transparency (scripts/refresh-brand-icons.mjs).
 const symbolSource = require('../../../assets/brand/symbol.png');
-const SYMBOL_ASPECT_RATIO = 351 / 512;
-// A little taller than the wordmark image, so the mark reads at the lettering's
-// cap height plus the pencil tip.
-const SYMBOL_SCALE = 1.2;
-// On a dark panel the mark sits on a white rounded tile, like the app icon.
-const TILE_SCALE = 1.25;
+const SYMBOL_ASPECT_RATIO = 421 / 512;
+// A little taller than the wordmark image, so the P reads a touch above the
+// lettering's cap height, its point dropping below the baseline.
+const SYMBOL_SCALE = 1.1;
+// On a colored panel the P sits on the icon's cream rounded tile.
+const ICON_CREAM = '#FDF6EB';
+const TILE_SCALE = 1.5;
 const TILE_RADIUS = 0.24;
 
 export interface WordmarkProps {
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
   },
   tile: {
     alignItems: 'center',
-    backgroundColor: colors.textInverse,
+    backgroundColor: ICON_CREAM,
     justifyContent: 'center',
   },
 });
