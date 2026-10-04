@@ -13,11 +13,10 @@ export const EN_LIVE_TRANSCRIPT: EnDict = {
   'Android 13 이상이나 iOS 앱에서 쓸 수 있어요': 'Available on Android 13 or later, or in the iOS app',
   '일반 녹음으로 시작': 'Use standard recording',
   '일반 녹음으로 전환': 'Switch to standard recording',
-  '저장한 대본': 'Saved transcripts',
   '대본을 불러오고 있어요': 'Loading transcripts',
   '{n}문장 / {state}': '{n} passages / {state}',
   '이어서 녹음 가능': 'Ready to resume',
-  '아직 저장한 대본이 없어요': 'No saved transcripts yet',
+  '아직 저장한 자막이 없어요': 'No saved captions yet',
   '음성 인식 준비 중': 'Preparing speech recognition',
   '마이크 연결 중': 'Connecting microphone',
   '듣고 있어요': 'Listening',
@@ -59,4 +58,5 @@ export const EN_LIVE_TRANSCRIPT: EnDict = {
   '녹음을 종료하지 못했어요.': 'Could not stop recording.',
   '음성 인식을 중단하지 못했어요.': 'Could not stop speech recognition.',
   '기기에 저장하지 못했어요. 다시 저장을 눌러 주세요.': 'Could not save on this device. Tap Save again.',
+  '저장한 자막': 'Saved captions',
 };

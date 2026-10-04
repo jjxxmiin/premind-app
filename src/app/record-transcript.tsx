@@ -96,17 +96,17 @@ function LiveTranscriptScreen({ workspaceId }: { readonly workspaceId: string })
             {!recorder.supported ? <AppText tone="muted">{t('Android 13 이상이나 iOS 앱에서 쓸 수 있어요')}</AppText> : null}
             <Button variant="secondary" disabled={busy} onPress={() => router.dismissTo('/record')}>{t('일반 녹음으로 시작')}</Button>
           </Card>
-          <AppText variant="heading">{t('저장한 대본')}</AppText>
+          <AppText variant="heading">{t('저장한 자막')}</AppText>
           {recorder.loadingHistory ? <AppText tone="muted">{t('대본을 불러오고 있어요')}</AppText>
             : recorder.history.length ? <Card padding={false}>
               {recorder.history.slice(0, historyLimit).map((item) => <ListRow key={item.id} title={item.title}
                 subtitle={t('{n}문장 / {state}', { n: item.paragraphs.length, state: t(item.status === 'completed' ? '완료' : '이어서 녹음 가능') })}
                 onPress={() => setSelected(item)} />)}
               {recorder.history.length > historyLimit ? <Button variant="ghost" onPress={() => setHistoryLimit((value) => value + 10)}>{t('더 보기')}</Button> : null}
-            </Card> : <AppText tone="muted">{t('아직 저장한 대본이 없어요')}</AppText>}
+            </Card> : <AppText tone="muted">{t('아직 저장한 자막이 없어요')}</AppText>}
         </> : <>
           <AppText variant="heading">{draft.title}</AppText>
-          <StatusBadge label={t(state ? phaseLabel : draft.status === 'completed' ? '저장한 대본' : '이어서 녹음 가능')} tone={phase === 'recording' ? 'brand' : 'neutral'} />
+          <StatusBadge label={t(state ? phaseLabel : draft.status === 'completed' ? '저장한 자막' : '이어서 녹음 가능')} tone={phase === 'recording' ? 'brand' : 'neutral'} />
           <AppText tone="muted" variant="meta" accessibilityLiveRegion="polite">{t(state?.unsaved ? '기기에 저장 중…' : '이 기기에 자동 저장됨')}</AppText>
           {draft.paragraphs.map((text, index) => <AppText key={index} selectable>{text}</AppText>)}
           {draft.interim ? <Card style={styles.card}><AppText variant="badge">{t('인식 중')}</AppText><AppText selectable tone="muted">{draft.interim}</AppText></Card> : null}

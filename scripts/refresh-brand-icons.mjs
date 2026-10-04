@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer';
+
 import sharp from 'sharp';
 
 // The app icon (2026-10-04): an orange P on a cream rounded square, drawn in

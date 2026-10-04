@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-10-03T09:03:58.242Z",
-  "sourceCommit": "0d424f98d82b47ecfe6fa19c3d4914a91fa6364d",
+  "generatedAt": "2026-10-04T12:05:29.692Z",
+  "sourceCommit": "e62a87585cb86671ea2e7fd28634b11b1643043b",
   "sourceWorktreeDirty": true,
   "captureBundles": [
-    "/_expo/static/js/web/entry-d1fbc865c7285957b1667f48b14c2a7f.js"
+    "/_expo/static/js/web/entry-1652d9c4f8853befdb0a33801d74a616.js"
   ],
-  "version": "1.0.5",
-  "versionCode": 8,
+  "version": "1.0.7",
+  "versionCode": 15,
   "capture": "Local web demo, 360×640 at 3x; not an Android device capture",
-  "iconSha256": "d6c90c2bed3ee6633a821db7424fc7f2ee1d66dff36d02ad09344c1ffad8db47",
+  "iconSha256": "e872de6f425a60437c311c43d2af287fbd58b3ca6907ff9178f90e30b70a6566",
   "iconSource": "assets/brand/app-icon.png",
   "playScreenshots": [
     "screenshots/framed/01-home.png",

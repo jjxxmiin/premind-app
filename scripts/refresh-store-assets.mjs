@@ -12,7 +12,7 @@ if (!['127.0.0.1', 'localhost'].includes(new URL(baseUrl).hostname)) {
 }
 const material = 'material-ai-intro-01';
 const screens = [
-  ['01-home', '/', ['쌓여 있던 강의를', '복습할 자료로'], '녹음, 파일, 유튜브 링크를 한곳에 모아요', '복습'],
+  ['01-home', '/', ['녹음, 영상, PDF를', '공부할 거리로'], '링크를 붙여 넣거나 바로 녹음해요', '오늘의 복습'],
   ['02-material-summary', `/material/${material}?tab=summary`, ['긴 강의도', '핵심부터 읽어요'], '요약부터 꼭 기억할 내용까지', '요약'],
   ['03-material-mindmap', `/material/${material}?tab=mindmap`, ['개념 사이의 연결이', '한눈에 보여요'], '내 자료로 만든 마인드맵', '마인드맵'],
   ['04-chat', `/chat/${material}`, ['헷갈릴 때는', '내 자료에 물어봐요'], '답을 확인하고 근거까지 살펴봐요', '5주차, 지도학습의 원리'],
@@ -59,11 +59,8 @@ try {
       await page.getByTestId('study-chat-messages').evaluate((element) => { element.scrollTop = 0; });
       await page.waitForTimeout(400);
     }
-    if (name === '03-material-mindmap') {
-      await page.mouse.move(180, 380);
-      await page.mouse.wheel(0, 330);
-      await page.waitForTimeout(400);
-    }
+    // 03-material-mindmap needs no scroll since direction D pins the player and
+    // tabs: the map starts right under the tabs.
     if (name === '09-interview') {
       await page.getByText('새 연습', { exact: true }).click();
       await page.getByText('준비된 질문', { exact: true }).click();

@@ -68,6 +68,7 @@ import { formatMaterialLength } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { useLayout } from '@/lib/layout';
 import { parseYouTubeId } from '@/lib/youtube';
+import { isDemoSession } from '@/services/api/session-manager';
 import { useAppStore } from '@/state/app-store';
 import { inputReset } from '@/theme/input-reset';
 import { colors, iconSizes, motion, radii, sizes, spacing, typography } from '@/theme/tokens';
@@ -845,41 +846,19 @@ export default function HomeScreen() {
         {listHeading}
       </View>
     ) : (
-      <View>
-        {showStart ? (
-          <View style={{ paddingHorizontal: gutter }}>
-            <HomeHero
-              name={session?.user.name?.trim() ?? ''}
-              onImport={openImport}
-              onLink={openYoutubeWith}
-              onRecord={openRecording}
-            />
-          </View>
-        ) : null}
-        {/* The white sheet rises over the dark top; the folders live in it. */}
-        <View style={styles.sheetTop}>
-          <SubjectTabs
-            activeIndex={safePageIndex}
-            gutter={gutter}
-            onAddPress={openProjectSheet}
-            onSelect={goToPage}
-            tabs={subjectTabs}
+      <View style={[styles.sheetHead, { paddingHorizontal: gutter }]}>
+        {showStart && hasMaterial ? (
+          <TodayReview
+            material={continueMaterial}
+            onCards={(material) =>
+              router.push({ pathname: '/cards/[id]', params: { id: material.id } })
+            }
+            onQuiz={(material) =>
+              router.push({ pathname: '/quiz/[id]', params: { id: material.id } })
+            }
           />
-          <View style={[styles.sheetHead, { paddingHorizontal: gutter }]}>
-            {showStart && hasMaterial ? (
-              <TodayReview
-                material={continueMaterial}
-                onCards={(material) =>
-                  router.push({ pathname: '/cards/[id]', params: { id: material.id } })
-                }
-                onQuiz={(material) =>
-                  router.push({ pathname: '/quiz/[id]', params: { id: material.id } })
-                }
-              />
-            ) : null}
-            {listHeading}
-          </View>
-        </View>
+        ) : null}
+        {listHeading}
       </View>
     );
     const empty = !hasMaterial && showEmptyAction ? (
@@ -958,6 +937,29 @@ export default function HomeScreen() {
           }
         />
 
+        <View style={{ paddingHorizontal: gutter }}>
+          <HomeHero
+            // The demo account's name is a placeholder ("PREMIND 사용자");
+            // greeting it by name reads oddly, so the demo gets no name.
+            name={isDemoSession(session) ? '' : session?.user.name?.trim() ?? ''}
+            onImport={openImport}
+            onLink={openYoutubeWith}
+            onRecord={openRecording}
+          />
+        </View>
+
+        {/* One white sheet over the dark top, fixed, with the folder tabs on its
+            edge and only the pages swiping inside it. A sheet per page left
+            dark gaps at the rounded corners whenever two pages met mid-swipe
+            (2026-10-04 QA: "왼쪽 오른쪽 중앙 틈새"). */}
+        <View style={styles.sheetFixed}>
+        <SubjectTabs
+          activeIndex={safePageIndex}
+          gutter={gutter}
+          onAddPress={openProjectSheet}
+          onSelect={goToPage}
+          tabs={subjectTabs}
+        />
         <View
           onLayout={(event) => {
             const width = Math.round(event.nativeEvent.layout.width);
@@ -989,6 +991,7 @@ export default function HomeScreen() {
             style={styles.pager}
             windowSize={5}
           />
+        </View>
         </View>
       </Screen>
       )}
@@ -1345,11 +1348,14 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  /** Direction D: the white sheet's rounded top edge, over the dark screen. */
-  sheetTop: {
+  /** Direction D: the one white sheet under the hero; the pages swipe inside it. */
+  sheetFixed: {
     backgroundColor: colors.background,
     borderTopLeftRadius: radii.sheet,
     borderTopRightRadius: radii.sheet,
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
     paddingTop: spacing.md,
   },
   sheetHead: {
