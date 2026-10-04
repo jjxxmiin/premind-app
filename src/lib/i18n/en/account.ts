@@ -38,19 +38,16 @@ export const EN_ACCOUNT: EnDict = {
   '이미 가입된 이메일이에요. 기존 방식으로 로그인한 뒤 프로필의 로그인 계정 관리에서 카카오 계정을 연결해 주세요.': 'This email is already registered. Sign in using your existing method, then link your Kakao account under Profile → Login methods.',
   // ── 2026-09-26 웹 구독 해지 ──
   '구독 해지': 'Cancel subscription',
-  '{date}까지 쓰고 그 뒤로 결제되지 않아요': "Use it until {date}. You won't be charged after that",
   '해지 취소': 'Keep subscription',
-  '{date}에 해지돼요. 누르면 계속 써요': 'Ends on {date}. Tap to keep it',
+  '{date}에 해지돼요': 'Ends on {date}',
   '계속 쓰기': 'Keep it',
   '해지하기': 'Cancel',
-  '{date}까지는 스탠다드를 그대로 쓰고, 그 뒤로는 결제되지 않아요. 언제든 해지를 취소할 수 있어요.':
-    "You keep Standard until {date}, and you won't be charged after that. You can undo this any time before then.",
+  '{date}까지는 스탠다드를 그대로 쓰고, 그 뒤로는 결제되지 않아요.': "You keep Standard until {date}, and you won't be charged after that.",
   '구독을 해지할까요?': 'Cancel your subscription?',
   '해지를 예약했어요. {date}까지는 스탠다드를 그대로 써요.': 'Cancellation scheduled. You keep Standard until {date}.',
   '해지를 취소했어요. 스탠다드가 계속돼요.': 'Cancellation undone. Standard continues.',
   '구독을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.': "We couldn't change your subscription. Please try again in a moment.",
-  '웹에서 결제한 구독이에요. 해지해도 이번 기간이 끝날 때까지 스탠다드를 써요.':
-    'You subscribed on the web. If you cancel, you keep Standard until the end of this period.',
+  '웹에서 결제한 구독이에요.': 'You subscribed on the web.',
   '웹에서 결제한 스탠다드 구독이 없어요.': "There's no Standard subscription paid on the web.",
   '지금은 구독을 바꿀 수 없어요. 잠시 후 다시 시도해 주세요.': "You can't change your subscription right now. Please try again in a moment.",
   // ── MY (profile) ──────────────────────────────────────────────────────────
@@ -219,11 +216,7 @@ export const EN_ACCOUNT: EnDict = {
     'Payment and cancellation are managed in {store} subscriptions.',
   '지금 버전에서는 앱에서 바로 구독할 수 없어요. 스토어에서 앱을 업데이트하면 구독할 수 있어요.':
     "You can't subscribe in this version of the app. Update the app from the store to subscribe.",
-  'App Store에서 해지하거나 결제 수단을 바꿔요': 'Cancel or change your payment method in the App Store',
-  'Google Play에서 해지하거나 결제 수단을 바꿔요':
-    'Cancel or change your payment method in Google Play',
   '구독 관리': 'Manage subscription',
-  '다른 기기에서 산 구독을 가져와요': 'Bring over a subscription bought on another device',
   '구매 복원': 'Restore purchase',
   '돌아가기': 'Go back',
   '스탠다드 구독하기': 'Subscribe to Standard',

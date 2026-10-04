@@ -87,33 +87,32 @@ function LiveTranscriptScreen({ workspaceId }: { readonly workspaceId: string })
         onContentSizeChange={() => { if (phase === 'recording' && nearBottom.current) transcriptScroll.current?.scrollToEnd({ animated: true }); }}>
         {!draft ? <>
           <AppText variant="heroTitle">{t('말하는 순간, 대본으로 남겨요')}</AppText>
-          <AppText tone="muted">{t('한국어 음성을 글로 확인하고 대본과 원본을 이 기기에 보관해요.')}</AppText>
           <Card style={styles.card}>
             <AuthField label={t('녹음 제목')} value={title} onChangeText={setTitle} maxLength={80} editable={!busy} />
-            <AppText tone="muted" variant="meta">{t('기기의 음성 인식 서비스를 사용해요. 서비스에 따라 음성이 Google 또는 Apple 서버로 전송될 수 있어요. 인식 결과는 실제 발화와 다를 수 있어요.')}</AppText>
-            <AppText tone="muted" variant="meta">{t('화면을 벗어나거나 잠그면 일시정지해요. 긴 강의와 백그라운드 녹음은 일반 녹음을 이용해 주세요.')}</AppText>
+            {/* What the start button's 동의 refers to; it stays visible above it. */}
+            <AppText tone="muted">{t('기기의 음성 인식 서비스를 사용해요. 서비스에 따라 음성이 Google 또는 Apple 서버로 전송될 수 있어요.')}</AppText>
+            <AppText tone="muted">{t('화면을 벗어나거나 잠그면 일시정지해요')}</AppText>
             <Button disabled={!recorder.supported || !title.trim()} loading={busy} variant="primary" onPress={() => void recorder.start(title)}>{t('동의하고 실시간 녹음 시작')}</Button>
-            {!recorder.supported ? <AppText tone="muted" variant="meta">{t('이 환경에서는 원본을 함께 저장하는 실시간 인식을 지원하지 않아요. Android 13 이상 또는 iOS 앱에서 이용해 주세요.')}</AppText> : null}
+            {!recorder.supported ? <AppText tone="muted">{t('Android 13 이상이나 iOS 앱에서 쓸 수 있어요')}</AppText> : null}
             <Button variant="secondary" disabled={busy} onPress={() => router.dismissTo('/record')}>{t('일반 녹음으로 시작')}</Button>
           </Card>
           <AppText variant="heading">{t('저장한 대본')}</AppText>
           {recorder.loadingHistory ? <AppText tone="muted">{t('대본을 불러오고 있어요')}</AppText>
             : recorder.history.length ? <Card padding={false}>
               {recorder.history.slice(0, historyLimit).map((item) => <ListRow key={item.id} title={item.title}
-                subtitle={t('{n}문장 · {state}', { n: item.paragraphs.length, state: t(item.status === 'completed' ? '완료' : '이어서 녹음 가능') })}
+                subtitle={t('{n}문장 / {state}', { n: item.paragraphs.length, state: t(item.status === 'completed' ? '완료' : '이어서 녹음 가능') })}
                 onPress={() => setSelected(item)} />)}
               {recorder.history.length > historyLimit ? <Button variant="ghost" onPress={() => setHistoryLimit((value) => value + 10)}>{t('더 보기')}</Button> : null}
-            </Card> : <AppText tone="muted" variant="meta">{t('녹음을 시작하면 대본이 여기에 자동 저장돼요.')}</AppText>}
+            </Card> : <AppText tone="muted">{t('아직 저장한 대본이 없어요')}</AppText>}
         </> : <>
           <AppText variant="heading">{draft.title}</AppText>
           <StatusBadge label={t(state ? phaseLabel : draft.status === 'completed' ? '저장한 대본' : '이어서 녹음 가능')} tone={phase === 'recording' ? 'brand' : 'neutral'} />
           <AppText tone="muted" variant="meta" accessibilityLiveRegion="polite">{t(state?.unsaved ? '기기에 저장 중…' : '이 기기에 자동 저장됨')}</AppText>
           {draft.paragraphs.map((text, index) => <AppText key={index} selectable>{text}</AppText>)}
-          {draft.interim ? <Card style={styles.card}><AppText variant="badge">{t('인식 중 · 아직 확정되지 않은 문장')}</AppText><AppText selectable tone="muted">{draft.interim}</AppText></Card> : null}
-          {!draft.paragraphs.length && !draft.interim ? <EmptyState title={t(phase === 'recording' ? '이제 말씀해 주세요' : '아직 대본이 없어요')} description={t('인식한 문장은 자동으로 저장돼요. 조용한 곳에서 마이크 가까이 말씀해 주세요.')} /> : null}
+          {draft.interim ? <Card style={styles.card}><AppText variant="badge">{t('인식 중')}</AppText><AppText selectable tone="muted">{draft.interim}</AppText></Card> : null}
+          {!draft.paragraphs.length && !draft.interim ? <EmptyState title={t(phase === 'recording' ? '이제 말씀해 주세요' : '아직 대본이 없어요')} description={t('조용한 곳에서 마이크 가까이 말씀해 주세요')} /> : null}
           {!active && draft.parts.length ? <Card style={styles.card}>
             <AppText variant="heading">{t('원본 녹음')}</AppText>
-            <AppText tone="muted" variant="meta">{t('일시정지 전후의 원본은 구간별로 보관해요.')}</AppText>
             <AudioParts parts={draft.parts} />
           </Card> : null}
           {!active && draft.status !== 'completed' ? <Button loading={exporting} disabled={!draft.paragraphs.length && !draft.interim} variant="ghost" onPress={() => void share()}>{t(Platform.OS === 'web' ? '대본 복사' : '대본 파일 내보내기')}</Button> : null}
@@ -136,9 +135,7 @@ function LiveTranscriptScreen({ workspaceId }: { readonly workspaceId: string })
       <Dialog visible={leaving} title={t('녹음을 저장한 뒤 나가요')} onRequestClose={() => setLeaving(false)}
         cancel={{ label: t('계속 보기'), onPress: () => setLeaving(false) }}
         confirm={{ label: t(dirty && !active ? '다시 저장' : '종료하고 저장'), disabled: busy,
-          onPress: () => { if (dirty && !active) recorder.retrySave(); else recorder.finish(); setLeaving(false); } }}>
-        <AppText>{t('마지막 문장이 정리되면 대본과 원본을 확인하고 나갈 수 있어요.')}</AppText>
-      </Dialog>
+          onPress: () => { if (dirty && !active) recorder.retrySave(); else recorder.finish(); setLeaving(false); } }} />
     </Screen>
   );
 }
@@ -160,7 +157,7 @@ function AudioParts({ parts }: { readonly parts: LiveTranscriptDraft['parts'] })
     return () => subscription.remove();
   }, [player]);
   return <>{parts.map((part, index) => <View key={part.uri} style={styles.audioPart}>
-    <AppText variant="meta">{t('구간 {n}', { n: index + 1 })} · {formatDuration(part.durationMillis / 1000)}</AppText>
+    <AppText variant="meta">{t('구간 {n}', { n: index + 1 })} / {formatDuration(part.durationMillis / 1000)}</AppText>
     {part.finalized ? <Button size="small" variant="secondary" loading={selectedUri === part.uri && status.isBuffering} onPress={() => {
       try {
         setError(false);
@@ -168,9 +165,9 @@ function AudioParts({ parts }: { readonly parts: LiveTranscriptDraft['parts'] })
         else { player.pause(); player.replace(part.uri); setSelectedUri(part.uri); player.play(); }
       } catch (failure) { setError(failure instanceof Error); }
     }}>{t(selectedUri === part.uri && status.playing ? '정지' : '재생')}</Button>
-      : <AppText tone="muted" variant="meta">{t('중단된 원본 · 파일 확인 필요')}</AppText>}
+      : <AppText tone="muted" variant="meta">{t('재생할 수 없는 원본이에요')}</AppText>}
   </View>)}
-  {error || status.error ? <AppText tone="negative" variant="meta">{t('원본을 재생하지 못했어요.')}</AppText> : null}</>;
+  {error || status.error ? <AppText tone="negative">{t('원본을 재생하지 못했어요.')}</AppText> : null}</>;
 }
 
 const styles = StyleSheet.create({

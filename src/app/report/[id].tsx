@@ -173,7 +173,7 @@ export default function LensReportScreen() {
             <StatusBadge label={t('평가 중')} showDot tone="brand" />
             <AppText variant="pageTitle">{t('내 발표를 읽고 평가하고 있어요')}</AppText>
             <AppText tone="muted" variant="body">
-              {t('길이에 따라 몇 초에서 몇 분 걸려요. 이 화면을 나가도 평가는 이어져요.')}
+              {t('이 화면을 나가도 평가는 이어져요')}
             </AppText>
           </View>
           <Card style={styles.scoreCard} variant="soft">
@@ -219,7 +219,7 @@ export default function LensReportScreen() {
         <View style={styles.unavailableContent}>
           <EmptyState
             actionLabel={t('돌아가기')}
-            description={t('내 발표 녹음이라면 평가를 시작해 보세요. 점수와 근거가 여기에 생겨요.')}
+            description={t('내 발표 녹음이라면 평가를 시작해 보세요')}
             onAction={() =>
               router.replace({
                 pathname: '/material/[id]',
@@ -376,7 +376,7 @@ export default function LensReportScreen() {
                 </View>
               </View>
               <RubricBandTrack accessibilityLabel={null} score={metric.score} style={styles.bandTrack} />
-              <AppText tone="muted" variant="meta">
+              <AppText tone="muted" variant="body">
                 {metric.evidence}
               </AppText>
             </View>
@@ -556,7 +556,7 @@ export default function LensReportScreen() {
                 {detailsToggle}
                 {showDetails ? details : null}
                 {/* 이용약관 제10조(인공지능 이용 고지): 점수와 피드백은 AI 가 만든 참고 의견이다. */}
-                <AppText tone="faint" variant="meta">
+                <AppText tone="muted" variant="body">
                   {t('AI가 만든 평가예요. 틀릴 수 있으니 참고로만 봐 주세요.')}
                 </AppText>
               </View>
@@ -683,7 +683,7 @@ function MomentRow({
         <View style={styles.flex}>
           <AppText variant="itemTitle">{moment.text}</AppText>
           {moment.action ? (
-            <AppText tone="muted" variant="meta">
+            <AppText tone="muted" variant="body">
               {moment.action}
             </AppText>
           ) : null}

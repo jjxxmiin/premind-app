@@ -250,52 +250,39 @@ function hasRecoverableRecordingSource(
   );
 }
 
+/**
+ * The badge label for each recorder state, and at most one hint line — only
+ * when it changes what the speaker does (docs/design-system.md, 2026-10-04).
+ * The badge, the timer and the buttons already say the rest.
+ */
 function recordingPresentation(input: {
   canUseRecovered: boolean;
   isFinalizing: boolean;
   needsPreservation: boolean;
   phase: PremindRecorderPhase;
-}) {
+}): { hint: string | null; label: string } {
   if (input.isFinalizing || input.phase === 'stopping') {
-    return {
-      description: '새 음성 입력은 멈췄고, 지금까지의 원본을 안전한 보관 영역으로 옮기고 있어요.',
-      label: '원본 보관 중',
-      safety: '저장이 끝나면 마인드팩 만들기로 넘어가요.',
-    };
+    return { hint: null, label: '원본 보관 중' };
   }
   if (input.phase === 'paused') {
-    return {
-      description: '새 음성은 기록하지 않아요. 계속하기 전까지 녹음 시간도 멈춰 있어요.',
-      label: '일시정지',
-      safety: '지금까지 녹음한 원본과 중요 표시는 기기에 남아 있어요.',
-    };
+    return { hint: null, label: '일시정지' };
   }
   if (input.phase === 'recording') {
     return {
-      description: '마이크 입력을 원본 파일에 기록하고 있어요.',
+      hint:
+        Platform.OS === 'web'
+          ? '녹음하는 동안 이 탭을 열어 두세요'
+          : '화면을 잠가도 녹음은 계속돼요',
       label: '녹음 중',
-      safety: '복구 정보는 5초마다 기기에 저장돼요.',
     };
   }
   if (input.canUseRecovered) {
     if (input.needsPreservation) {
-      return {
-        description: '녹음은 멈췄고 원본이 이 화면에 임시로 남아 있어요.',
-        label: '보관 다시 시도',
-        safety: '이 탭을 닫기 전에 아래 버튼으로 원본 보관을 다시 시도해 주세요.',
-      };
+      return { hint: '이 탭을 닫기 전에 다시 저장해 주세요', label: '보관 다시 시도' };
     }
-    return {
-      description: '녹음은 중단됐지만 사용할 수 있는 원본을 기기에 보관했어요.',
-      label: '원본 보관됨',
-      safety: '저장된 구간으로 마인드팩 만들기를 이어갈 수 있어요.',
-    };
+    return { hint: null, label: '원본 보관됨' };
   }
-  return {
-    description: '녹음 장치가 중단되어 새 음성을 기록하지 않고 있어요.',
-    label: '확인 필요',
-    safety: '아래 안내를 확인한 뒤 안전하게 화면을 나가 주세요.',
-  };
+  return { hint: null, label: '확인 필요' };
 }
 
 export default function RecordScreen() {
@@ -477,8 +464,6 @@ export default function RecordScreen() {
   const recoverableSourceCount = visibleRecoverableSessions.filter(
     hasRecoverableRecordingSource,
   ).length;
-  const metadataOnlyCount =
-    visibleRecoverableSessions.length - recoverableSourceCount;
   const levelBars = useMemo(
     () =>
       makeLevelBars(
@@ -1194,25 +1179,12 @@ export default function RecordScreen() {
           {visibleRecoverableSessions.length > 0 || recoveryLoadError ? (
             <View style={styles.section}>
               <SectionHeader
-                description={
-                  recoverableSourceCount > 0
-                    ? t('원본을 고르면 이어서 마인드팩을 만들어요.')
-                    : undefined
-                }
                 title={
                   recoverableSourceCount > 0
                     ? t('이어갈 녹음 {n}개', { n: recoverableSourceCount })
                     : t('녹음 기록')
                 }
               />
-
-              {metadataOnlyCount > 0 ? (
-                <AppText tone="negative" variant="meta">
-                  {t('원본이 없는 기록이 {n}개 있어요. 아래에서 지울 수 있어요.', {
-                    n: metadataOnlyCount,
-                  })}
-                </AppText>
-              ) : null}
 
               {visibleRecoverableSessions.length > 0 ? (
                 <Card padding={false}>
@@ -1236,7 +1208,7 @@ export default function RecordScreen() {
                           </AppText>
                           {!hasRecoverableRecordingSource(snapshot) ? (
                             <AppText tone="negative" variant="meta">
-                              {t('원본을 찾을 수 없어요. 기록만 지울 수 있어요.')}
+                              {t('원본을 찾을 수 없어요')}
                             </AppText>
                           ) : null}
                         </View>
@@ -1274,7 +1246,7 @@ export default function RecordScreen() {
 
               {recoveryLoadError ? (
                 <View style={styles.errorBox}>
-                  <AppText style={styles.errorCopy} tone="negative" variant="meta">
+                  <AppText style={styles.errorCopy} tone="negative" variant="body">
                     {t(recoveryLoadError)}
                   </AppText>
                   <Button
@@ -1330,8 +1302,11 @@ export default function RecordScreen() {
                     ? t('누르면 바로 시작돼요')
                     : t('탭하면 바로 시작돼요')}
                 </AppText>
-                <AppText align="center" tone="muted" variant="meta">
-                  {t('원본은 기기에 먼저 저장돼요')}
+                {/* The screen's one hint: the only thing that changes how to record. */}
+                <AppText align="center" tone="muted" variant="body">
+                  {Platform.OS === 'web'
+                    ? t('녹음하는 동안 이 탭을 열어 두세요')
+                    : t('화면을 잠가도 녹음은 계속돼요')}
                 </AppText>
               </View>
             </AnimatedReveal>
@@ -1356,8 +1331,6 @@ export default function RecordScreen() {
                 titleFocused={titleFocused}
               />
             </AnimatedReveal>
-
-            {isTablet ? <SetupReassurance /> : null}
           </DeskCard>
 
           {permissionDenied ? (
@@ -1367,9 +1340,6 @@ export default function RecordScreen() {
               </View>
               <View style={styles.flex}>
                 <AppText variant="itemTitle">{t('마이크 권한이 필요해요')}</AppText>
-                <AppText tone="muted" variant="meta">
-                  {t('설정에서 마이크를 허용한 뒤 다시 시작해 주세요.')}
-                </AppText>
                 <Button
                   leftIcon={<Settings color={colors.text} size={iconSizes.inline} />}
                   onPress={openMicrophoneSettings}
@@ -1389,14 +1359,12 @@ export default function RecordScreen() {
                 <AppText tone="negative" variant="bodyStrong">
                   {t('녹음을 시작하지 못했어요')}
                 </AppText>
-                <AppText tone="muted" variant="meta">
+                <AppText tone="muted" variant="body">
                   {t(screenError)}
                 </AppText>
               </View>
             </View>
           ) : null}
-
-          {isTablet ? null : <SetupReassurance />}
         </ScrollView>
       </Screen>
     );
@@ -1411,10 +1379,6 @@ export default function RecordScreen() {
     needsPreservation: Boolean(recoverable?.needsPreservation),
     phase: recorderPhase,
   });
-  const visibleSafety =
-    screenError && activeControls
-      ? t('원본은 그대로 있어요. 아래 안내를 확인해 주세요.')
-      : t(recordingState.safety);
   const recordingStatusTone: StatusTone = isSaving
     ? 'neutral'
     : isRecording
@@ -1502,10 +1466,6 @@ export default function RecordScreen() {
               </View>
             </BreathingView>
 
-            <AppText align="center" style={styles.stageMuted} variant="meta">
-              {t(recordingState.description)}
-            </AppText>
-
             <MarkerTimeline
               durationMillis={displayDurationMillis}
               markers={displayMarkers}
@@ -1521,29 +1481,6 @@ export default function RecordScreen() {
                 {markerNotice}
               </AppText>
             ) : null}
-
-            <Card style={styles.stageStateCard} variant="stage">
-              <View
-                accessible
-                accessibilityLabel={t('현재 상태 {state}. {safety}', {
-                  safety: visibleSafety,
-                  state: t.ctx('state', recordingState.label),
-                })}
-                style={styles.stageStateContent}
-              >
-                <View style={styles.stageStateIcon}>
-                  <HardDrive color={colors.stageText} size={iconSizes.section} strokeWidth={1.9} />
-                </View>
-                <View style={styles.flex}>
-                  <AppText style={styles.stageMuted} variant="badge">
-                    {t('원본 상태')}
-                  </AppText>
-                  <AppText tone="inverse" variant="meta">
-                    {visibleSafety}
-                  </AppText>
-                </View>
-              </View>
-            </Card>
           </AnimatedReveal>
 
           {screenError ? (
@@ -1554,7 +1491,7 @@ export default function RecordScreen() {
                     ? t('녹음은 계속되고 있어요')
                     : t('원본 상태를 확인해 주세요')}
                 </AppText>
-                <AppText style={styles.stageMuted} variant="meta">
+                <AppText style={styles.stageMuted} variant="body">
                   {t(screenError)}
                 </AppText>
               </Card>
@@ -1639,20 +1576,14 @@ export default function RecordScreen() {
             )}
           </AnimatedReveal>
 
-          <View style={styles.stageReassurance}>
-            <Lock {...decorative} color={colors.stageMuted} size={iconSizes.inline} strokeWidth={1.9} />
-            <AppText style={[styles.flex, styles.stageMuted]} variant="meta">
-              {screenError && activeControls
-                ? visibleSafety
-                : isRecording
-                  ? Platform.OS === 'web'
-                    ? t('이 탭을 열어 두세요. 종료하면 원본을 브라우저에 저장해요.')
-                    : t('화면을 잠가도 녹음은 계속돼요. 전화가 오면 원본을 자동으로 저장해요.')
-                  : isPaused
-                    ? t('멈춘 동안은 녹음하지 않아요. 지금까지의 원본과 중요 표시는 그대로 있어요.')
-                    : visibleSafety}
-            </AppText>
-          </View>
+          {recordingState.hint && !screenError ? (
+            <View style={styles.stageReassurance}>
+              <Lock {...decorative} color={colors.stageMuted} size={iconSizes.inline} strokeWidth={1.9} />
+              <AppText style={[styles.flex, styles.stageMuted]} variant="body">
+                {t(recordingState.hint)}
+              </AppText>
+            </View>
+          ) : null}
         </View>
       </Screen>
 
@@ -1667,11 +1598,6 @@ export default function RecordScreen() {
           loading: isFinalizing,
           onPress: () => void finishRecording(),
         }}
-        description={
-          Platform.OS === 'web'
-            ? t('원본을 브라우저에 저장한 뒤 마인드팩을 만들어요.')
-            : t('원본을 기기에 저장한 뒤 마인드팩을 만들어요.')
-        }
         onRequestClose={() => {
           if (!isFinalizing) setStopConfirmationVisible(false);
         }}
@@ -1686,28 +1612,15 @@ export default function RecordScreen() {
                 time: formatDuration(displayDurationMillis / 1_000),
               })}
             </AppText>
-            <AppText tone="muted" variant="meta">
-              {t('중요 표시 {n}개도 함께 저장돼요.', { n: displayMarkers.length })}
-            </AppText>
+            {displayMarkers.length > 0 ? (
+              <AppText tone="muted" variant="meta">
+                {t('중요 표시 {n}개', { n: displayMarkers.length })}
+              </AppText>
+            ) : null}
           </View>
         </View>
       </Dialog>
     </>
-  );
-}
-
-/** The one "your recording is safe" line under the ready screen. */
-function SetupReassurance() {
-  const t = useT();
-  return (
-    <View style={styles.reassuranceRow}>
-      <Lock {...decorative} color={colors.textFaint} size={iconSizes.inline} strokeWidth={1.9} />
-      <AppText style={styles.flex} tone="muted" variant="meta">
-        {Platform.OS === 'web'
-          ? t('녹음 중에도 원본을 브라우저에 저장해 두어 새로고침해도 이어갈 수 있어요.')
-          : t('화면이 잠겨도 녹음은 계속돼요. 원본은 기기에 남아요.')}
-      </AppText>
-    </View>
   );
 }
 
@@ -1954,14 +1867,14 @@ function MarkerTimeline({
           );
         })}
       </View>
-      <AppText align="center" style={styles.stageMuted} variant="meta">
-        {lastMarker
-          ? t('중요 표시 {n}개, 마지막 {time}', {
-              n: markers.length,
-              time: formatDuration(lastMarker.timestampMillis / 1_000),
-            })
-          : t('기억할 순간에 중요 표시를 남겨요')}
-      </AppText>
+      {lastMarker ? (
+        <AppText align="center" style={styles.stageMuted} variant="meta">
+          {t('중요 표시 {n}개, 마지막 {time}', {
+            n: markers.length,
+            time: formatDuration(lastMarker.timestampMillis / 1_000),
+          })}
+        </AppText>
+      ) : null}
     </View>
   );
 }
@@ -2188,11 +2101,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: spacing.xs,
   },
-  reassuranceRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
   recordingContent: {
     flexGrow: 1,
     gap: spacing.xl,
@@ -2248,23 +2156,6 @@ const styles = StyleSheet.create({
   waveBar: {
     borderRadius: radii.full,
     width: 4,
-  },
-  stageStateCard: {
-    alignSelf: 'stretch',
-    padding: spacing.md,
-  },
-  stageStateContent: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  stageStateIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.stage,
-    borderRadius: radii.input,
-    height: sizes.iconButton,
-    justifyContent: 'center',
-    width: sizes.iconButton,
   },
   markerBlock: {
     gap: spacing.sm,

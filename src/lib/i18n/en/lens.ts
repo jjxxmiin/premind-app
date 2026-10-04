@@ -140,11 +140,9 @@ export const EN_LENS: EnDict = {
     "We can't find this material. Please pick it again from your materials.",
   돌아가기: 'Go back',
   '내 발표를 읽고 평가하고 있어요': "We're reading and reviewing your presentation",
-  '길이에 따라 몇 초에서 몇 분 걸려요. 이 화면을 나가도 평가는 이어져요.':
-    'It takes a few seconds to a few minutes, depending on length. The review keeps going if you leave this screen.',
+  '이 화면을 나가도 평가는 이어져요': 'The review keeps going if you leave this screen',
   '얼마나 잘했나요': 'How did you do',
-  '내 발표 녹음이라면 평가를 시작해 보세요. 점수와 근거가 여기에 생겨요.':
-    "If this is a recording of your presentation, start a review. Your score and evidence will show up here.",
+  '내 발표 녹음이라면 평가를 시작해 보세요': 'If this is a recording of your presentation, start a review',
   '아직 평가가 없어요': 'No review yet',
   '내 발표를 평가했어요': 'Your presentation review',
   '발표, 스피치, 면접 연습 녹음을 대본으로 채점했어요. 결론부터 읽고, 시간을 눌러 그 부분을 들어요.':

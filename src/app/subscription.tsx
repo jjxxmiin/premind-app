@@ -410,7 +410,7 @@ function SubscriptionContent() {
               opens this screen worried about being charged should not have to
               scroll past a price table to find out what they are on. */}
           {subscribed ? (
-            <AppText tabular tone="soft" variant="meta">
+            <AppText tabular tone="soft" variant="body">
               {planLine}
             </AppText>
           ) : null}
@@ -429,7 +429,7 @@ function SubscriptionContent() {
               tone="ink"
               value={usage.minutes_used}
             />
-            <AppText tone="faint" variant="badge">
+            <AppText tone="muted" variant="body">
               {usage.minutes_used >= usage.minutes_limit
                 ? t('이번 달 분량을 다 썼어요. 다음 달 1일에 다시 채워져요.')
                 : locale === 'en'
@@ -513,14 +513,14 @@ function SubscriptionContent() {
               {cancelLine(surface, locale)}
             </AppText>
             {/* 전자상거래법 제17조 제6항: 청약철회 기준을 결제 전에 알린다(환불규정 제3조, 2026-09-26). */}
-            <AppText tone="faint" variant="meta">
+            <AppText tone="muted" variant="body">
               {refundLine(locale)}{' '}
               <AppText
                 accessibilityRole="link"
                 onPress={() => openUrl(REFUND_POLICY_URL)}
                 style={styles.refundLink}
-                tone="faint"
-                variant="meta"
+                tone="muted"
+                variant="body"
               >
                 {t('환불규정')}
               </AppText>
@@ -536,7 +536,7 @@ function SubscriptionContent() {
             <AppText tone="muted" variant="body">
               {canBuyHere
                 ? webManaged
-                  ? t('웹에서 결제한 구독이에요. 해지해도 이번 기간이 끝날 때까지 스탠다드를 써요.')
+                  ? t('웹에서 결제한 구독이에요.')
                   : surface === 'web'
                   ? t('결제와 해지는 PREMIND 웹에서 진행돼요.')
                   : t('결제와 해지는 {store} 구독에서 관리돼요.', {
@@ -551,11 +551,6 @@ function SubscriptionContent() {
               leadingIcon={CreditCard}
               onPress={() => openUrl(manageSubscriptionUrl(surface, manageProductId))}
               showChevron
-              subtitle={t(
-                surface === 'appstore'
-                  ? 'App Store에서 해지하거나 결제 수단을 바꿔요'
-                  : 'Google Play에서 해지하거나 결제 수단을 바꿔요',
-              )}
               title={t('구독 관리')}
             />
           ) : null}
@@ -566,7 +561,6 @@ function SubscriptionContent() {
               leadingIcon={XCircle}
               onPress={() => setCancelAsk(true)}
               showChevron
-              subtitle={t('{date}까지 쓰고 그 뒤로 결제되지 않아요', { date: webEnd })}
               title={t('구독 해지')}
             />
           ) : null}
@@ -576,7 +570,7 @@ function SubscriptionContent() {
               disabled={webBusy}
               leadingIcon={RotateCcw}
               onPress={() => void changeWebCancel(false)}
-              subtitle={t('{date}에 해지돼요. 누르면 계속 써요', { date: webEnd })}
+              subtitle={t('{date}에 해지돼요', { date: webEnd })}
               title={t('해지 취소')}
             />
           ) : null}
@@ -588,7 +582,6 @@ function SubscriptionContent() {
               disabled={busy !== null}
               leadingIcon={RotateCcw}
               onPress={() => void restore()}
-              subtitle={t('다른 기기에서 산 구독을 가져와요')}
               title={t('구매 복원')}
             />
           ) : null}
@@ -624,18 +617,18 @@ function SubscriptionContent() {
       <View style={styles.bottomBar}>
         <View style={[styles.barInner, wide ? styles.barInnerWide : null]}>
           {state.notice ? (
-            <AppText accessibilityLiveRegion="polite" tone={state.notice.tone} variant="meta">
+            <AppText accessibilityLiveRegion="polite" tone={state.notice.tone} variant="body">
               {t(state.notice.text)}
             </AppText>
           ) : null}
           {!subscribed && checkingPlan ? (
-            <AppText accessibilityLiveRegion="polite" tone="muted" variant="meta">
+            <AppText accessibilityLiveRegion="polite" tone="muted" variant="body">
               {t('구독 정보를 확인하고 있어요.')}
             </AppText>
           ) : null}
           {!subscribed && planStatus.error ? (
             <>
-              <AppText accessibilityRole="alert" tone="negative" variant="meta">
+              <AppText accessibilityRole="alert" tone="negative" variant="body">
                 {t('기존 구독을 확인하지 못했어요. 다시 확인한 뒤 결제해 주세요.')}
               </AppText>
               <Button onPress={() => void planStatus.refresh()} size="small" variant="outline">
@@ -655,7 +648,7 @@ function SubscriptionContent() {
           ) : isWeb ? (
             <>
               {webCheckout.error ? (
-                <AppText accessibilityRole="alert" tone="muted" variant="meta">
+                <AppText accessibilityRole="alert" tone="negative" variant="body">
                   {t(webCheckout.error)}
                 </AppText>
               ) : null}
@@ -718,7 +711,7 @@ function SubscriptionContent() {
                   products while the app's subscriptions are still being set up
                   or reviewed, so say that rather than showing a dead control. */}
               {!storePackage && !storeLoading ? (
-                <AppText accessibilityRole="alert" tone="muted" variant="meta">
+                <AppText accessibilityRole="alert" tone="muted" variant="body">
                   {t('구독 상품을 불러오지 못했어요. 연결을 확인하고 다시 시도해 주세요.')}
                 </AppText>
               ) : null}
@@ -766,7 +759,7 @@ function SubscriptionContent() {
       <Dialog
         cancel={{ label: t('계속 쓰기'), onPress: () => setCancelAsk(false), variant: 'secondary' }}
         confirm={{ label: t('해지하기'), loading: webBusy, onPress: () => void changeWebCancel(true), variant: 'danger' }}
-        description={t('{date}까지는 스탠다드를 그대로 쓰고, 그 뒤로는 결제되지 않아요. 언제든 해지를 취소할 수 있어요.', { date: webEnd })}
+        description={t('{date}까지는 스탠다드를 그대로 쓰고, 그 뒤로는 결제되지 않아요.', { date: webEnd })}
         onRequestClose={() => setCancelAsk(false)}
         title={t('구독을 해지할까요?')}
         visible={cancelAsk}
