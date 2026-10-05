@@ -20,7 +20,6 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "export:web": "expo export --platform web",
-    "export:web:production": "node scripts/export-web-production.mjs",
     "build:android": "bash scripts/build-android.sh",
     "assets:icons": "node scripts/refresh-brand-icons.mjs"
   },

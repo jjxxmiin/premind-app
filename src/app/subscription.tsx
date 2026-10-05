@@ -1,7 +1,6 @@
 import {
   Check,
   CreditCard,
-  ExternalLink,
   FileText,
   Mail,
   Minus,
@@ -64,16 +63,11 @@ import {
   type StoreEntitlement,
   type StoreOffering,
 } from '@/services/billing';
-import {
-  interviewServerAvailable,
-  startWebCheckout,
-} from '@/features/interview/interview-api';
 import { useAppStore } from '@/state/app-store';
 import {
   PLAN_BENEFITS,
   PLAN_PRICES,
   PRIVACY_URL,
-  SUBSCRIPTION_WEB_URL,
   TERMS_URL,
   type BillingCycle,
 } from '@/data/subscription-plans';
@@ -242,10 +236,6 @@ function SubscriptionContent() {
   const { session } = useAppStore();
   const [cycle, setCycle] = useState<BillingCycle>('monthly');
   const [allBenefits, setAllBenefits] = useState(false);
-  const [webCheckout, setWebCheckout] = useState<{ busy: boolean; error: string | null }>({
-    busy: false,
-    error: null,
-  });
   const [offering, setOffering] = useState<StoreOffering | null>(null);
   const [storeLoading, setStoreLoading] = useState(true);
   const [storeAttempt, setStoreAttempt] = useState(0);
@@ -259,8 +249,10 @@ function SubscriptionContent() {
   const price = PLAN_PRICES.standard;
   const storeBilling = isStoreBillingAvailable();
   const isWeb = Platform.OS === 'web';
-  // Where a purchase can start from this screen.
-  const canBuyHere = isWeb || storeBilling;
+  // Where a purchase can start from this screen: the store only. The student
+  // web app and its web checkout were retired on 2026-10-05; a web build is
+  // now an internal demo and sells nothing.
+  const canBuyHere = storeBilling;
   const surface: BillingSurface = isWeb
     ? 'web'
     : Platform.OS === 'ios'
@@ -460,7 +452,7 @@ function SubscriptionContent() {
               onChange={setCycle}
               options={cycleOptions.map((option) => ({
                 ...option,
-                disabled: busy !== null || webCheckout.busy,
+                disabled: busy !== null,
                 label: t(option.label),
               }))}
               value={cycle}
@@ -664,65 +656,6 @@ function SubscriptionContent() {
             >
               {t('돌아가기')}
             </Button>
-          ) : isWeb ? (
-            <>
-              {webCheckout.error ? (
-                <AppText accessibilityRole="alert" tone="negative" variant="body">
-                  {t(webCheckout.error)}
-                </AppText>
-              ) : null}
-              <Button
-                disabled={webCheckout.busy || purchaseBlocked}
-                fullWidth
-                loading={webCheckout.busy}
-                onPress={() => {
-                  setWebCheckout({ busy: true, error: null });
-                  // The student server opens a Polar checkout for this account
-                  // (premind-recorder-api /api/interview/checkout); the webhook
-                  // turns 스탠다드 on. No server configured (demo build) → the
-                  // pricing page instead.
-                  if (!interviewServerAvailable()) {
-                    openUrl(SUBSCRIPTION_WEB_URL);
-                    setWebCheckout({ busy: false, error: null });
-                    return;
-                  }
-                  const back =
-                    typeof window !== 'undefined' ? window.location.href : SUBSCRIPTION_WEB_URL;
-                  startWebCheckout(back, cycle)
-                    .then((url) => {
-                      if (typeof window !== 'undefined') window.location.assign(url);
-                      else openUrl(url);
-                    })
-                    .catch((error: unknown) => {
-                      setWebCheckout({
-                        busy: false,
-                        error:
-                          error instanceof Error && error.message
-                            ? error.message
-                            : '결제 창을 열지 못했어요. 잠시 후 다시 시도해 주세요.',
-                      });
-                    });
-                }}
-                rightIcon={
-                  <ExternalLink
-                    color={colors.textInverse}
-                    size={iconSizes.inline}
-                  />
-                }
-                size="large"
-                variant="primary"
-              >
-                {t('스탠다드 구독하기')}
-              </Button>
-              <Button
-                fullWidth
-                onPress={() => goBackOrReplace('/(tabs)/profile')}
-                size="medium"
-                variant="ghost"
-              >
-                {t('나중에 할게요')}
-              </Button>
-            </>
           ) : storeBilling ? (
             <>
               {/* A disabled button with no reason beside it is the thing people

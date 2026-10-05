@@ -3,10 +3,9 @@
 2026-10-04. 스토어 제목을 "프리마인드 PREMIND - 녹음 요약, 영상 공부"로 바꾸면서, 웹과 AI 답변에서도
 같은 이름과 같은 한 문장 정의가 보이도록 정리한 문서예요.
 
-- **앱 안 웹(premind.co.kr/app)** 은 로그인 뒤 쓰는 앱이라 `noindex` 그대로예요(`public/index.html`).
-  공유 미리보기용 제목과 설명만 아래 표기에 맞췄어요.
-- **검색에 걸려야 하는 곳은 소개 페이지(premind.co.kr/student)** 예요. 그 코드는 `premind` 레포에 있고
-  이 레포에서는 고치지 않으니, 아래 블록을 그 페이지의 `<head>`와 본문에 그대로 옮겨 주세요.
+- **학생 웹(premind.co.kr/app, /student)은 2026-10-05 에 접었어요.** 학생용 소개는 새 도메인으로 따로 가요.
+  아래의 `https://새도메인` 을 정해진 주소로 바꿔서 그 사이트의 `<head>`와 본문에 넣어 주세요.
+  주소가 정해지기 전에는 앱 다운로드 링크(Play 스토어)가 정식 소개 주소 역할을 해요.
 
 ## 1. 이름과 한 문장 정의 (모든 곳에서 똑같이)
 
@@ -30,11 +29,11 @@ AI 답변 엔진(ChatGPT, Perplexity, Gemini, 네이버 Cue:)은 여러 곳에�
 ```html
 <title>프리마인드 PREMIND - 강의 녹음 요약, 유튜브와 PDF를 AI로 정리하는 공부 앱</title>
 <meta name="description" content="프리마인드(PREMIND)는 강의를 녹음하거나 영상, 유튜브 링크, PDF를 올리면 AI가 대본, 요약, 마인드맵, 문제를 만들어 주는 공부 앱이에요. 무료로 시작해요." />
-<link rel="canonical" href="https://premind.co.kr/student" />
+<link rel="canonical" href="https://새도메인" />
 <meta property="og:title" content="프리마인드 PREMIND - 녹음 요약, 영상 공부" />
 <meta property="og:description" content="강의 녹음 한 번에 대본, 요약, 마인드맵, 문제까지. 유튜브 영상, PDF도 AI가 정리해요." />
-<meta property="og:url" content="https://premind.co.kr/student" />
-<meta property="og:image" content="https://premind.co.kr/og/student.png" />
+<meta property="og:url" content="https://새도메인" />
+<meta property="og:image" content="https://새도메인/og.png" />
 <meta name="twitter:card" content="summary_large_image" />
 ```
 
@@ -64,7 +63,7 @@ AI 답변 엔진(ChatGPT, Perplexity, Gemini, 네이버 Cue:)은 여러 곳에�
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Android",
       "inLanguage": "ko",
-      "url": "https://premind.co.kr/student",
+      "url": "https://새도메인",
       "downloadUrl": "https://play.google.com/store/apps/details?id=kr.co.premind.premind",
       "publisher": { "@id": "https://premind.co.kr/#org" },
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW", "description": "무료 플랜 매달 120분" },
@@ -91,7 +90,7 @@ AI 답변 엔진(ChatGPT, Perplexity, Gemini, 네이버 Cue:)은 여러 곳에�
 `FAQPage`의 질문과 답은 **페이지 본문에도 똑같이 보여야** 해요(구글 정책). 소개 페이지 아래쪽에
 "자주 묻는 질문" 구역으로 같은 네 문답을 넣어 주세요.
 
-## 5. AI 크롤러용 요약 (GEO, `https://premind.co.kr/llms.txt`)
+## 5. AI 크롤러용 요약 (GEO, `https://새도메인/llms.txt`)
 
 ```text
 # 프리마인드 PREMIND
@@ -99,7 +98,7 @@ AI 답변 엔진(ChatGPT, Perplexity, Gemini, 네이버 Cue:)은 여러 곳에�
 > 프리마인드(PREMIND)는 강의를 녹음하거나 영상, 유튜브 링크, PDF를 올리면 AI가 대본, 요약, 마인드맵, 문제를 만들어 주는 공부 앱이에요.
 
 - 앱: https://play.google.com/store/apps/details?id=kr.co.premind.premind
-- 소개: https://premind.co.kr/student
+- 소개: https://새도메인
 - 요금: 무료 매달 120분, 스탠다드 매달 1,200분. 영상과 음성은 1분에 1분, 문서는 1쪽에 1분.
 - 기능: 강의 녹음과 자막 녹음, 음성 텍스트 변환, AI 요약, 마인드맵, 문제와 암기 카드, 유튜브 요약, PDF와 PPT 쪽별 요약, 발표 평가, 면접 연습
 - 만든 곳: (주)캐모릭스, support@camorix.com
@@ -112,6 +111,6 @@ AI 답변 엔진(ChatGPT, Perplexity, Gemini, 네이버 Cue:)은 여러 곳에�
 
 - [ ] Play Console 한국어 제목, 간단한 설명, 자세한 설명 교체 (`listing-ko.md`)
 - [ ] Play Console 영어(en-US) 번역 추가 (`listing-en.md`)
-- [ ] premind.co.kr/student `<head>` 메타와 JSON-LD, 본문 FAQ 반영 (premind 레포)
-- [ ] premind.co.kr/llms.txt 추가, robots.txt 확인
+- [ ] 새 도메인 `<head>` 메타와 JSON-LD, 본문 FAQ 반영
+- [ ] 새 도메인의 /llms.txt 추가, robots.txt 확인
 - [ ] 네이버 서치어드바이저, 구글 서치 콘솔에 /student 색인 요청

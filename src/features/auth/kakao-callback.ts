@@ -1,5 +1,4 @@
 export const KAKAO_APP_REDIRECT = 'premind://oauth/kakao';
-export const KAKAO_WEB_CALLBACK_PATH = '/app/oauth/kakao.html';
 
 export function parseKakaoCallback(
   callbackUrl: string, expectedState: string, redirectUri = KAKAO_APP_REDIRECT,

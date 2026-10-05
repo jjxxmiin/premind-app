@@ -3,7 +3,6 @@ import * as Crypto from 'expo-crypto';
 
 import { useGoogleAuthentication, isGoogleSignInSupported } from './use-google-auth';
 import { parseKakaoCallback, KAKAO_APP_REDIRECT } from './kakao-callback';
-import { authenticateKakaoWeb } from './kakao-web-auth';
 import { openKakaoAuthSession } from './kakao-native-session';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
@@ -40,8 +39,14 @@ const googleClientIdForPlatform = Platform.select({
   default: googleClientIds.web,
 });
 
-/** Providers this build carries a usable key for. A build constant. */
-export const localProviders: AuthProvider[] = [
+/**
+ * Providers this build carries a usable key for. A build constant.
+ *
+ * None on the web: the student web app was retired on 2026-10-05, and a web
+ * build is now only the internal demo (QA, store screenshots), which signs in
+ * with the demo account.
+ */
+export const localProviders: AuthProvider[] = Platform.OS === 'web' ? [] : [
   ...(googleClientIdForPlatform && googleClientIds.web && isGoogleSignInSupported()
     ? (['google'] as const) : []),
   ...(kakaoRestKey && kakaoLegalNoticeEnabled
@@ -113,11 +118,6 @@ export function useGoogleSignIn(): () => Promise<void> {
 /** The secret and token exchange stay on the server; only a PKCE code returns. */
 export function useKakaoIdentity(): () => Promise<{ code: string; state: string; codeVerifier: string }> {
   return useCallback(async () => {
-    if (Platform.OS === 'web') {
-      const result = await authenticateKakaoWeb((challenge) => apiClient.startKakaoSignIn(challenge, 'web'));
-      if (!result) throw new SocialSignInCancelled();
-      return result;
-    }
     const request = new AuthSession.AuthRequest({
       clientId: kakaoRestKey ?? '',
       redirectUri: KAKAO_APP_REDIRECT,
