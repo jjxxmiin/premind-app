@@ -21,3 +21,20 @@ describe('app i18n core', () => {
     expect(translate('en', [dict], '없는 문장')).toBe('없는 문장');
   });
 });
+
+describe('device language', () => {
+  const { localeForDevice } = jest.requireActual<typeof import('./locale-store')>('./locale-store');
+
+  it('keeps Korean devices in Korean and puts every other language in English', () => {
+    expect(localeForDevice('ko-KR')).toBe('ko');
+    expect(localeForDevice('en-US')).toBe('en');
+    expect(localeForDevice('ja-JP')).toBe('en');
+    expect(localeForDevice('vi')).toBe('en');
+    expect(localeForDevice('zh-Hans-CN')).toBe('en');
+  });
+
+  it('stays in Korean when the device language cannot be read', () => {
+    expect(localeForDevice(undefined)).toBe('ko');
+    expect(localeForDevice('')).toBe('ko');
+  });
+});

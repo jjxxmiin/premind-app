@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 
 import { cleanAiLines, cleanAiText } from '@/lib/ai-text';
+import { getLocale } from '@/lib/i18n/locale-store';
 
 import type {
   AccessSession,
@@ -1103,6 +1104,8 @@ export class PremindApiClient {
         ...init,
         headers: {
           Accept: 'application/json',
+          // AI 가 쓰는 언어 = 앱 화면 언어(2026-10-05): 요약, 문제, 질문 답이 영어 화면에서 영어로.
+          'X-Locale': getLocale(),
           ...init.headers,
         },
         signal: controller.signal,

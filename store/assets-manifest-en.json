@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-10-05T01:04:30.999Z",
+  "sourceCommit": "7fa7b422c1c3ea91ebd57ae7ae92fa4f2b99a4e6",
+  "sourceWorktreeDirty": true,
+  "captureBundles": [
+    "/_expo/static/js/web/entry-b5fe2007f6ae31f823d09a509e91d528.js"
+  ],
+  "version": "1.0.7",
+  "versionCode": 16,
+  "capture": "Local web demo, 360×640 at 3x; not an Android device capture",
+  "iconSha256": "e872de6f425a60437c311c43d2af287fbd58b3ca6907ff9178f90e30b70a6566",
+  "iconSource": "assets/brand/app-icon.png",
+  "locale": "en",
+  "playScreenshots": [
+    "screenshots/en/framed/01-home.png",
+    "screenshots/en/framed/02-material-summary.png",
+    "screenshots/en/framed/03-material-mindmap.png",
+    "screenshots/en/framed/04-chat.png",
+    "screenshots/en/framed/05-mastery.png",
+    "screenshots/en/framed/06-lens.png",
+    "screenshots/en/framed/07-report.png"
+  ]
+}

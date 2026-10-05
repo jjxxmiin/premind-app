@@ -53,7 +53,9 @@ export default function ProfileScreen() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [notificationError, setNotificationError] = useState<string | null>(null);
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
-  const displayName = session?.user.name?.trim() || t('PREMIND 사용자');
+  // The demo account carries the placeholder name 'PREMIND 사용자', which reads in the screen language.
+  const ownName = session?.user.name?.trim();
+  const displayName = ownName && ownName !== 'PREMIND 사용자' ? ownName : t('PREMIND 사용자');
   const initial = Array.from(displayName)[0] ?? 'P';
   const demoAccount = isDemoSession(session);
   const planStatus = usePlanStatus();

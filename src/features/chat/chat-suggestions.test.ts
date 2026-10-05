@@ -147,3 +147,11 @@ describe('chatSuggestions', () => {
     expect(chatSuggestions(withConcepts('가', '나', '다', '라')).length).toBe(3);
   });
 });
+
+describe('English concept questions', () => {
+  it('writes a sentence-case term in lowercase mid-sentence and leaves acronyms alone', () => {
+    const questions = chatSuggestions(withConcepts('Supervised learning', 'ROC curve'), [], 'en');
+    expect(questions).toContain('What is supervised learning?');
+    expect(questions).toContain('What is ROC curve?');
+  });
+});

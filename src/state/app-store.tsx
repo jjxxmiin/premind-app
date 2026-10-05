@@ -13,6 +13,7 @@ import { AppState as NativeAppState } from 'react-native';
 
 import { createEmptySnapshot, createMockSnapshot } from '../data/mock-data';
 import { createId } from '../lib/format';
+import { getLocale } from '../lib/i18n';
 import {
   applyStudyNotebookPatch,
   normalizeStudyNotebooks,
@@ -765,7 +766,7 @@ export function AppStoreProvider({
               : requestedSession;
           const loaded = storedSnapshot ??
             (isDemoSession(session)
-              ? createMockSnapshot()
+              ? createMockSnapshot(getLocale())
               : createEmptySnapshot());
           const snapshot = withDefaultProject(loaded, session);
           dispatchAction({ type: 'hydrate', snapshot, session });

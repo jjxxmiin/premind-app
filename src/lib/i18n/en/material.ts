@@ -47,7 +47,8 @@ export const EN_MATERIAL: EnDict = {
   '켬': 'on',
   '끔': 'off',
   '구간': 'Sections',
-  '쪽 요약': 'Page summaries',
+  // Short: the document sheet fits 요약, 쪽 요약, 마인드맵, 카드 on one line at 360dp.
+  '쪽 요약': 'Pages',
   '대본 전체를 다시 보여줘요.': 'Shows the whole transcript again.',
   '칠한 문장이 있는 줄만 보여줘요.': 'Shows only lines with highlighted sentences.',
   '{pos}으로 이동': 'Go to {pos}',
@@ -65,7 +66,7 @@ export const EN_MATERIAL: EnDict = {
   '찾는 문장이 없어요': 'No matching lines',
   '대본이 없어요': 'No transcript',
   '질문 화면을 열어요.': 'Opens the question screen.',
-  '이 자료에 물어보기': 'Ask about this material',
+  '이 자료에 물어보기': 'Ask AI',
   '문제 풀기': 'Take the quiz',
   '고른 이유에 맞게 이 부분만 다시 설명해 드릴게요.': "We'll explain just this part again, based on the reason you pick.",
   '어디가 헷갈렸어요?': 'What was confusing?',

@@ -226,4 +226,10 @@ export const EN_HOME: EnDict = {
   '유튜브 링크로 만들기': 'Make it from the YouTube link',
   '오늘의 복습': "Today's review",
   '문제 {n}개': { one: '{n} question', other: '{n} questions' },
+  // The home start chip is an action ("Record"), not the 녹음 tab noun "Recording".
+  'start|녹음': 'Record',
+  // English pass (2026-10-05)
+  '시작 중': 'Starting',
+  '더 보기': 'Show more',
+  '가격을 불러오고 있어요': 'Loading prices',
 };

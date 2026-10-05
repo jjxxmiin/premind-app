@@ -6,6 +6,9 @@ import type {
   ShareRoom,
   StudyMaterial,
 } from '../types';
+import type { AppLocale } from '../lib/i18n/core';
+
+import { MOCK_DATA_EN } from './mock-data-en';
 
 /**
  * A five-page PDF, as the server hands one back: page N carries `startMs`
@@ -848,7 +851,23 @@ function daysAgoIso(days: number): string {
   return new Date(Date.now() - days * 86_400_000).toISOString();
 }
 
-export function createMockSnapshot(): PersistedAppSnapshot {
+/** Every Korean string in the demo swapped for its English line; ids, times and answers stay put. */
+function toEnglish<T>(value: T): T {
+  if (typeof value === 'string') return (MOCK_DATA_EN[value] ?? value) as T;
+  if (Array.isArray(value)) return value.map(toEnglish) as T;
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, toEnglish(v)])) as T;
+  }
+  return value;
+}
+
+/** The demo library, in the screen language at the moment the demo starts. */
+export function createMockSnapshot(locale: AppLocale = 'ko'): PersistedAppSnapshot {
+  const snapshot = koreanMockSnapshot();
+  return locale === 'en' ? toEnglish(snapshot) : snapshot;
+}
+
+function koreanMockSnapshot(): PersistedAppSnapshot {
   return {
     schemaVersion: 1,
     projects: clone(mockProjects),

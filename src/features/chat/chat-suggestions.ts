@@ -48,12 +48,15 @@ export function chatSuggestions(
   const concepts = material.note?.concepts ?? [];
   const started = asked.length > 0;
 
+  // A sentence-case term sits mid-sentence in English: "What is overfitting?", not "What is Overfitting?".
+  const inline = (term: string) =>
+    locale === 'en' && /^[A-Z][a-z]+(?: [a-z][\w-]*)*$/.test(term) ? term[0]!.toLowerCase() + term.slice(1) : term;
   const opening = tx('이 {noun}를 한 문단으로 요약해줘', { noun });
   const conceptQuestions = concepts
     .slice(0, 3)
-    .map((concept) => tx('{term}{j} 뭐야?', { term: concept.term, j: josa(concept.term, '이') }));
+    .map((concept) => tx('{term}{j} 뭐야?', { term: inline(concept.term), j: josa(concept.term, '이') }));
   const deeper = concepts[0]
-    ? tx('{term}{j} 예를 들어 설명해줘', { term: concepts[0].term, j: josa(concepts[0].term, '을') })
+    ? tx('{term}{j} 예를 들어 설명해줘', { term: inline(concepts[0].term), j: josa(concepts[0].term, '을') })
     : null;
 
   const ordered = [

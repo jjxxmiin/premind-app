@@ -60,7 +60,7 @@ export function HomeHero({
         />
         <View style={styles.actions}>
           {/* 녹음 is the product's core action, so it alone carries the accent. */}
-          <StartChip accent icon={Mic} label={t('녹음')} onPress={onRecord} testID="home-start-record" />
+          <StartChip accent icon={Mic} label={t.ctx('start', '녹음')} onPress={onRecord} testID="home-start-record" />
           <StartChip icon={FileText} label={t('파일')} onPress={onImport} testID="home-start-import" />
           <StartChip icon={Link2} label={t('링크')} onPress={() => onLink(text.trim())} testID="home-start-youtube" />
           <View style={styles.flex} />

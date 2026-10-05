@@ -459,7 +459,9 @@ export default function HomeScreen() {
   const hasMaterial = materials.length > 0;
 
   // The desktop greeting and 이어서 보기: the whole library, whatever folder is selected.
-  const displayName = session?.user.name?.trim() || t('PREMIND 사용자');
+  // The demo account carries the placeholder name 'PREMIND 사용자', which reads in the screen language.
+  const ownName = session?.user.name?.trim();
+  const displayName = ownName && ownName !== 'PREMIND 사용자' ? ownName : t('PREMIND 사용자');
   const statusBar = useLightStatusBar();
   const continueMaterial = useMemo(
     () =>
